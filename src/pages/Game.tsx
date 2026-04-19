@@ -59,6 +59,11 @@ export default function Game() {
   // Reset execution when program changes
   useEffect(() => { setStepIdx(0); stopAuto(); }, [program]);
 
+  // Scroll to top when entering game
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [d, initialLanguage]);
+
   function resetForPuzzle(p: Puzzle) {
     setPuzzle(p);
     setProgram(p.program);

@@ -1,5 +1,5 @@
 import { Link, useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import TopNav from "@/components/TopNav";
 import { DIFFICULTY_META } from "@/components/DifficultyMeta";
 import { Difficulty, LANGUAGES } from "@/lib/puzzle-engine";
@@ -13,6 +13,10 @@ export default function Modes() {
   const progress = loadProgress();
   const navigate = useNavigate();
   const [selectedMode, setSelectedMode] = useState<Difficulty | null>(null);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const handleModeSelect = (mode: Difficulty) => {
     setSelectedMode(mode);

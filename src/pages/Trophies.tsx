@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -19,6 +19,10 @@ import { cn } from "@/lib/utils";
 export default function Trophies() {
   const progress = loadProgress();
   const a = progress.attempts;
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
 
   const stats = useMemo(() => {
     const correct = a.filter(x => x.correct);

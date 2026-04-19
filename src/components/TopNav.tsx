@@ -68,6 +68,24 @@ export default function TopNav({ center, backTo }: TopNavProps) {
     return pathname.startsWith(item.to);
   }
 
+  function handleNavClick(item: NavItem) {
+    if (item.external && item.to.startsWith("/#")) {
+      // Handle hash links - scroll to section
+      const sectionId = item.to.slice(2); // Remove "/#" prefix
+      setTimeout(() => {
+        const element = document.getElementById(sectionId);
+        if (element) {
+          element.scrollIntoView({ behavior: "smooth" });
+        }
+      }, 0);
+    } else {
+      // For regular page navigation, scroll to top smoothly
+      setTimeout(() => {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, 0);
+    }
+  }
+
   return (
     <header className="border-b border-border/50 backdrop-blur-md sticky top-0 z-40 bg-background/80">
       <div className="container flex items-center justify-between py-3 gap-3">
@@ -85,6 +103,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
               <Link
                 key={item.to}
                 to={item.to}
+                onClick={() => handleNavClick(item)}
                 className={cn(
                   "px-3 py-1.5 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-1.5",
                   active
@@ -166,13 +185,23 @@ export default function TopNav({ center, backTo }: TopNavProps) {
             <nav className="container py-3 grid gap-1">
               {NAV_ITEMS.map((item) => {
                 const Icon = item.icon;
+                const active = isActive(item);
                 return (
                   <Link
                     key={item.to}
                     to={item.to}
-                    className="px-3 py-2 rounded-md text-sm text-foreground hover:bg-secondary/60 inline-flex items-center gap-2"
+                    onClick={() => {
+                      handleNavClick(item);
+                      setMobileOpen(false);
+                    }}
+                    className={cn(
+                      "px-3 py-2 rounded-md text-sm font-medium transition-colors inline-flex items-center gap-2",
+                      active
+                        ? "bg-primary/10 text-primary-glow"
+                        : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
+                    )}
                   >
-                    <Icon className="w-4 h-4 text-muted-foreground" />
+                    <Icon className="w-4 h-4" />
                     {item.label}
                   </Link>
                 );

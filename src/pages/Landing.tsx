@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import TopNav from "@/components/TopNav";
@@ -30,6 +31,10 @@ const STEPS: [string, string][] = [
 ];
 
 export default function Landing() {
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col">
       <TopNav />
