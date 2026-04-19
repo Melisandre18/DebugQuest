@@ -3,10 +3,13 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, CheckCircle2, XCircle, Lightbulb, ArrowRight, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lesson } from "@/lib/lessons";
+import { getExampleForLanguage } from "@/lib/lessons";
+import type { Language } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
 
 interface Props {
   lesson: Lesson;
+  language: Language;
   /** Called when the user finishes the lesson (passes the quiz or skips). */
   onContinue?: () => void;
   /** Disables the continue button (e.g. already on Debug tab). */
@@ -17,9 +20,10 @@ interface Props {
  * Structured pre-puzzle lesson: concept → example → key ideas → mini quiz.
  * Encourages "learn first, fix second".
  */
-export default function LessonPanel({ lesson, onContinue, hideContinue }: Props) {
+export default function LessonPanel({ lesson, language, onContinue, hideContinue }: Props) {
   const [picked, setPicked] = useState<number | null>(null);
   const correct = picked !== null && picked === lesson.quiz.correctIndex;
+  const example = getExampleForLanguage(lesson, language);
 
   return (
     <div className="space-y-5">
@@ -50,9 +54,9 @@ export default function LessonPanel({ lesson, onContinue, hideContinue }: Props)
       <section className="card-surface rounded-xl p-5">
         <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Example</div>
         <pre className="code-surface rounded-lg p-4 text-xs md:text-sm overflow-auto leading-6">
-{lesson.example.code}
+{example.code}
         </pre>
-        <p className="text-sm text-muted-foreground mt-3">{lesson.example.explanation}</p>
+        <p className="text-sm text-muted-foreground mt-3">{example.explanation}</p>
       </section>
 
       {/* Key ideas */}

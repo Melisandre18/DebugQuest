@@ -29,16 +29,19 @@ type View = "blocks" | "code";
 type Tab = "learn" | "debug";
 
 export default function Game() {
-  const { difficulty } = useParams<{ difficulty: Difficulty }>();
+  const { difficulty, language: urlLanguage } = useParams<{ difficulty: Difficulty; language?: Language }>();
   const navigate = useNavigate();
   const d = (["easy","medium","hard","adaptive"].includes(difficulty ?? "")
     ? difficulty
     : "easy") as Difficulty;
+  const initialLanguage = (["python", "javascript", "cpp", "java"].includes(urlLanguage ?? "")
+    ? urlLanguage
+    : "python") as Language;
 
   const [puzzle, setPuzzle] = useState<Puzzle>(() => choosePuzzle(d));
   const [tab, setTab] = useState<Tab>("learn");
-  const [language, setLanguage] = useState<Language>("python");
-  const [view, setView] = useState<View>("blocks");
+  const [language, setLanguage] = useState<Language>(initialLanguage);
+  const [view, setView] = useState<View>(initialLanguage !== "python" && d !== "easy" ? "code" : "blocks");
   const [program, setProgram] = useState<Program>(puzzle.program);
   const [hintsRevealed, setHintsRevealed] = useState(0);
   const [attempts, setAttempts] = useState(0);
@@ -193,7 +196,7 @@ export default function Game() {
           {/* LEARN TAB */}
           <TabsContent value="learn" className="m-0">
             <div className="grid lg:grid-cols-[1fr_320px] gap-5">
-              <LessonPanel lesson={lesson} onContinue={() => setTab("debug")} />
+              <LessonPanel lesson={lesson} language={language} onContinue={() => setTab("debug")} />
               <aside className="space-y-4">
                 <div className="card-surface rounded-xl p-5">
                   <div className="font-display font-semibold inline-flex items-center gap-2 mb-2">

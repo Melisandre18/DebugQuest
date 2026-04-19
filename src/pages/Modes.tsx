@@ -1,14 +1,29 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useState } from "react";
 import TopNav from "@/components/TopNav";
 import { DIFFICULTY_META } from "@/components/DifficultyMeta";
-import { Difficulty } from "@/lib/puzzle-engine";
+import { Difficulty, LANGUAGES } from "@/lib/puzzle-engine";
 import { loadProgress, ACHIEVEMENTS } from "@/lib/progress";
-import { ArrowRight, Trophy, Award } from "lucide-react";
+import { ArrowRight, Trophy, Award, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const modes: Difficulty[] = ["easy", "medium", "hard", "adaptive"];
 
 export default function Modes() {
   const progress = loadProgress();
+  const navigate = useNavigate();
+  const [selectedMode, setSelectedMode] = useState<Difficulty | null>(null);
+
+  const handleModeSelect = (mode: Difficulty) => {
+    setSelectedMode(mode);
+  };
+
+  const handleLanguageSelect = (language: string) => {
+    if (selectedMode) {
+      navigate(`/play/${selectedMode}/${language}`);
+      setSelectedMode(null);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -29,10 +44,10 @@ export default function Modes() {
             const m = DIFFICULTY_META[d];
             const Icon = m.icon;
             return (
-              <Link
+              <button
                 key={d}
-                to={`/play/${d}`}
-                className="card-surface rounded-2xl p-6 group hover:border-primary/40 hover:-translate-y-0.5 transition-all relative overflow-hidden"
+                onClick={() => handleModeSelect(d)}
+                className="card-surface rounded-2xl p-6 group hover:border-primary/40 hover:-translate-y-0.5 transition-all relative overflow-hidden text-left"
               >
                 <div className="absolute -right-6 -top-6 w-32 h-32 rounded-full opacity-10 blur-2xl bg-primary" />
                 <div className="flex items-start justify-between">
@@ -46,12 +61,43 @@ export default function Modes() {
                   {m.bullets.map(b => <li key={b} className="flex gap-2"><span className={m.color}>›</span>{b}</li>)}
                 </ul>
                 <div className="mt-6 inline-flex items-center text-sm font-medium text-primary-glow">
-                  Start <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  Continue <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>
-              </Link>
+              </button>
             );
           })}
         </div>
+
+        {/* Language Selection Modal */}
+        {selectedMode && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="card-surface rounded-2xl p-8 max-w-md w-full mx-4">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="font-display text-2xl font-bold">Select your language</h2>
+                <button
+                  onClick={() => setSelectedMode(null)}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              <p className="text-sm text-muted-foreground mb-4">
+                Both the learn and debug sections will be shown in your chosen language.
+              </p>
+              <div className="space-y-2">
+                {LANGUAGES.map((lang) => (
+                  <button
+                    key={lang.id}
+                    onClick={() => handleLanguageSelect(lang.id)}
+                    className="w-full text-left px-4 py-3 rounded-lg border border-border bg-card/40 hover:bg-primary/10 hover:border-primary/40 transition-all"
+                  >
+                    <span className="font-medium">{lang.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Progress strip */}
         <section className="mt-14">

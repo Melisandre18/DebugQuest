@@ -1,5 +1,5 @@
 // Per-bug-type lesson content. Shown in the "Learn" tab before fixing.
-import type { BugType } from "@/lib/puzzle-engine";
+import type { BugType, Language } from "@/lib/puzzle-engine";
 
 export interface Lesson {
   title: string;
@@ -7,8 +7,8 @@ export interface Lesson {
   concept: string;
   /** Markdown-ish blocks (we render simply). */
   intro: string;
-  /** A short worked example, shown as code. */
-  example: { language: "python"; code: string; explanation: string };
+  /** Worked examples in multiple languages, shown as code. */
+  examples: Record<Language, { code: string; explanation: string }>;
   /** Three key takeaways. */
   keyIdeas: string[];
   /** A single multiple-choice quiz question to confirm understanding. */
@@ -17,17 +17,40 @@ export interface Lesson {
   furtherReading: string[];
 }
 
+/**
+ * Get the example for a specific language, falling back to Python if not available.
+ */
+export function getExampleForLanguage(lesson: Lesson, lang: Language) {
+  return lesson.examples[lang] || lesson.examples.python;
+}
+
 export const LESSONS: Record<BugType, Lesson> = {
   "swapped-branches": {
     title: "Sequence: order of execution",
     concept: "Programs run statements top-to-bottom, one at a time.",
     intro:
       "A program is a list of instructions for the computer. It executes them strictly in the order they appear. Two programs with the same instructions in a different order can produce completely different results.",
-    example: {
-      language: "python",
-      code: "print(\"Hello\")\nprint(\"World\")",
-      explanation:
-        "Line 1 runs first → prints \"Hello\". Then line 2 runs → prints \"World\". Swap the lines and the output reverses.",
+    examples: {
+      python: {
+        code: "print(\"Hello\")\nprint(\"World\")",
+        explanation:
+          "Line 1 runs first → prints \"Hello\". Then line 2 runs → prints \"World\". Swap the lines and the output reverses.",
+      },
+      javascript: {
+        code: "console.log(\"Hello\");\nconsole.log(\"World\");",
+        explanation:
+          "Line 1 runs first → prints \"Hello\". Then line 2 runs → prints \"World\". Swap the lines and the output reverses.",
+      },
+      cpp: {
+        code: "#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << \"Hello\" << endl;\n    cout << \"World\" << endl;\n    return 0;\n}",
+        explanation:
+          "Line 3 runs first → prints \"Hello\". Then line 4 runs → prints \"World\". Swap the lines and the output reverses.",
+      },
+      java: {
+        code: "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n        System.out.println(\"World\");\n    }\n}",
+        explanation:
+          "Line 3 runs first → prints \"Hello\". Then line 4 runs → prints \"World\". Swap the lines and the output reverses.",
+      },
     },
     keyIdeas: [
       "Statements execute top to bottom.",
@@ -48,11 +71,27 @@ export const LESSONS: Record<BugType, Lesson> = {
     concept: "==, !=, <, <=, >, >= each accept a different set of values.",
     intro:
       "A comparison evaluates to true or false. Picking the wrong operator quietly changes which values pass the check — and therefore which branch of the program runs.",
-    example: {
-      language: "python",
-      code: "age = 18\nif age >= 18:\n    print(\"Welcome\")",
-      explanation:
-        ">= matches 18 AND every number above it. Using > would exclude 18 itself; using == would only match exactly 18.",
+    examples: {
+      python: {
+        code: "age = 18\nif age >= 18:\n    print(\"Welcome\")",
+        explanation:
+          ">= matches 18 AND every number above it. Using > would exclude 18 itself; using == would only match exactly 18.",
+      },
+      javascript: {
+        code: "let age = 18;\nif (age >= 18) {\n    console.log(\"Welcome\");\n}",
+        explanation:
+          ">= matches 18 AND every number above it. Using > would exclude 18 itself; using == would only match exactly 18.",
+      },
+      cpp: {
+        code: "int age = 18;\nif (age >= 18) {\n    cout << \"Welcome\" << endl;\n}",
+        explanation:
+          ">= matches 18 AND every number above it. Using > would exclude 18 itself; using == would only match exactly 18.",
+      },
+      java: {
+        code: "int age = 18;\nif (age >= 18) {\n    System.out.println(\"Welcome\");\n}",
+        explanation:
+          ">= matches 18 AND every number above it. Using > would exclude 18 itself; using == would only match exactly 18.",
+      },
     },
     keyIdeas: [
       "Read conditions out loud and check each boundary value.",
@@ -73,11 +112,27 @@ export const LESSONS: Record<BugType, Lesson> = {
     concept: "Loops are inclusive/exclusive in different ways depending on the language.",
     intro:
       "A loop iterates over a range of values. The single most common bug in programming is being off by one at the boundary — running one too many or one too few iterations.",
-    example: {
-      language: "python",
-      code: "total = 0\nfor i in range(1, 6):   # i = 1, 2, 3, 4, 5\n    total = total + i\nreturn total           # 15",
-      explanation:
-        "Python's range(1, 6) is exclusive at the upper bound, so i takes the values 1..5 — five iterations. Writing range(1, 5) would only sum to 10.",
+    examples: {
+      python: {
+        code: "total = 0\nfor i in range(1, 6):   # i = 1, 2, 3, 4, 5\n    total = total + i\nreturn total           # 15",
+        explanation:
+          "Python's range(1, 6) is exclusive at the upper bound, so i takes the values 1..5 — five iterations. Writing range(1, 5) would only sum to 10.",
+      },
+      javascript: {
+        code: "let total = 0;\nfor (let i = 1; i <= 5; i++) {   // i = 1, 2, 3, 4, 5\n    total = total + i;\n}\nreturn total;           // 15",
+        explanation:
+          "JavaScript's <= is inclusive, so i takes the values 1..5 — five iterations. Using < 5 would only sum to 10.",
+      },
+      cpp: {
+        code: "int total = 0;\nfor (int i = 1; i <= 5; i++) {   // i = 1, 2, 3, 4, 5\n    total = total + i;\n}\nreturn total;           // 15",
+        explanation:
+          "C++ loop with <= is inclusive, so i takes the values 1..5 — five iterations. Using < 5 would only sum to 10.",
+      },
+      java: {
+        code: "int total = 0;\nfor (int i = 1; i <= 5; i++) {   // i = 1, 2, 3, 4, 5\n    total = total + i;\n}\nreturn total;           // 15",
+        explanation:
+          "Java loop with <= is inclusive, so i takes the values 1..5 — five iterations. Using < 5 would only sum to 10.",
+      },
     },
     keyIdeas: [
       "Always verify the FIRST and LAST iteration of any loop.",
@@ -98,11 +153,27 @@ export const LESSONS: Record<BugType, Lesson> = {
     concept: "A while loop stops only when its condition becomes false.",
     intro:
       "A while loop keeps repeating its body forever unless something inside the body moves a variable toward making the condition false. Forgetting to update that variable — or moving it the wrong way — creates an infinite loop.",
-    example: {
-      language: "python",
-      code: "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1   # crucial: drives n toward 0",
-      explanation:
-        "Each iteration decreases n. After three iterations n is 0, the condition n > 0 becomes false, and the loop exits.",
+    examples: {
+      python: {
+        code: "n = 3\nwhile n > 0:\n    print(n)\n    n = n - 1   # crucial: drives n toward 0",
+        explanation:
+          "Each iteration decreases n. After three iterations n is 0, the condition n > 0 becomes false, and the loop exits.",
+      },
+      javascript: {
+        code: "let n = 3;\nwhile (n > 0) {\n    console.log(n);\n    n = n - 1;   // crucial: drives n toward 0\n}",
+        explanation:
+          "Each iteration decreases n. After three iterations n is 0, the condition n > 0 becomes false, and the loop exits.",
+      },
+      cpp: {
+        code: "int n = 3;\nwhile (n > 0) {\n    cout << n << endl;\n    n = n - 1;   // crucial: drives n toward 0\n}",
+        explanation:
+          "Each iteration decreases n. After three iterations n is 0, the condition n > 0 becomes false, and the loop exits.",
+      },
+      java: {
+        code: "int n = 3;\nwhile (n > 0) {\n    System.out.println(n);\n    n = n - 1;   // crucial: drives n toward 0\n}",
+        explanation:
+          "Each iteration decreases n. After three iterations n is 0, the condition n > 0 becomes false, and the loop exits.",
+      },
     },
     keyIdeas: [
       "Identify the loop variable in the condition.",
@@ -123,11 +194,27 @@ export const LESSONS: Record<BugType, Lesson> = {
     concept: "An accumulator's starting value defines what the loop is computing.",
     intro:
       "Loops that build up a result (sum, product, max, min, count) start from an initial value. The wrong starting value silently corrupts every iteration that follows.",
-    example: {
-      language: "python",
-      code: "total = 0          # correct for SUM\nfor x in [4, 9, 2]:\n    total = total + x\n# total = 15",
-      explanation:
-        "Sum starts at 0 (the additive identity). For a product, start at 1. For a max, start at the first element or -infinity.",
+    examples: {
+      python: {
+        code: "total = 0          # correct for SUM\nfor x in [4, 9, 2]:\n    total = total + x\n# total = 15",
+        explanation:
+          "Sum starts at 0 (the additive identity). For a product, start at 1. For a max, start at the first element or -infinity.",
+      },
+      javascript: {
+        code: "let total = 0;          // correct for SUM\nfor (let x of [4, 9, 2]) {\n    total = total + x;\n}\n// total = 15",
+        explanation:
+          "Sum starts at 0 (the additive identity). For a product, start at 1. For a max, start at the first element or -infinity.",
+      },
+      cpp: {
+        code: "int total = 0;          // correct for SUM\nint arr[] = {4, 9, 2};\nfor (int x : arr) {\n    total = total + x;\n}\n// total = 15",
+        explanation:
+          "Sum starts at 0 (the additive identity). For a product, start at 1. For a max, start at the first element or -infinity.",
+      },
+      java: {
+        code: "int total = 0;          // correct for SUM\nint[] arr = {4, 9, 2};\nfor (int x : arr) {\n    total = total + x;\n}\n// total = 15",
+        explanation:
+          "Sum starts at 0 (the additive identity). For a product, start at 1. For a max, start at the first element or -infinity.",
+      },
     },
     keyIdeas: [
       "Sum → start at 0. Product → start at 1.",
@@ -148,11 +235,27 @@ export const LESSONS: Record<BugType, Lesson> = {
     concept: "When conditions overlap, more specific cases must be checked first.",
     intro:
       "If two conditions can both be true, the FIRST matching branch wins. Putting the general case before the specific case means the specific case never runs.",
-    example: {
-      language: "python",
-      code: "if i % 15 == 0:    # most specific\n    print(\"FizzBuzz\")\nelif i % 3 == 0:\n    print(\"Fizz\")\nelif i % 5 == 0:\n    print(\"Buzz\")\nelse:\n    print(i)",
-      explanation:
-        "15 is divisible by both 3 and 5. If we checked %3 first, 15 would print \"Fizz\" and never reach the FizzBuzz branch.",
+    examples: {
+      python: {
+        code: "if i % 15 == 0:    # most specific\n    print(\"FizzBuzz\")\nelif i % 3 == 0:\n    print(\"Fizz\")\nelif i % 5 == 0:\n    print(\"Buzz\")\nelse:\n    print(i)",
+        explanation:
+          "15 is divisible by both 3 and 5. If we checked %3 first, 15 would print \"Fizz\" and never reach the FizzBuzz branch.",
+      },
+      javascript: {
+        code: "if (i % 15 === 0) {    // most specific\n    console.log(\"FizzBuzz\");\n} else if (i % 3 === 0) {\n    console.log(\"Fizz\");\n} else if (i % 5 === 0) {\n    console.log(\"Buzz\");\n} else {\n    console.log(i);\n}",
+        explanation:
+          "15 is divisible by both 3 and 5. If we checked %3 first, 15 would print \"Fizz\" and never reach the FizzBuzz branch.",
+      },
+      cpp: {
+        code: "if (i % 15 == 0) {    // most specific\n    cout << \"FizzBuzz\" << endl;\n} else if (i % 3 == 0) {\n    cout << \"Fizz\" << endl;\n} else if (i % 5 == 0) {\n    cout << \"Buzz\" << endl;\n} else {\n    cout << i << endl;\n}",
+        explanation:
+          "15 is divisible by both 3 and 5. If we checked %3 first, 15 would print \"Fizz\" and never reach the FizzBuzz branch.",
+      },
+      java: {
+        code: "if (i % 15 == 0) {    // most specific\n    System.out.println(\"FizzBuzz\");\n} else if (i % 3 == 0) {\n    System.out.println(\"Fizz\");\n} else if (i % 5 == 0) {\n    System.out.println(\"Buzz\");\n} else {\n    System.out.println(i);\n}",
+        explanation:
+          "15 is divisible by both 3 and 5. If we checked %3 first, 15 would print \"Fizz\" and never reach the FizzBuzz branch.",
+      },
     },
     keyIdeas: [
       "Most specific → most general, top to bottom.",
