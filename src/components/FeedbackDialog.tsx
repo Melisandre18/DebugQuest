@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { useLocation } from "react-router-dom";
+import { MessageSquare, Star, Send } from "lucide-react";
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { cn } from "@/lib/utils";
+import { FEEDBACK_CATEGORIES, FeedbackContext, submitFeedback } from "@/lib/feedback";
+
+interface Props {
+  context?: FeedbackContext;
+  puzzleId?: string;
+  /** Custom trigger; defaults to a small ghost button. */
+  trigger?: React.ReactNode;
+  /** Optional label shown next to the icon in the default trigger. */
+  triggerLabel?: string;
+}
+
+/**
+ * Reusable feedback dialog. Stores submissions in localStorage
+ * (no backend yet — see lib/feedback.ts).
+ */
+export default function FeedbackDialog({
+  context = "general",
+  puzzleId,
+  trigger,
+  triggerLabel = "Feedback",
+}: Props) {
+  const { pathname } = useLocation();
+  const [open, setOpen] = useState(false);
+  const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
+  const [category, setCategory] = useState<string>(context === "puzzle" ? "Difficulty" : "Idea");
+  const [message, setMessage] = useState("");
+
+  function reset() {
+    setRating(5); setCategory(context === "puzzle" ? "Difficulty" : "Idea"); setMessage("");
+  }
+
+  function handleSubmit() {
+    if (message.trim().length < 3) {
+      toast.error("Please write a few words so we can act on it.");
+      return;
+    }
+    submitFeedback({
+      context, rating, category, message: message.trim(), puzzleId, route: pathname,
+    });
+    toast.success("Thanks — feedback saved.", {
+      description: "Stored locally on this device for now.",
+    });
+    setOpen(false);
+    reset();
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {trigger ?? (
+          <Button variant="ghost" size="sm" className="gap-1.5">
+            <MessageSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">{triggerLabel}</span>
+          </Button>
+        )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle className="font-display flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-primary-glow" />
+            {context === "puzzle" ? "Feedback on this puzzle" : "Send feedback"}
+          </DialogTitle>
+          <DialogDescription>
+            Tell us what worked, what didn't, or what you'd like to see next. Stored on this device.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Rating</label>
+            <div className="mt-1.5 flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  onClick={() => setRating(n as 1 | 2 | 3 | 4 | 5)}
+                  className={cn(
+                    "p-1.5 rounded-md transition-all hover:scale-110",
+                    n <= rating ? "text-accent" : "text-muted-foreground/40 hover:text-muted-foreground"
+                  )}
+                  aria-label={`${n} star${n > 1 ? "s" : ""}`}
+                >
+                  <Star className="w-5 h-5" fill={n <= rating ? "currentColor" : "none"} />
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">Category</label>
+            <Select value={category} onValueChange={setCategory}>
+              <SelectTrigger className="mt-1.5">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FEEDBACK_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">
+              {context === "puzzle" ? "Your thoughts on this puzzle" : "What's on your mind?"}
+            </label>
+            <Textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder={
+                context === "puzzle"
+                  ? "Was the bug clear? Were the hints useful?"
+                  : "Loved something? Confused by something? Tell us."
+              }
+              rows={4}
+              className="mt-1.5 resize-none"
+            />
+            <div className="text-[11px] text-muted-foreground mt-1 text-right">
+              {message.length} / 600
+            </div>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="hero" onClick={handleSubmit}>
+            <Send className="w-4 h-4 mr-1" /> Send
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
