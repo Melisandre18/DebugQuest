@@ -1,7 +1,6 @@
 export type Language = "en" | "ka";
 
 export interface Translations {
-  // Navigation
   nav: {
     home: string;
     howItWorks: string;
@@ -12,88 +11,32 @@ export interface Translations {
     feedback: string;
   };
 
-  // Landing page
   landing: {
-    hero: {
-      title: string;
-      subtitle: string;
-      description: string;
-      cta: string;
-    };
+    hero: { title: string; subtitle: string; description: string; cta: string };
     features: {
-      learnFirst: {
-        title: string;
-        desc: string;
-      };
-      realPrograms: {
-        title: string;
-        desc: string;
-      };
-      blocksAndCode: {
-        title: string;
-        desc: string;
-      };
-      execution: {
-        title: string;
-        desc: string;
-      };
-      hints: {
-        title: string;
-        desc: string;
-      };
-      adaptive: {
-        title: string;
-        desc: string;
-      };
+      learnFirst:   { title: string; desc: string };
+      realPrograms: { title: string; desc: string };
+      blocksAndCode:{ title: string; desc: string };
+      execution:    { title: string; desc: string };
+      hints:        { title: string; desc: string };
+      adaptive:     { title: string; desc: string };
     };
     howItWorks: {
-      title: string;
-      subtitle: string;
-      description: string;
-      steps: {
-        read: string;
-        run: string;
-        hypothesise: string;
-        test: string;
-        reflect: string;
-        levelUp: string;
-      };
-      descriptions: {
-        read: string;
-        run: string;
-        hypothesise: string;
-        test: string;
-        reflect: string;
-        levelUp: string;
-      };
+      title: string; subtitle: string; description: string;
+      steps: { read: string; run: string; hypothesise: string; test: string; reflect: string; levelUp: string };
+      descriptions: { read: string; run: string; hypothesise: string; test: string; reflect: string; levelUp: string };
     };
-    modes: {
-      title: string;
-      subtitle: string;
-      description: string;
-      start: string;
-    };
-    concepts: {
-      title: string;
-    };
+    modes:    { title: string; subtitle: string; description: string; start: string };
+    concepts: { title: string };
   };
 
-  // Modes page
   modes: {
-    title: string;
-    subtitle: string;
-    description: string;
-    selectLanguage: string;
-    languageDescription: string;
-    continue: string;
-    progressTitle: string;
-    totalScore: string;
-    puzzlesSolved: string;
-    attempts: string;
-    achievements: string;
+    title: string; subtitle: string; description: string;
+    selectLanguage: string; languageDescription: string;
+    continue: string; progressTitle: string;
+    totalScore: string; puzzlesSolved: string; attempts: string; achievements: string;
   };
 
-  // Game page
   game: {
     goal: string;
     skip: string;
@@ -106,6 +49,7 @@ export interface Translations {
     resetButton: string;
     autoPlayButton: string;
     hint: string;
+    hints: string;
     pickFix: string;
     attempts: string;
     concept: string;
@@ -114,138 +58,116 @@ export interface Translations {
     readMoreTitle: string;
     conceptTab: string;
     debugTab: string;
+
+    // API states
+    loadingPuzzle: string;
+    loadError: string;
+    retry: string;
+
+    // Programming language dropdown
+    activeProgrammingLang: string;
+    programmingLanguage: string;
+
+    // Feedback text
+    correctFeedback: string;
+    incorrectFeedback: string;
+    whatYouLearned: string;
+    theBug: string;
+    in: string;
+    whyItWorks: string;
+    whyItWorksDesc: string;
+    underlyingConcept: string;
+    nextPuzzle: string;
+    restoreAndRetry: string;
+
+    // Hints
+    spoiler: string;
+    locked: string;
+    allHintsRevealed: string;
+    hintCostNote: string;
+
+    // Strategy panel
+    debugStrategy: string;
+    strategyTrace: string;
+    strategyIsolate: string;
+    strategyFix: string;
+    needRefresher: string;
+    reReadLesson: string;
+
+    // Bug type names
+    bugTypes: {
+      "wrong-operator": string;
+      "off-by-one": string;
+      "wrong-condition": string;
+      "infinite-loop": string;
+      "wrong-init": string;
+      "swapped-branches": string;
+    };
+
+    // Concept explainers
+    conceptExplainers: {
+      "wrong-operator": string;
+      "off-by-one": string;
+      "wrong-condition": string;
+      "infinite-loop": string;
+      "wrong-init": string;
+      "swapped-branches": string;
+    };
   };
 
-  // Difficulty levels
   difficulty: {
-    easy: {
-      title: string;
-      tagline: string;
-      bullets: string[];
-    };
-    medium: {
-      title: string;
-      tagline: string;
-      bullets: string[];
-    };
-    hard: {
-      title: string;
-      tagline: string;
-      bullets: string[];
-    };
-    adaptive: {
-      title: string;
-      tagline: string;
-      bullets: string[];
-    };
+    easy:     { title: string; tagline: string; bullets: string[] };
+    medium:   { title: string; tagline: string; bullets: string[] };
+    hard:     { title: string; tagline: string; bullets: string[] };
+    adaptive: { title: string; tagline: string; bullets: string[] };
   };
 
-  // Trophies page
   trophies: {
-    title: string;
-    accuracy: string;
-    avgTime: string;
-    avgHints: string;
-    bestScore: string;
-    achievements: string;
-    reset: string;
-    trophyRoom: string;
-    pointsUnit: string;
-    subtitle: string;
-    earnMorePoints: string;
-    attemptNumber: string;
-    startFirstPuzzle: string;
+    title: string; accuracy: string; avgTime: string; avgHints: string;
+    bestScore: string; achievements: string; reset: string; trophyRoom: string;
+    pointsUnit: string; subtitle: string; earnMorePoints: string;
+    attemptNumber: string; startFirstPuzzle: string;
   };
 
-  // Messages
-  messages: {
-    correct: string;
-    incorrect: string;
-    solved: string;
-    points: string;
-  };
+  messages: { correct: string; incorrect: string; solved: string; points: string };
 
-  // Language
-  language: {
-    english: string;
-    georgian: string;
-  };
+  language: { english: string; georgian: string };
 
-  // Common UI
   common: {
-    solved: string;
-    attempts: string;
-    reset: string;
-    cancel: string;
-    send: string;
-    rating: string;
-    noProgress: string;
-    noProgressDesc: string;
+    solved: string; attempts: string; reset: string; cancel: string;
+    send: string; rating: string; noProgress: string; noProgressDesc: string;
   };
 
-  // Landing specific
   landingUI: {
-    features: string;
-    builtFor: string;
-    modes: string;
-    fourWays: string;
-    whyDebugging: string;
-    difficultyModes: string;
-    languages: string;
-    noSignup: string;
+    features: string; builtFor: string; modes: string; fourWays: string;
+    whyDebugging: string; difficultyModes: string; languages: string; noSignup: string;
   };
 
-  // Modes specific
   modesUI: {
-    selectLanguage: string;
-    selectLanguageDesc: string;
-    yourProgress: string;
-    totalScore: string;
-    puzzlesSolved: string;
+    selectLanguage: string; selectLanguageDesc: string;
+    yourProgress: string; totalScore: string; puzzlesSolved: string;
   };
 
-  // Trophies specific
   trophiesUI: {
-    resetProgress: string;
-    confirmReset: string;
-    accuracy: string;
-    avgTime: string;
-    avgHints: string;
-    bestStreak: string;
-    noTrophies: string;
-    noTrophiesDesc: string;
-    scoreOverTime: string;
-    solvedByDifficulty: string;
-    recentAttempts: string;
+    resetProgress: string; confirmReset: string; accuracy: string;
+    avgTime: string; avgHints: string; bestStreak: string;
+    noTrophies: string; noTrophiesDesc: string;
+    scoreOverTime: string; solvedByDifficulty: string; recentAttempts: string;
   };
 
-  // Feedback dialog
   feedback: {
-    feedbackOnPuzzle: string;
-    sendFeedback: string;
-    feedbackDesc: string;
-    puzzleQuestion: string;
-    generalQuestion: string;
+    feedbackOnPuzzle: string; sendFeedback: string; feedbackDesc: string;
+    puzzleQuestion: string; generalQuestion: string;
   };
 
-  // Game specific
   gameUI: {
-    whenReady: string;
-    debugInstructions: string;
-    goToDebug: string;
-    stepPrefix: string;
-    executionHalted: string;
+    whenReady: string; debugInstructions: string;
+    goToDebug: string; stepPrefix: string; executionHalted: string;
   };
 
   buttons: {
-    skip: string;
-    play: string;
-    step: string;
-    reset: string;
-    auto: string;
-    hint: string;
-    startDebugging: string;
-    pause: string;
+    skip: string; play: string; step: string; reset: string;
+    auto: string; hint: string; startDebugging: string; pause: string;
   };
 }
 
@@ -260,6 +182,7 @@ export const translations: Record<Language, Translations> = {
       back: "Back",
       feedback: "Feedback",
     },
+
     landing: {
       hero: {
         title: "Learn programming by fixing bugs",
@@ -269,44 +192,18 @@ export const translations: Record<Language, Translations> = {
         cta: "Start Playing",
       },
       features: {
-        learnFirst: {
-          title: "Learn first, then fix",
-          desc: "Every puzzle opens with a focused 60-second lesson on the underlying concept — then you apply it.",
-        },
-        realPrograms: {
-          title: "Real broken programs",
-          desc: "No syntax drills. Every level is a working program with a real, traceable defect.",
-        },
-        blocksAndCode: {
-          title: "Blocks ↔ code, in sync",
-          desc: "Toggle visual blocks or read the same program in Python, JavaScript, C++ or Java.",
-        },
-        execution: {
-          title: "Step-through execution",
-          desc: "Run, pause and step. Watch variables and control flow change line by line.",
-        },
-        hints: {
-          title: "Tiered hints",
-          desc: "From a gentle nudge to a full explanation — only when you ask.",
-        },
-        adaptive: {
-          title: "Adaptive difficulty",
-          desc: "We track accuracy, time and hints used, and tune the next puzzle.",
-        },
+        learnFirst:    { title: "Learn first, then fix", desc: "Every puzzle opens with a focused 60-second lesson on the underlying concept — then you apply it." },
+        realPrograms:  { title: "Real broken programs",  desc: "No syntax drills. Every level is a working program with a real, traceable defect." },
+        blocksAndCode: { title: "Blocks ↔ code, in sync", desc: "Toggle visual blocks or read the same program in Python, JavaScript, C++ or Java." },
+        execution:     { title: "Step-through execution", desc: "Run, pause and step. Watch variables and control flow change line by line." },
+        hints:         { title: "Tiered hints",           desc: "From a gentle nudge to a full explanation — only when you ask." },
+        adaptive:      { title: "Adaptive difficulty",    desc: "We track accuracy, time and hints used, and tune the next puzzle." },
       },
       howItWorks: {
         title: "How it works",
         subtitle: "A learning loop, not a lecture.",
-        description:
-          "Every puzzle follows the same workflow used by real programmers.",
-        steps: {
-          read: "Read",
-          run: "Run",
-          hypothesise: "Hypothesise",
-          test: "Test",
-          reflect: "Reflect",
-          levelUp: "Level up",
-        },
+        description: "Every puzzle follows the same workflow used by real programmers.",
+        steps: { read: "Read", run: "Run", hypothesise: "Hypothesise", test: "Test", reflect: "Reflect", levelUp: "Level up" },
         descriptions: {
           read: "Understand what the program should do.",
           run: "Run and observe behavior.",
@@ -316,15 +213,8 @@ export const translations: Record<Language, Translations> = {
           levelUp: "Move to a harder puzzle.",
         },
       },
-      modes: {
-        title: "Four ways to play",
-        subtitle: "Pick a mode or let Adaptive decide.",
-        description: "Each mode increases difficulty.",
-        start: "Start",
-      },
-      concepts: {
-        title: "Why debugging?",
-      },
+      modes:    { title: "Four ways to play", subtitle: "Pick a mode or let Adaptive decide.", description: "Each mode increases difficulty.", start: "Start" },
+      concepts: { title: "Why debugging?" },
     },
 
     modes: {
@@ -345,46 +235,77 @@ export const translations: Record<Language, Translations> = {
       goal: "Goal:",
       skip: "Skip",
       whyLearnFirst: "Why learn first?",
-      whyLearnFirstDesc:
-        "You need a mental model before debugging effectively.",
+      whyLearnFirstDesc: "You need a mental model before debugging effectively.",
       blocks: "Blocks",
       code: "Code",
       playButton: "Play",
       stepButton: "Step",
       resetButton: "Reset",
       autoPlayButton: "Auto",
-      hint: "Reveal next hint",
+      hint: "Hint",
+      hints: "Hints",
       pickFix: "Pick a fix",
       attempts: "Attempts:",
       concept: "Concept",
       keyIdeas: "Key ideas",
       quickCheck: "Quick check",
       readMoreTitle: "Read More",
-      conceptTab: "Learn",
-      debugTab: "Debug",
+      conceptTab: "Learn the concept",
+      debugTab: "Debug the program",
+
+      loadingPuzzle: "Loading puzzle…",
+      loadError: "Could not load puzzle. Check your connection and try again.",
+      retry: "Try again",
+
+      activeProgrammingLang: "Programming language",
+      programmingLanguage: "Language",
+
+      correctFeedback: "Correct — bug squashed.",
+      incorrectFeedback: "Not yet — read the explanation and try again.",
+      whatYouLearned: "What you just learned",
+      theBug: "The bug:",
+      in: "in",
+      whyItWorks: "Why this fix works:",
+      whyItWorksDesc: "Stepping through the fixed program shows variables reach the expected state and produce the required output.",
+      underlyingConcept: "Underlying concept:",
+      nextPuzzle: "Next puzzle",
+      restoreAndRetry: "Restore original & try again",
+
+      spoiler: "Spoiler",
+      locked: "— locked —",
+      allHintsRevealed: "All hints revealed",
+      hintCostNote: "Each hint lowers your score for this puzzle. Solve with as few as possible.",
+
+      debugStrategy: "Debugging strategy",
+      strategyTrace:   "1. Trace — Step through and watch how variables change.",
+      strategyIsolate: "2. Isolate — Find the first moment reality diverges from expectation.",
+      strategyFix:     "3. Fix — Apply the smallest change that addresses the actual cause.",
+      needRefresher: "Need a refresher?",
+      reReadLesson: "Re-read the lesson",
+
+      bugTypes: {
+        "wrong-operator":   "wrong operator",
+        "off-by-one":       "off-by-one error",
+        "wrong-condition":  "wrong condition",
+        "infinite-loop":    "non-terminating loop",
+        "wrong-init":       "incorrect initialisation",
+        "swapped-branches": "wrong execution order",
+      },
+      conceptExplainers: {
+        "wrong-operator":   "Comparison operators define which inputs pass the condition. Off-by-one operator choices ripple through the entire branch.",
+        "off-by-one":       "Loop bounds are inclusive/exclusive in different languages. Always trace the first and last iteration to verify boundaries.",
+        "wrong-condition":  "When multiple conditions overlap, the order of checks matters. Specific cases must come before general ones.",
+        "infinite-loop":    "A while-loop only terminates if the loop variable moves toward making the condition false on every iteration.",
+        "wrong-init":       "The initial value of an accumulator (sum, max, min, count) defines what the loop is actually computing.",
+        "swapped-branches": "Programs execute statements in order. Ordering itself is logic.",
+      },
     },
 
     difficulty: {
-      easy: {
-        title: "Easy",
-        tagline: "Foundations",
-        bullets: ["Core concepts", "Guided hints", "Blocks only"],
-      },
-      medium: {
-        title: "Medium",
-        tagline: "Intermediate",
-        bullets: ["Real patterns", "Fewer hints", "Blocks & code"],
-      },
-      hard: {
-        title: "Hard",
-        tagline: "Advanced",
-        bullets: ["Tough bugs", "Minimal hints", "Code only"],
-      },
-      adaptive: {
-        title: "Adaptive",
-        tagline: "Smart difficulty",
-        bullets: ["Learns from you", "Auto-adjusted"],
-      },
+      easy:     { title: "Easy",     tagline: "Foundations",      bullets: ["Core concepts", "Guided hints", "Blocks only"] },
+      medium:   { title: "Medium",   tagline: "Intermediate",     bullets: ["Real patterns", "Fewer hints", "Blocks & code"] },
+      hard:     { title: "Hard",     tagline: "Advanced",         bullets: ["Tough bugs", "Minimal hints", "Code only"] },
+      adaptive: { title: "Adaptive", tagline: "Smart difficulty", bullets: ["Learns from you", "Auto-adjusted"] },
     },
 
     trophies: {
@@ -403,60 +324,33 @@ export const translations: Record<Language, Translations> = {
       startFirstPuzzle: "Start your first puzzle",
     },
 
-    messages: {
-      correct: "Puzzle solved.",
-      incorrect: "Try again.",
-      solved: "Solved",
-      points: "points",
-    },
-
-    language: {
-      english: "English",
-      georgian: "Georgian",
-    },
+    messages: { correct: "Puzzle solved.", incorrect: "Not quite — try again.", solved: "Solved", points: "points" },
+    language: { english: "English", georgian: "Georgian" },
 
     common: {
-      solved: "Solved",
-      attempts: "Attempts",
-      reset: "Reset",
-      cancel: "Cancel",
-      send: "Send",
-      rating: "Rating",
-      noProgress: "No progress yet",
-      noProgressDesc: "Solve your first puzzle.",
+      solved: "Solved", attempts: "Attempts", reset: "Reset", cancel: "Cancel",
+      send: "Send", rating: "Rating", noProgress: "No progress yet", noProgressDesc: "Solve your first puzzle.",
     },
 
     landingUI: {
-      features: "Features",
-      builtFor: "Built for understanding.",
-      modes: "Modes",
-      fourWays: "Four ways to play",
-      whyDebugging: "Why debugging?",
-      difficultyModes: "4 modes",
-      languages: "Python · JS · C++ · Java",
-      noSignup: "No signup required",
+      features: "Features", builtFor: "Built for understanding.", modes: "Modes",
+      fourWays: "Four ways to play", whyDebugging: "Why debugging?",
+      difficultyModes: "4 modes", languages: "Python · JS · C++ · Java", noSignup: "No signup required",
     },
 
     modesUI: {
       selectLanguage: "Select your language",
-      selectLanguageDesc: "Content matches your language.",
+      selectLanguageDesc: "The lesson examples will match your choice.",
       yourProgress: "Your progress",
       totalScore: "Total score",
       puzzlesSolved: "Puzzles solved",
     },
 
     trophiesUI: {
-      resetProgress: "Reset Progress",
-      confirmReset: "Are you sure?",
-      accuracy: "Accuracy",
-      avgTime: "Avg. time",
-      avgHints: "Avg. hints",
-      bestStreak: "Best streak",
-      noTrophies: "No trophies yet",
-      noTrophiesDesc: "Solve your first puzzle.",
-      scoreOverTime: "Score over time",
-      solvedByDifficulty: "Solved by difficulty",
-      recentAttempts: "Recent attempts",
+      resetProgress: "Reset Progress", confirmReset: "Are you sure?",
+      accuracy: "Accuracy", avgTime: "Avg. time", avgHints: "Avg. hints",
+      bestStreak: "Best streak", noTrophies: "No trophies yet", noTrophiesDesc: "Solve your first puzzle.",
+      scoreOverTime: "Score over time", solvedByDifficulty: "Solved by difficulty", recentAttempts: "Recent attempts",
     },
 
     feedback: {
@@ -468,246 +362,252 @@ export const translations: Record<Language, Translations> = {
     },
 
     gameUI: {
-      whenReady: "When ready",
-      debugInstructions: "Run and fix the bug.",
-      goToDebug: "Go to Debug",
-      stepPrefix: "step",
-      executionHalted: "halted",
+      whenReady: "When you're ready",
+      debugInstructions: "Head to the Debug tab, step through the program, and pick the fix that addresses the root cause.",
+      goToDebug: "Go to Debug tab",
+      stepPrefix: "Step",
+      executionHalted: "halted (too many steps)",
     },
 
     buttons: {
-      skip: "Skip",
-      play: "Play",
-      step: "Step",
-      reset: "Reset",
-      auto: "Auto",
-      hint: "Hint",
-      startDebugging: "Start debugging",
-      pause: "Pause",
+      skip: "Skip", play: "Play", step: "Step", reset: "Reset",
+      auto: "Auto", hint: "Reveal next hint", startDebugging: "Start debugging", pause: "Pause",
     },
   },
-// TODO: REFACTOR: The Georgian translations are currently placeholders and need to be updated.
+
+  // ── Georgian ──────────────────────────────────────────────────────────────
   ka: {
     nav: {
       home: "მთავარი",
       howItWorks: "როგორ მუშაობს",
       modes: "რეჟიმები",
       trophies: "ტროფეები",
-      play: "დაწყება",
+      play: "თამაში",
       back: "უკან",
       feedback: "უკუკავშირი",
     },
 
     landing: {
       hero: {
-        title: "ისწავლე პროგრამირება შეცდომების გასწორებით",
-        subtitle: "კოდი არ დაწერო — გამოასწორე იგი.",
+        title: "ისწავლე პროგრამირება შეცდომების გამოსწორებით",
+        subtitle: "ნუ დაწერ კოდს — გამოასწორე იგი.",
         description:
-          "ინტერაქტიული დიბაგინგის თამაში, რომელიც ავითარებს ალგორითმულ აზროვნებას.",
-        cta: "დაწყება",
+          "ინტერაქტიული დებაგინგის თამაში, რომელიც ავითარებს ნამდვილ გამოთვლით აზროვნებას. დაეუფლე Python-ს, JavaScript-ს, C++-ს და Java-ს პრაქტიკული პრობლემების გადაჭრით.",
+        cta: "თამაშის დაწყება",
       },
       features: {
-        learnFirst: {
-          title: "ჯერ ისწავლე",
-          desc: "მოკლე გაკვეთილი და შემდეგ პრაქტიკა.",
-        },
-        realPrograms: {
-          title: "რეალური პროგრამები",
-          desc: "ნამდვილი შეცდომები რეალურ კოდში.",
-        },
-        blocksAndCode: {
-          title: "ბლოკები და კოდი",
-          desc: "აირჩიე ფორმატი.",
-        },
-        execution: {
-          title: "ნაბიჯები",
-          desc: "დააკვირდი შესრულებას.",
-        },
-        hints: {
-          title: "მინიშნებები",
-          desc: "მხოლოდ საჭიროებისას.",
-        },
-        adaptive: {
-          title: "ადაპტური",
-          desc: "სირთულე ავტომატურად იცვლება.",
-        },
+        learnFirst:    { title: "ჯერ ისწავლე, შემდეგ გამოასწორე", desc: "ყოველი ამოცანა იხსნება 60-წამიანი გაკვეთილით ძირითადი კონცეფციის შესახებ — შემდეგ ახარება." },
+        realPrograms:  { title: "ნამდვილი გატეხილი პროგრამები",   desc: "სინტაქსური სავარჯიშოები არ არის. ყოველი დონე სამუშაო პროგრამაა ნამდვილი, თვალსაჩინო დეფექტით." },
+        blocksAndCode: { title: "ბლოკები ↔ კოდი, სინქრონულად",   desc: "გადართე ვიზუალური ბლოკები ან წაიკითხე იგივე პროგრამა Python-ში, JavaScript-ში, C++-ში ან Java-ში." },
+        execution:     { title: "ნაბიჯ-ნაბიჯ შესრულება",          desc: "გაუშვი, შეაჩერე და ნაბიჯი გადადგი. დააკვირდი, როგორ იცვლება ცვლადები სტრიქონ-სტრიქონ." },
+        hints:         { title: "დახარისხებული მინიშნებები",        desc: "მსუბუქი გამიჯვნიდან სრულ განმარტებამდე — მხოლოდ მოთხოვნის შემთხვევაში." },
+        adaptive:      { title: "ადაპტური სირთულე",                desc: "სისტემა ადევნებს თვალს სიზუსტეს, დროსა და გამოყენებულ მინიშნებებს და ამოარჩევს შემდეგ ამოცანას." },
       },
       howItWorks: {
         title: "როგორ მუშაობს",
-        subtitle: "პრაქტიკული მიდგომა",
-        description: "რეალური დეველოპერის პროცესი.",
-        steps: {
-          read: "წაკითხვა",
-          run: "გაშვება",
-          hypothesise: "ჰიპოთეზა",
-          test: "ტესტი",
-          reflect: "ანალიზი",
-          levelUp: "დონე",
-        },
+        subtitle: "სასწავლო მარყუჟი, არა ლექცია.",
+        description: "ყოველი ამოცანა მიჰყვება იმავე სამუშაო პროცედურას, რასაც ნამდვილი პროგრამისტები იყენებენ.",
+        steps: { read: "წაიკითხე", run: "გაუშვი", hypothesise: "ჰიპოთეზა", test: "ტესტი", reflect: "გააანალიზე", levelUp: "ასწიე დონე" },
         descriptions: {
-          read: "გაიგე მიზანი.",
-          run: "დააკვირდი.",
-          hypothesise: "აირჩიე გამოსწორება.",
-          test: "გამოიყენე.",
-          reflect: "ისწავლე.",
-          levelUp: "გააგრძელე.",
+          read: "გაიგე, რა უნდა გააკეთოს პროგრამამ.",
+          run: "გაუშვი და დააკვირდი ქცევას.",
+          hypothesise: "შეარჩიე შესაძლო გამოსწორება.",
+          test: "გამოიყენე და ხელახლა გაუშვი.",
+          reflect: "წაიკითხე განმარტება.",
+          levelUp: "გადადი უფრო რთულ ამოცანაზე.",
         },
       },
-      modes: {
-        title: "რეჟიმები",
-        subtitle: "აირჩიე დონე",
-        description: "სირთულე იზრდება.",
-        start: "დაწყება",
-      },
-      concepts: {
-        title: "რატომ დიბაგინგი?",
-      },
+      modes:    { title: "ოთხი სათამაშო გზა", subtitle: "შეარჩიე რეჟიმი ან ნება მიეც ადაპტურს.", description: "ყოველი რეჟიმი სირთულეს ზრდის.", start: "დაწყება" },
+      concepts: { title: "რატომ დებაგინგი?" },
     },
 
     modes: {
-      title: "აირჩიე რეჟიმი",
-      subtitle: "ადაპტური არჩევანი",
-      description: "ყველა ენა მხარდაჭერილია.",
-      selectLanguage: "აირჩიე ენა",
-      languageDescription: "შინაარსი შეიცვლება.",
+      title: "შეარჩიე რეჟიმი",
+      subtitle: "ადაპტური ირჩევს შესრულებაზე დაყრდნობით.",
+      description: "ყველა ამოცანა მხარს უჭერს ძირითად ენებს.",
+      selectLanguage: "შეარჩიე ენა",
+      languageDescription: "კოდის მაგალითები შეესაბამება შენს არჩევანს.",
       continue: "გაგრძელება",
-      progressTitle: "პროგრესი",
-      totalScore: "ქულა",
-      puzzlesSolved: "ამოხსნილი",
-      attempts: "ცდები",
+      progressTitle: "შენი პროგრესი",
+      totalScore: "ჯამური ქულა",
+      puzzlesSolved: "ამოხსნილი ამოცანები",
+      attempts: "მცდელობები",
       achievements: "მიღწევები",
     },
 
     game: {
       goal: "მიზანი:",
       skip: "გამოტოვება",
-      whyLearnFirst: "რატომ სწავლა?",
-      whyLearnFirstDesc: "გჭირდება სწორი გაგება.",
+      whyLearnFirst: "რატომ ჯერ სწავლა?",
+      whyLearnFirstDesc: "ეფექტური დებაგინგისთვის ჭირდება მენტალური მოდელი.",
       blocks: "ბლოკები",
       code: "კოდი",
       playButton: "გაშვება",
       stepButton: "ნაბიჯი",
-      resetButton: "განულება",
+      resetButton: "განახლება",
       autoPlayButton: "ავტო",
       hint: "მინიშნება",
-      pickFix: "აირჩიე",
-      attempts: "ცდები:",
+      hints: "მინიშნებები",
+      pickFix: "შეარჩიე გამოსწორება",
+      attempts: "მცდელობები:",
       concept: "კონცეფცია",
-      keyIdeas: "იდეები",
-      quickCheck: "შემოწმება",
-      readMoreTitle: "მეტი",
-      conceptTab: "სწავლა",
-      debugTab: "დიბაგინგი",
+      keyIdeas: "ძირითადი იდეები",
+      quickCheck: "სწრაფი შემოწმება",
+      readMoreTitle: "მეტის წაკითხვა",
+      conceptTab: "ისწავლე კონცეფცია",
+      debugTab: "გამოასწორე პროგრამა",
+
+      loadingPuzzle: "ამოცანა იტვირთება…",
+      loadError: "ამოცანის ჩატვირთვა ვერ მოხერხდა. შეამოწმე კავშირი და სცადე ხელახლა.",
+      retry: "ხელახლა სცადე",
+
+      activeProgrammingLang: "პროგრამირების ენა",
+      programmingLanguage: "ენა",
+
+      correctFeedback: "სწორია — შეცდომა გამოსწორდა!",
+      incorrectFeedback: "ჯერ კიდევ ვერ — წაიკითხე განმარტება და სცადე ხელახლა.",
+      whatYouLearned: "რა ისწავლე",
+      theBug: "შეცდომა:",
+      in: "",
+      whyItWorks: "რატომ მუშაობს ეს გამოსწორება:",
+      whyItWorksDesc: "გამოსწორებული პროგრამის ნაბიჯ-ნაბიჯ გავლა გვიჩვენებს, რომ ცვლადები სასურველ მდგომარეობას აღწევენ.",
+      underlyingConcept: "ძირითადი კონცეფცია:",
+      nextPuzzle: "შემდეგი ამოცანა",
+      restoreAndRetry: "აღადგინე ორიგინალი და სცადე ხელახლა",
+
+      spoiler: "სპოილერი",
+      locked: "— დაბლოკილია —",
+      allHintsRevealed: "ყველა მინიშნება გახსნილია",
+      hintCostNote: "ყოველი მინიშნება ამ ამოცანის ქულას ამცირებს. გამოასწორე რაც შეიძლება ნაკლები მინიშნებით.",
+
+      debugStrategy: "დებაგინგის სტრატეგია",
+      strategyTrace:   "1. თვალყური — ნაბიჯ-ნაბიჯ გაიარე და დააკვირდი ცვლადებს.",
+      strategyIsolate: "2. იზოლაცია — იპოვე პირველი მომენტი, სადაც სინამდვილე მოლოდინს განეშორება.",
+      strategyFix:     "3. გამოსწორება — გამოიყენე ყველაზე მინიმალური ცვლილება, რომელიც ნამდვილ მიზეზს ეხება.",
+      needRefresher: "გჭირდება განმეორება?",
+      reReadLesson: "ხელახლა წაიკითხე გაკვეთილი",
+
+      bugTypes: {
+        "wrong-operator":   "არასწორი ოპერატორი",
+        "off-by-one":       "off-by-one შეცდომა",
+        "wrong-condition":  "არასწორი პირობა",
+        "infinite-loop":    "უსასრულო მარყუჟი",
+        "wrong-init":       "არასწორი ინიციალიზაცია",
+        "swapped-branches": "შეცვლილი შესრულების თანმიმდევრობა",
+      },
+      conceptExplainers: {
+        "wrong-operator":   "შედარების ოპერატორები განსაზღვრავს, რომელი მნიშვნელობები გაივლის პირობას. ოფ-ბაი-ვან ოპერატორის არჩევანი მთელ ტოტზე ვრცელდება.",
+        "off-by-one":       "მარყუჟის საზღვრები ენის მიხედვით ინკლუზიური ან ექსკლუზიურია. ყოველთვის გაიარე პირველი და ბოლო იტერაცია.",
+        "wrong-condition":  "როდესაც მრავალი პირობა გადაფარავს ერთმანეთს, შემოწმებათა თანმიმდევრობა მნიშვნელოვანია. კონკრეტული შემთხვევები ზოგადებამდე.",
+        "infinite-loop":    "while-მარყუჟი მხოლოდ მაშინ სრულდება, როდესაც მარყუჟის ცვლადი ყოველ იტერაციაზე პირობის false-ად გახდისკენ მიდის.",
+        "wrong-init":       "ა კუმულატორის (ჯამი, მაქსიმუმი, მინიმუმი, დათვლა) საწყისი მნიშვნელობა განსაზღვრავს, რას ითვლის მარყუჟი.",
+        "swapped-branches": "პროგრამები ბრძანებებს თანმიმდევრობით ასრულებენ. თანმიმდევრობა თავად ლოგიკაა.",
+      },
     },
 
     difficulty: {
-      easy: { title: "მარტივი", tagline: "საფუძვლები", bullets: ["კონცეფციები"] },
-      medium: { title: "საშუალო", tagline: "შუალედი", bullets: ["ნიმუშები"] },
-      hard: { title: "რთული", tagline: "მოწინავე", bullets: ["გამოწვევა"] },
-      adaptive: { title: "ადაპტური", tagline: "ჭკვიანი", bullets: ["ავტო"] },
+      easy:     { title: "მარტივი",  tagline: "საფუძვლები",    bullets: ["ძირითადი კონცეფციები", "კონკრეტული მინიშნებები", "მხოლოდ ბლოკები"] },
+      medium:   { title: "საშუალო", tagline: "შუალედური",     bullets: ["ნამდვილი ნიმუშები", "ნაკლები მინიშნება", "ბლოკები და კოდი"] },
+      hard:     { title: "რთული",   tagline: "მოწინავე",      bullets: ["რთული შეცდომები", "მინიმალური მინიშნება", "მხოლოდ კოდი"] },
+      adaptive: { title: "ადაპტური",tagline: "ჭკვიანი სირთულე",bullets: ["გთვლის", "ავტომატურად ადაპტირება"] },
     },
 
     trophies: {
-      title: "ტროფეები",
+      title: "შენი ტროფეები",
       accuracy: "სიზუსტე",
-      avgTime: "დრო",
-      avgHints: "მინიშნებები",
-      bestScore: "საუკეთესო",
+      avgTime: "საშ. დრო",
+      avgHints: "საშ. მინიშნება",
+      bestScore: "საუკეთესო ქულა",
       achievements: "მიღწევები",
-      reset: "განულება",
-      trophyRoom: "ტროფეები",
+      reset: "პროგრესის განულება",
+      trophyRoom: "ტროფეების ოთახი",
       pointsUnit: "ქულა",
-      subtitle: "შენი სტატისტიკა",
-      earnMorePoints: "მეტი ქულა",
-      attemptNumber: "ცდა #",
-      startFirstPuzzle: "დაიწყე",
+      subtitle: "შენი დებაგინგის სტატისტიკა.",
+      earnMorePoints: "მეტი ქულის მიღება",
+      attemptNumber: "მცდელობა #",
+      startFirstPuzzle: "დაიწყე პირველი ამოცანა",
     },
 
     messages: {
-      correct: "ამოხსნილია",
-      incorrect: "სცადე თავიდან",
-      solved: "მოგვარებულია",
+      correct: "ამოცანა ამოხსნილია.",
+      incorrect: "ჯერ სწორი არ არის — სცადე ხელახლა.",
+      solved: "ამოხსნილია",
       points: "ქულა",
     },
 
-    language: {
-      english: "English",
-      georgian: "ქართული",
-    },
+    language: { english: "English", georgian: "ქართული" },
 
     common: {
-      solved: "ამოხსნილი",
-      attempts: "ცდები",
-      reset: "განულება",
+      solved: "ამოხსნილია",
+      attempts: "მცდელობები",
+      reset: "განახლება",
       cancel: "გაუქმება",
       send: "გაგზავნა",
       rating: "შეფასება",
-      noProgress: "პროგრესი არ არის",
-      noProgressDesc: "დაიწყე პირველი ამოცანა",
+      noProgress: "პროგრესი ჯერ არ არის",
+      noProgressDesc: "ამოხსენი შენი პირველი ამოცანა.",
     },
 
     landingUI: {
       features: "ფუნქციები",
-      builtFor: "გაგებისთვის",
+      builtFor: "შექმნილია გასაგებლად.",
       modes: "რეჟიმები",
-      fourWays: "ოთხი გზა",
-      whyDebugging: "რატომ?",
+      fourWays: "ოთხი სათამაშო გზა",
+      whyDebugging: "რატომ დებაგინგი?",
       difficultyModes: "4 რეჟიმი",
       languages: "Python · JS · C++ · Java",
       noSignup: "რეგისტრაცია არ არის საჭირო",
     },
 
     modesUI: {
-      selectLanguage: "ენა",
-      selectLanguageDesc: "არჩეული ენა",
-      yourProgress: "პროგრესი",
-      totalScore: "ქულა",
-      puzzlesSolved: "ამოხსნილი",
+      selectLanguage: "შეარჩიე პროგრამირების ენა",
+      selectLanguageDesc: "კოდის მაგალითები შეესაბამება შენს არჩევანს.",
+      yourProgress: "შენი პროგრესი",
+      totalScore: "ჯამური ქულა",
+      puzzlesSolved: "ამოხსნილი ამოცანები",
     },
 
     trophiesUI: {
-      resetProgress: "განულება",
+      resetProgress: "პროგრესის განულება",
       confirmReset: "დარწმუნებული ხარ?",
       accuracy: "სიზუსტე",
-      avgTime: "დრო",
-      avgHints: "მინიშნებები",
-      bestStreak: "სერია",
-      noTrophies: "არ არის",
-      noTrophiesDesc: "დაიწყე",
+      avgTime: "საშ. დრო",
+      avgHints: "საშ. მინიშნება",
+      bestStreak: "საუკეთესო სერია",
+      noTrophies: "ტროფეები ჯერ არ არის",
+      noTrophiesDesc: "ამოხსენი შენი პირველი ამოცანა.",
       scoreOverTime: "ქულა დროში",
-      solvedByDifficulty: "სირთულის მიხედვით",
-      recentAttempts: "ბოლო ცდები",
+      solvedByDifficulty: "ამოხსნილი სირთულის მიხედვით",
+      recentAttempts: "ბოლო მცდელობები",
     },
 
     feedback: {
-      feedbackOnPuzzle: "უკუკავშირი",
+      feedbackOnPuzzle: "ამოცანის შეფასება",
       sendFeedback: "გაგზავნა",
-      feedbackDesc: "გვითხარი აზრი",
+      feedbackDesc: "გვიზიარე შენი მოსაზრება.",
       puzzleQuestion: "გასაგები იყო?",
-      generalQuestion: "შენიშვნა?",
+      generalQuestion: "გაქვს შენიშვნა?",
     },
 
     gameUI: {
       whenReady: "როცა მზად ხარ",
-      debugInstructions: "გაუშვი და გამოასწორე",
-      goToDebug: "Debug",
+      debugInstructions: "გადადი Debug ჩანართზე, ნაბიჯ-ნაბიჯ გაიარე პროგრამა და შეარჩიე გამოსწორება, რომელიც ძირეულ მიზეზს ეხება.",
+      goToDebug: "Debug ჩანართზე გადასვლა",
       stepPrefix: "ნაბიჯი",
-      executionHalted: "შეჩერებულია",
+      executionHalted: "შეჩერებულია (ძალიან ბევრი ნაბიჯი)",
     },
 
     buttons: {
       skip: "გამოტოვება",
       play: "გაშვება",
       step: "ნაბიჯი",
-      reset: "განულება",
+      reset: "განახლება",
       auto: "ავტო",
-      hint: "მინიშნება",
-      startDebugging: "დაწყება",
+      hint: "შემდეგი მინიშნების გახსნა",
+      startDebugging: "დებაგინგის დაწყება",
       pause: "პაუზა",
     },
   },
 };
 
-export const getTranslation = (language: Language): Translations => {
-  return translations[language];
-};
+export const getTranslation = (language: Language): Translations => translations[language];

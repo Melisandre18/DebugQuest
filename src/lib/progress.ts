@@ -1,5 +1,5 @@
 // Lightweight progress + adaptive logic stored in localStorage.
-import { Difficulty, Puzzle, puzzlesByDifficulty } from "./puzzle-engine";
+import type { Difficulty, Puzzle } from "./puzzle-engine";
 
 const KEY = "debugquest.progress.v1";
 
@@ -74,26 +74,5 @@ export function recordAttempt(rec: AttemptRecord, puzzle: Puzzle): { progress: P
   return { progress: p, newAchievements: newly };
 }
 
-/** Pick a puzzle for adaptive mode based on recent performance. */
-export function pickAdaptive(progress: Progress): Puzzle {
-  const recent = progress.attempts.slice(-5);
-  const correctRate = recent.length ? recent.filter(a => a.correct).length / recent.length : 0.5;
-  const avgHints = recent.length ? recent.reduce((s, a) => s + a.hintsUsed, 0) / recent.length : 1;
-
-  let target: Exclude<Difficulty, "adaptive"> = "easy";
-  if (correctRate > 0.7 && avgHints < 1) target = "hard";
-  else if (correctRate > 0.5) target = "medium";
-
-  const pool = puzzlesByDifficulty(target);
-  // Prefer unseen puzzles
-  const unseen = pool.filter(p => !progress.solved.includes(p.id));
-  const list = unseen.length ? unseen : pool;
-  return list[Math.floor(Math.random() * list.length)];
-}
-
-export function pickNext(d: Exclude<Difficulty, "adaptive">, progress: Progress): Puzzle {
-  const pool = puzzlesByDifficulty(d);
-  const unseen = pool.filter(p => !progress.solved.includes(p.id));
-  const list = unseen.length ? unseen : pool;
-  return list[Math.floor(Math.random() * list.length)];
-}
+// Puzzle selection logic has moved to the backend (api/_data/puzzles-source.ts).
+// Use getNextPuzzle() from puzzle-service.ts instead.
