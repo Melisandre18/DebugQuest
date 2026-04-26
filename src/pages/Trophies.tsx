@@ -15,9 +15,11 @@ import { Progress } from "@/components/ui/progress";
 import { ACHIEVEMENTS, loadProgress, resetProgress } from "@/lib/progress";
 import { puzzlesByDifficulty } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Trophies() {
   const progress = loadProgress();
+  const { t } = useLanguage();
   const a = progress.attempts;
 
   useEffect(() => {
@@ -67,7 +69,7 @@ export default function Trophies() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNav backTo={{ to: "/modes", label: "Modes" }} />
+      <TopNav backTo={{ to: "/modes", label: t.nav.modes }} />
 
       <main className="container py-10 md:py-14 flex-1">
         {/* Hero */}
@@ -82,52 +84,52 @@ export default function Trophies() {
           <div className="relative flex flex-wrap items-end justify-between gap-6">
             <div>
               <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-accent">
-                <Trophy className="w-3.5 h-3.5" /> Trophy Room
+                <Trophy className="w-3.5 h-3.5" /> {t.trophies.trophyRoom}
               </div>
               <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight mt-2">
                 <span className="text-gradient-accent">{progress.totalScore.toLocaleString()}</span>
-                <span className="text-muted-foreground text-2xl md:text-3xl ml-2">pts</span>
+                <span className="text-muted-foreground text-2xl md:text-3xl ml-2">{t.trophies.pointsUnit}</span>
               </h1>
               <p className="mt-2 text-muted-foreground">
-                Your debugging résumé. Every fix, every hint, every streak — measured.
+                {t.trophies.subtitle}
               </p>
               <div className="mt-5 flex flex-wrap gap-2">
                 <Button asChild variant="hero" size="lg">
-                  <Link to="/modes">Earn more points <ArrowRight className="ml-1 w-4 h-4" /></Link>
+                  <Link to="/modes">{t.trophies.earnMorePoints} <ArrowRight className="ml-1 w-4 h-4" /></Link>
                 </Button>
                 {a.length > 0 && (
                   <Button
                     variant="outline"
                     size="lg"
                     onClick={() => {
-                      if (confirm("Reset all progress? This cannot be undone.")) {
+                      if (confirm(t.trophiesUI.confirmReset)) {
                         resetProgress();
                         location.reload();
                       }
                     }}
                   >
-                    Reset progress
+                    {t.trophiesUI.resetProgress}
                   </Button>
                 )}
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3 min-w-[260px]">
-              <KPI icon={Target}   label="Accuracy"     value={`${stats.accuracy}%`} tone="primary" />
-              <KPI icon={Clock}    label="Avg time"     value={a.length ? `${stats.avgTime}s` : "—"} tone="accent" />
-              <KPI icon={Lightbulb} label="Avg hints"   value={a.length ? stats.avgHints : "—"} tone="accent" />
-              <KPI icon={Flame}    label="Best streak" value={stats.bestStreak} tone="primary" />
+              <KPI icon={Target}   label={t.trophiesUI.accuracy}    value={`${stats.accuracy}%`} tone="primary" />
+              <KPI icon={Clock}    label={t.trophiesUI.avgTime}     value={a.length ? `${stats.avgTime}s` : "—"} tone="accent" />
+              <KPI icon={Lightbulb} label={t.trophiesUI.avgHints}   value={a.length ? stats.avgHints : "—"} tone="accent" />
+              <KPI icon={Flame}    label={t.trophiesUI.bestStreak} value={stats.bestStreak} tone="primary" />
             </div>
           </div>
         </motion.div>
 
         {a.length === 0 ? (
-          <EmptyState />
+          <EmptyState t={t} />
         ) : (
           <>
             {/* Score over time + difficulty */}
             <div className="grid lg:grid-cols-[1.6fr_1fr] gap-5 mt-6">
-              <Panel title="Score over time" icon={Activity}>
+              <Panel title={t.trophiesUI.scoreOverTime} icon={Activity}>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={scoreSeries} margin={{ top: 5, right: 12, bottom: 0, left: -12 }}>
@@ -141,7 +143,7 @@ export default function Trophies() {
                           borderRadius: 8,
                           fontSize: 12,
                         }}
-                        labelFormatter={(l) => `Attempt #${l}`}
+                        labelFormatter={(l) => `${t.trophies.attemptNumber}${l}`}
                       />
                       <Line
                         type="monotone"
@@ -156,7 +158,7 @@ export default function Trophies() {
                 </div>
               </Panel>
 
-              <Panel title="Solved by difficulty" icon={Zap}>
+              <Panel title={t.trophiesUI.solvedByDifficulty} icon={Zap}>
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={byDifficulty} margin={{ top: 5, right: 12, bottom: 0, left: -12 }}>
@@ -227,7 +229,7 @@ export default function Trophies() {
                 </div>
               </Panel>
 
-              <Panel title="Recent attempts" icon={Clock}>
+              <Panel title={t.trophiesUI.recentAttempts} icon={Clock}>
                 <div className="space-y-2 max-h-80 overflow-auto pr-1">
                   {recent.map((r, idx) => (
                     <div
@@ -295,7 +297,7 @@ function Panel({
   );
 }
 
-function EmptyState() {
+function EmptyState({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -306,12 +308,12 @@ function EmptyState() {
       <div className="inline-flex w-14 h-14 rounded-2xl bg-gradient-accent text-accent-foreground items-center justify-center shadow-glow-accent animate-bounce-soft">
         <Trophy className="w-7 h-7" />
       </div>
-      <h2 className="font-display text-2xl font-bold mt-4">No trophies yet</h2>
+      <h2 className="font-display text-2xl font-bold mt-4">{t.trophiesUI.noTrophies}</h2>
       <p className="text-muted-foreground mt-1 max-w-md mx-auto">
-        Solve your first puzzle to unlock score history, accuracy charts, and achievements.
+        {t.trophiesUI.noTrophiesDesc}
       </p>
       <Button asChild variant="hero" size="lg" className="mt-5">
-        <Link to="/modes">Start your first puzzle <ArrowRight className="ml-1 w-4 h-4" /></Link>
+        <Link to="/modes">{t.trophies.startFirstPuzzle} <ArrowRight className="ml-1 w-4 h-4" /></Link>
       </Button>
     </motion.div>
   );

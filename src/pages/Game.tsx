@@ -24,6 +24,7 @@ import { getLesson } from "@/lib/lessons";
 import { ACHIEVEMENTS, computeScore, loadProgress, pickAdaptive, pickNext, recordAttempt } from "@/lib/progress";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 type View = "blocks" | "code";
 type Tab = "learn" | "debug";
@@ -31,6 +32,7 @@ type Tab = "learn" | "debug";
 export default function Game() {
   const { difficulty, language: urlLanguage } = useParams<{ difficulty: Difficulty; language?: Language }>();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const d = (["easy","medium","hard","adaptive"].includes(difficulty ?? "")
     ? difficulty
     : "easy") as Difficulty;
@@ -172,7 +174,7 @@ export default function Game() {
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <Button variant="outline" size="sm" onClick={chooseAndLoadNext}>
-                Skip <ChevronRight className="w-4 h-4 ml-1" />
+                {t.buttons.skip} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
               <FeedbackDialog
                 context="puzzle"
@@ -205,24 +207,21 @@ export default function Game() {
               <aside className="space-y-4">
                 <div className="card-surface rounded-xl p-5">
                   <div className="font-display font-semibold inline-flex items-center gap-2 mb-2">
-                    <BookOpen className="w-4 h-4 text-primary-glow" /> Why learn first?
+                    <BookOpen className="w-4 h-4 text-primary-glow" /> {t.game.whyLearnFirst}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Real debugging requires a mental model of <b className="text-foreground/90">how</b> the
-                    code is supposed to behave. The Learn tab gives you that model in 60 seconds — then
-                    you'll be hunting a real bug, not guessing.
+                    {t.game.whyLearnFirstDesc}
                   </p>
                 </div>
                 <div className="card-surface rounded-xl p-5 text-sm space-y-2">
                   <div className="font-display font-semibold inline-flex items-center gap-2">
-                    <Target className="w-4 h-4 text-accent" /> When you're ready
+                    <Target className="w-4 h-4 text-accent" /> {t.gameUI.whenReady}
                   </div>
                   <p className="text-muted-foreground text-[13px]">
-                    Switch to the <b className="text-foreground/90">Debug</b> tab, run the program
-                    step-by-step, and pick the fix you believe is correct.
+                    {t.gameUI.debugInstructions}
                   </p>
                   <Button variant="hero" size="sm" className="w-full mt-2" onClick={() => setTab("debug")}>
-                    Go to Debug <ChevronRight className="w-4 h-4 ml-1" />
+                    {t.gameUI.goToDebug} <ChevronRight className="w-4 h-4 ml-1" />
                   </Button>
                 </div>
               </aside>
@@ -234,18 +233,18 @@ export default function Game() {
             {/* Execution controls bar */}
             <div className="card-surface rounded-xl p-3 mb-5 flex items-center justify-between gap-3 flex-wrap">
               <div className="text-xs text-muted-foreground inline-flex items-center gap-2">
-                <span className="font-mono">step {Math.min(stepIdx + 1, runResult.steps.length)} / {runResult.steps.length}</span>
-                {runResult.timedOut && <span className="text-destructive">· halted (loop limit)</span>}
+                <span className="font-mono">{t.gameUI.stepPrefix} {Math.min(stepIdx + 1, runResult.steps.length)} / {runResult.steps.length}</span>
+                {runResult.timedOut && <span className="text-destructive">· {t.gameUI.executionHalted}</span>}
               </div>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm" onClick={resetExecution}>
-                  <RotateCcw className="w-4 h-4 mr-1" /> Reset
+                  <RotateCcw className="w-4 h-4 mr-1" /> {t.buttons.reset}
                 </Button>
                 <Button variant={autoRunning ? "secondary" : "hero"} size="sm" onClick={startAuto}>
-                  <Play className="w-4 h-4 mr-1" /> {autoRunning ? "Pause" : "Run"}
+                  <Play className="w-4 h-4 mr-1" /> {autoRunning ? t.buttons.pause : t.buttons.play}
                 </Button>
                 <Button variant="outline" size="sm" onClick={step} disabled={stepIdx >= runResult.steps.length - 1}>
-                  <StepForward className="w-4 h-4 mr-1" /> Step
+                  <StepForward className="w-4 h-4 mr-1" /> {t.buttons.step}
                 </Button>
               </div>
             </div>
@@ -428,7 +427,7 @@ export default function Game() {
                     disabled={hintsRevealed >= maxHints(puzzle, d)}
                   >
                     <Lightbulb className="w-4 h-4 mr-1" />
-                    {hintsRevealed >= maxHints(puzzle, d) ? "All hints revealed" : "Reveal next hint"}
+                    {hintsRevealed >= maxHints(puzzle, d) ? "All hints revealed" : t.buttons.hint}
                   </Button>
                   <p className="text-[11px] text-muted-foreground mt-2">Each hint lowers your score for this puzzle. Try to solve with as few as possible.</p>
                 </div>

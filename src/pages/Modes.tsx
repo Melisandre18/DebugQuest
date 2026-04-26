@@ -6,12 +6,14 @@ import { Difficulty, LANGUAGES } from "@/lib/puzzle-engine";
 import { loadProgress, ACHIEVEMENTS } from "@/lib/progress";
 import { ArrowRight, Trophy, Award, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const modes: Difficulty[] = ["easy", "medium", "hard", "adaptive"];
 
 export default function Modes() {
   const progress = loadProgress();
   const navigate = useNavigate();
+  const { t } = useLanguage();
   const [selectedMode, setSelectedMode] = useState<Difficulty | null>(null);
 
   useEffect(() => {
@@ -35,11 +37,10 @@ export default function Modes() {
 
       <main className="container py-12 md:py-16 flex-1">
         <div className="max-w-3xl">
-          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">Modes</div>
-          <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight">Choose your mode</h1>
+          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">{t.modes.title}</div>
+          <h1 className="font-display text-4xl md:text-5xl font-bold tracking-tight">{t.modes.title}</h1>
           <p className="mt-3 text-muted-foreground">
-            Each mode introduces new bug types and fewer safety nets. Adaptive Mode picks for you,
-            based on how you've been playing.
+            {t.modes.description}
           </p>
         </div>
 
@@ -77,7 +78,7 @@ export default function Modes() {
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
             <div className="card-surface rounded-2xl p-8 max-w-md w-full mx-4">
               <div className="flex items-center justify-between mb-6">
-                <h2 className="font-display text-2xl font-bold">Select your language</h2>
+                <h2 className="font-display text-2xl font-bold">{t.modesUI.selectLanguage}</h2>
                 <button
                   onClick={() => setSelectedMode(null)}
                   className="text-muted-foreground hover:text-foreground transition-colors"
@@ -86,7 +87,7 @@ export default function Modes() {
                 </button>
               </div>
               <p className="text-sm text-muted-foreground mb-4">
-                Both the learn and debug sections will be shown in your chosen language.
+                {t.modesUI.selectLanguageDesc}
               </p>
               <div className="space-y-2">
                 {LANGUAGES.map((lang) => (
@@ -107,19 +108,19 @@ export default function Modes() {
         <section className="mt-14">
           <div className="flex items-center gap-2 mb-4">
             <Trophy className="w-5 h-5 text-accent" />
-            <h2 className="font-display text-xl font-semibold">Your progress</h2>
+            <h2 className="font-display text-xl font-semibold">{t.modesUI.yourProgress}</h2>
           </div>
           <div className="grid sm:grid-cols-3 gap-4">
             <div className="card-surface rounded-xl p-5">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Total score</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t.modesUI.totalScore}</div>
               <div className="font-display text-3xl font-bold text-gradient-primary mt-1">{progress.totalScore}</div>
             </div>
             <div className="card-surface rounded-xl p-5">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Puzzles solved</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t.modesUI.puzzlesSolved}</div>
               <div className="font-display text-3xl font-bold mt-1">{progress.solved.length}</div>
             </div>
             <div className="card-surface rounded-xl p-5">
-              <div className="text-xs uppercase tracking-wider text-muted-foreground">Attempts</div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">{t.common.attempts}</div>
               <div className="font-display text-3xl font-bold mt-1">{progress.attempts.length}</div>
             </div>
           </div>
@@ -127,7 +128,7 @@ export default function Modes() {
           <div className="mt-6 card-surface rounded-xl p-5">
             <div className="flex items-center gap-2 mb-3">
               <Award className="w-4 h-4 text-accent" />
-              <h3 className="font-display font-semibold">Achievements</h3>
+              <h3 className="font-display font-semibold">{t.modes.achievements}</h3>
             </div>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
               {Object.entries(ACHIEVEMENTS).map(([code, a]) => {

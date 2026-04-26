@@ -12,6 +12,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { FEEDBACK_CATEGORIES, FeedbackContext, submitFeedback } from "@/lib/feedback";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   context?: FeedbackContext;
@@ -33,6 +34,7 @@ export default function FeedbackDialog({
   triggerLabel = "Feedback",
 }: Props) {
   const { pathname } = useLocation();
+  const { t } = useLanguage();
   const [open, setOpen] = useState(false);
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [category, setCategory] = useState<string>(context === "puzzle" ? "Difficulty" : "Idea");
@@ -71,16 +73,16 @@ export default function FeedbackDialog({
         <DialogHeader>
           <DialogTitle className="font-display flex items-center gap-2">
             <MessageSquare className="w-5 h-5 text-primary-glow" />
-            {context === "puzzle" ? "Feedback on this puzzle" : "Send feedback"}
+            {context === "puzzle" ? t.feedback.feedbackOnPuzzle : t.feedback.sendFeedback}
           </DialogTitle>
           <DialogDescription>
-            Tell us what worked, what didn't, or what you'd like to see next. Stored on this device.
+            {t.feedback.feedbackDesc}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-2">
           <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">Rating</label>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">{t.common.rating}</label>
             <div className="mt-1.5 flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((n) => (
                 <button
@@ -122,8 +124,8 @@ export default function FeedbackDialog({
               onChange={(e) => setMessage(e.target.value)}
               placeholder={
                 context === "puzzle"
-                  ? "Was the bug clear? Were the hints useful?"
-                  : "Loved something? Confused by something? Tell us."
+                  ? t.feedback.puzzleQuestion
+                  : t.feedback.generalQuestion
               }
               rows={4}
               className="mt-1.5 resize-none"
@@ -135,9 +137,9 @@ export default function FeedbackDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="ghost" onClick={() => setOpen(false)}>{t.common.cancel}</Button>
           <Button variant="hero" onClick={handleSubmit}>
-            <Send className="w-4 h-4 mr-1" /> Send
+            <Send className="w-4 h-4 mr-1" /> {t.common.send}
           </Button>
         </DialogFooter>
       </DialogContent>

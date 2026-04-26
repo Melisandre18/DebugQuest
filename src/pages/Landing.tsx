@@ -9,28 +9,30 @@ import {
 } from "lucide-react";
 import { DIFFICULTY_META } from "@/components/DifficultyMeta";
 import { Difficulty } from "@/lib/puzzle-engine";
-
-const features = [
-  { icon: GraduationCap, title: "Learn first, then fix",       desc: "Every puzzle opens with a focused 60-second lesson on the underlying concept — then you apply it." },
-  { icon: Bug,           title: "Real broken programs",        desc: "No syntax drills. Every level is a working program with a real, traceable defect." },
-  { icon: Workflow,      title: "Blocks ↔ code, in sync",      desc: "Toggle visual blocks or read the same program in Python, JavaScript, C++ or Java." },
-  { icon: Activity,      title: "Step-through execution",      desc: "Run, pause and step. Watch variables and control flow change line by line." },
-  { icon: Lightbulb,     title: "Tiered hints",                desc: "From a gentle nudge to a full explanation — only when you ask, never spoiled by default." },
-  { icon: Brain,         title: "Adaptive difficulty",         desc: "We track accuracy, time and hints used, and quietly tune the next puzzle to keep you in flow." },
-];
+import { useLanguage } from "@/contexts/LanguageContext";
 
 const modes: Difficulty[] = ["easy", "medium", "hard", "adaptive"];
 
-const STEPS: [string, string][] = [
-  ["Read",        "Understand what the program is supposed to do."],
-  ["Run",        "Step through it. Watch variables. Find where reality diverges."],
-  ["Hypothesise", "Pick the fix you believe will work."],
-  ["Test",        "Apply the fix and re-run. Did the output match?"],
-  ["Reflect",     "Read the explanation. Lock the concept in."],
-  ["Level up",    "Score, streak, and a slightly harder puzzle next."],
-];
-
 export default function Landing() {
+  const { t } = useLanguage();
+
+  const features = [
+    { icon: GraduationCap, title: t.landing.features.learnFirst.title,       desc: t.landing.features.learnFirst.desc },
+    { icon: Bug,           title: t.landing.features.realPrograms.title,      desc: t.landing.features.realPrograms.desc },
+    { icon: Workflow,      title: t.landing.features.blocksAndCode.title,     desc: t.landing.features.blocksAndCode.desc },
+    { icon: Activity,      title: t.landing.features.execution.title,         desc: t.landing.features.execution.desc },
+    { icon: Lightbulb,     title: t.landing.features.hints.title,             desc: t.landing.features.hints.desc },
+    { icon: Brain,         title: t.landing.features.adaptive.title,          desc: t.landing.features.adaptive.desc },
+  ];
+
+  const STEPS: [string, string][] = [
+    [t.landing.howItWorks.steps.read,         t.landing.howItWorks.descriptions.read],
+    [t.landing.howItWorks.steps.run,          t.landing.howItWorks.descriptions.run],
+    [t.landing.howItWorks.steps.hypothesise,  t.landing.howItWorks.descriptions.hypothesise],
+    [t.landing.howItWorks.steps.test,         t.landing.howItWorks.descriptions.test],
+    [t.landing.howItWorks.steps.reflect,      t.landing.howItWorks.descriptions.reflect],
+    [t.landing.howItWorks.steps.levelUp,      t.landing.howItWorks.descriptions.levelUp],
+  ];
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
@@ -39,16 +41,15 @@ export default function Landing() {
     <div className="min-h-screen flex flex-col">
       <TopNav />
 
-      <Hero />
+      <Hero t={t} />
 
       {/* HOW IT WORKS */}
       <section id="how" className="container py-20 scroll-mt-20">
         <div className="max-w-2xl mb-10">
-          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">How it works</div>
-          <h2 className="font-display text-3xl md:text-4xl font-bold">A learning loop, not a lecture.</h2>
+          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">{t.landing.howItWorks.title}</div>
+          <h2 className="font-display text-3xl md:text-4xl font-bold">{t.landing.howItWorks.subtitle}</h2>
           <p className="mt-3 text-muted-foreground">
-            Every puzzle moves you through the same six steps — the actual workflow real programmers
-            use when they debug.
+            {t.landing.howItWorks.description}
           </p>
         </div>
         <ol className="grid md:grid-cols-3 gap-4">
@@ -76,8 +77,8 @@ export default function Landing() {
       {/* FEATURES */}
       <section id="features" className="container py-20 scroll-mt-20">
         <div className="max-w-2xl mb-10">
-          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">Features</div>
-          <h2 className="font-display text-3xl md:text-4xl font-bold">Built for understanding, not memorisation.</h2>
+          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">{t.landingUI.features}</div>
+          <h2 className="font-display text-3xl md:text-4xl font-bold">{t.landingUI.builtFor}</h2>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           {features.map(({ icon: Icon, title, desc }, i) => (
@@ -102,10 +103,10 @@ export default function Landing() {
       {/* MODES */}
       <section id="modes" className="container py-20 scroll-mt-20">
         <div className="max-w-2xl mb-10">
-          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">Modes</div>
-          <h2 className="font-display text-3xl md:text-4xl font-bold">Four ways to play.</h2>
+          <div className="text-xs uppercase tracking-wider text-primary-glow font-mono mb-2">{t.landingUI.modes}</div>
+          <h2 className="font-display text-3xl md:text-4xl font-bold">{t.landingUI.fourWays}</h2>
           <p className="mt-3 text-muted-foreground">
-            Pick a mode that fits your level — or let Adaptive Mode meet you where you are.
+            {t.landing.modes.description}
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -133,7 +134,7 @@ export default function Landing() {
                     {m.bullets.map(b => <li key={b} className="flex gap-2"><span className={m.color}>›</span>{b}</li>)}
                   </ul>
                   <div className="mt-5 inline-flex items-center text-sm text-primary-glow opacity-80 group-hover:opacity-100 transition-opacity">
-                    Start <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                    {t.landingUI.modes} <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </div>
                 </Link>
               </motion.div>
@@ -153,9 +154,9 @@ export default function Landing() {
           <div className="absolute inset-0 grid-bg opacity-15 [mask-image:linear-gradient(180deg,black,transparent)]" />
           <div className="relative grid md:grid-cols-2 gap-10 items-center">
             <div>
-              <div className="text-xs uppercase tracking-wider text-accent font-mono mb-2">Pedagogy</div>
+              <div className="text-xs uppercase tracking-wider text-accent font-mono mb-2">{t.landingUI.whyDebugging}</div>
               <h2 className="font-display text-3xl md:text-4xl font-bold">
-                Built on the science of <span className="text-gradient-accent">how programmers think.</span>
+                {t.landingUI.builtFor}
               </h2>
               <p className="mt-4 text-muted-foreground">
                 Each puzzle exposes one of the foundational mental models — control flow,
@@ -171,17 +172,17 @@ export default function Landing() {
                 ["Control Flow Graphs", "Highlighted paths show which branches actually run."],
                 ["Execution Models", "Step-by-step variable snapshots make abstract state concrete."],
                 ["Debugging Strategy", "Trace → Isolate → Fix — the same loop pros use."],
-              ].map(([t, d], i) => (
+              ].map(([title, desc], i) => (
                 <motion.div
-                  key={t}
+                  key={title}
                   initial={{ opacity: 0, x: 16 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.08 }}
                   className="rounded-lg p-4 border border-border bg-card/40 hover:border-accent/40 transition-colors"
                 >
-                  <div className="font-display font-semibold">{t}</div>
-                  <div className="text-sm text-muted-foreground mt-0.5">{d}</div>
+                  <div className="font-display font-semibold">{title}</div>
+                  <div className="text-sm text-muted-foreground mt-0.5">{desc}</div>
                 </motion.div>
               ))}
             </div>
@@ -191,7 +192,7 @@ export default function Landing() {
 
       <footer className="border-t border-border/50 py-8 mt-auto">
         <div className="container flex flex-col md:flex-row items-center justify-between gap-3 text-sm text-muted-foreground">
-          <span>Learn to think like a programmer, one bug at a time.</span>
+          <span>{t.trophies.subtitle}</span>
           <span className="font-mono text-xs opacity-70">// 0 bugs survive · DebugQuest</span>
         </div>
       </footer>
@@ -201,7 +202,7 @@ export default function Landing() {
 
 /* ---------------- Hero (toned down) ---------------- */
 
-function Hero() {
+function Hero({ t }: { t: ReturnType<typeof useLanguage>["t"] }) {
   return (
     <section className="relative overflow-hidden bg-gradient-hero border-b border-border/50">
       <div className="absolute inset-0 grid-bg opacity-20 [mask-image:radial-gradient(ellipse_at_center,black,transparent_70%)]" />
@@ -216,35 +217,37 @@ function Hero() {
         >
           <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary-glow text-xs font-medium mb-5">
             <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-primary" />
-            Learn programming by debugging real code
+            {t.landing.hero.title}
           </span>
 
           <h1 className="font-display font-bold text-4xl md:text-6xl tracking-tight leading-[1.05]">
-            Don't write code.
-            <br />
-            <span className="text-gradient-primary">Fix it.</span>
+            {t.landing.hero.subtitle.split("\n").map((line, i) => (
+              <span key={i}>
+                {i === 1 ? <span className="text-gradient-primary">{line}</span> : line}
+                {i < t.landing.hero.subtitle.split("\n").length - 1 && <br />}
+              </span>
+            ))}
           </h1>
 
           <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-xl">
-            DebugQuest teaches computational thinking through guided debugging. Each level pairs a
-            short concept lesson with a real broken program — read it, run it, fix it, learn why.
+            {t.landing.hero.description}
           </p>
 
           <div className="mt-7 flex flex-wrap gap-3">
             <Button asChild size="xl" variant="hero">
               <Link to="/modes">
-                Start playing <ArrowRight className="ml-1 w-5 h-5" />
+                {t.landing.hero.cta} <ArrowRight className="ml-1 w-5 h-5" />
               </Link>
             </Button>
             <Button asChild size="xl" variant="outline">
-              <a href="#how">How it works</a>
+              <a href="#how">{t.landing.howItWorks.title}</a>
             </Button>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /> 4 difficulty modes</span>
-            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /> Python · JS · C++ · Java</span>
-            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /> No signup required</span>
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /> {t.landingUI.difficultyModes}</span>
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /> {t.landingUI.languages}</span>
+            <span className="inline-flex items-center gap-1.5"><CheckCircle2 className="w-3.5 h-3.5 text-success" /> {t.landingUI.noSignup}</span>
           </div>
         </motion.div>
 

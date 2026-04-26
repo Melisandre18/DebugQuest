@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import FeedbackDialog from "@/components/FeedbackDialog";
 import { loadProgress } from "@/lib/progress";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface TopNavProps {
   /** Optional extra slot rendered between logo block and right-side actions. */
@@ -24,16 +25,17 @@ interface NavItem {
   /** External-style hash links scroll to landing sections. */
   external?: boolean;
 }
-const NAV_ITEMS: NavItem[] = [
-  { label: "Home",         to: "/",             icon: Home },
-  { label: "How it works", to: "/#how",         icon: Workflow, external: true },
-  { label: "Modes",        to: "/modes",        icon: Gamepad2 },
-  { label: "Trophies",     to: "/trophies",     icon: Trophy },
+const STATIC_NAV_ITEMS: Omit<NavItem, "label">[] = [
+  { to: "/",             icon: Home },
+  { to: "/#how",         icon: Workflow, external: true },
+  { to: "/modes",        icon: Gamepad2 },
+  { to: "/trophies",     icon: Trophy },
 ];
 
 /** Persistent app nav: logo + section links + live score chip + feedback. */
 export default function TopNav({ center, backTo }: TopNavProps) {
   const { pathname, hash } = useLocation();
+  const { t, language, setLanguage } = useLanguage();
   const [score, setScore] = useState<number>(() => loadProgress().totalScore);
   const [solved, setSolved] = useState<number>(() => loadProgress().solved.length);
   const [bump, setBump] = useState(0);
@@ -61,6 +63,16 @@ export default function TopNav({ center, backTo }: TopNavProps) {
 
   // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false); }, [pathname, hash]);
+
+  const navItems: NavItem[] = STATIC_NAV_ITEMS.map((item) => ({
+    ...item,
+    label:
+      item.to === "/" ? t.nav.home :
+      item.to === "/#how" ? t.nav.howItWorks :
+      item.to === "/modes" ? t.nav.modes :
+      item.to === "/trophies" ? t.nav.trophies :
+      item.to,
+  }));
 
   function isActive(item: NavItem) {
     if (item.external) return false;
@@ -96,7 +108,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
 
         {/* Desktop nav links */}
         <nav className="hidden md:flex items-center gap-1">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
             return (
@@ -119,11 +131,19 @@ export default function TopNav({ center, backTo }: TopNavProps) {
         </nav>
 
         <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => setLanguage(language === "en" ? "ka" : "en")}
+            className="hidden sm:inline-flex items-center rounded-full border border-border bg-background px-3 py-1.5 text-sm font-medium transition-colors hover:bg-secondary/60 hover:text-foreground"
+          >
+            {language === "en" ? "KA" : "EN"}
+          </button>
+
           {/* Score chip */}
           <Link
             to="/trophies"
             className="group relative inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/5 pl-2 pr-3 py-1.5 hover:border-accent/70 hover:bg-accent/10 transition-colors"
-            aria-label="View trophies and analytics"
+            aria-label={t.nav.trophies}
           >
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-accent text-accent-foreground shadow-glow-accent">
               <Trophy className="w-3.5 h-3.5" />
@@ -141,7 +161,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
               </motion.span>
             </AnimatePresence>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground hidden lg:inline">
-              {solved} solved
+              {solved} {t.common.solved}
             </span>
           </Link>
 
@@ -156,7 +176,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
 
           {pathname === "/" && (
             <Button asChild variant="hero" size="sm" className="hidden sm:inline-flex">
-              <Link to="/modes"><Gamepad2 className="w-4 h-4 mr-1" /> Play</Link>
+              <Link to="/modes"><Gamepad2 className="w-4 h-4 mr-1" /> {t.nav.play}</Link>
             </Button>
           )}
 
@@ -183,7 +203,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
             className="md:hidden border-t border-border/60 overflow-hidden bg-background/95 backdrop-blur-md"
           >
             <nav className="container py-3 grid gap-1">
-              {NAV_ITEMS.map((item) => {
+              {navItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item);
                 return (

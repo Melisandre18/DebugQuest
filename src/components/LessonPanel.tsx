@@ -6,6 +6,7 @@ import type { Lesson } from "@/lib/lessons";
 import { getExampleForLanguage } from "@/lib/lessons";
 import type { Language } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   lesson: Lesson;
@@ -21,6 +22,7 @@ interface Props {
  * Encourages "learn first, fix second".
  */
 export default function LessonPanel({ lesson, language, onContinue, hideContinue }: Props) {
+  const { t } = useLanguage();
   const [picked, setPicked] = useState<number | null>(null);
   const correct = picked !== null && picked === lesson.quiz.correctIndex;
   const example = getExampleForLanguage(lesson, language);
@@ -146,7 +148,7 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
       {!hideContinue && (
         <div className="flex justify-end">
           <Button variant="hero" onClick={onContinue}>
-            I'm ready — start debugging <ArrowRight className="w-4 h-4 ml-1" />
+            {t.buttons.startDebugging} <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
       )}
