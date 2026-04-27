@@ -13,7 +13,7 @@ const sid = (tag: string) => `${tag}_${++_uid}`;
 function num(value: number): Expr { return { kind: "num", value }; }
 function str(value: string): Expr { return { kind: "str", value }; }
 function vr(name: string): Expr  { return { kind: "var", name }; }
-function bin(op: Expr & { kind: "bin" }["op"], left: Expr, right: Expr): Expr {
+function bin(op: Extract<Expr, { kind: "bin" }>["op"], left: Expr, right: Expr): Expr {
   return { kind: "bin", op, left, right };
 }
 
@@ -666,6 +666,9 @@ export function serializePuzzle(def: PuzzleDef, lang: UiLanguage = "en") {
     difficulty: def.difficulty,
     bugType: def.bugType,
     bugStmtId: def.bugStmtId,
+    programmingLanguage: "any" as const,
+    format: "ast" as const,
+    interaction: "pick-fix" as const,
     concept: pick(def.concept),
     title: pick(def.title),
     story: pick(def.story),

@@ -14,17 +14,11 @@ function readBody(req: IncomingMessage): Promise<string> {
   });
 }
 
-// Reuse transporter across warm invocations to avoid reconnecting every time.
-let _transporter: ReturnType<typeof nodemailer.createTransport> | null = null;
 function getTransporter(user: string, pass: string) {
-  if (!_transporter) {
-    _transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: { user, pass },
-      pool: true,
-    });
-  }
-  return _transporter;
+  return nodemailer.createTransport({
+    service: "gmail",
+    auth: { user, pass },
+  });
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {

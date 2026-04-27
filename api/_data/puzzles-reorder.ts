@@ -29,6 +29,8 @@ const r1: AstReorderDef = {
   difficulty: "easy",
   bugType: "swapped-branches",
   programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
   concept: {
     en: "Sequence: swapping two variables requires a temporary",
     ka: "თანმიმდევრობა: ორი ცვლადის გაცვლა საჭიროებს დამხმარე ცვლადს",
@@ -78,6 +80,8 @@ const r2: AstReorderDef = {
   difficulty: "easy",
   bugType: "swapped-branches",
   programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
   concept: {
     en: "Sequence: operations depend on prior state",
     ka: "თანმიმდევრობა: ოპერაციები დამოკიდებულია წინა მდგომარეობაზე",
@@ -126,6 +130,8 @@ const r3: AstReorderDef = {
   difficulty: "medium",
   bugType: "swapped-branches",
   programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
   concept: {
     en: "Sequence: variables must be defined before they are used",
     ka: "თანმიმდევრობა: ცვლადი გამოყენებამდე განსაზღვრული უნდა იყოს",
