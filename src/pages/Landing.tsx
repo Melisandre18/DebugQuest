@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import TopNav from "@/components/TopNav";
@@ -10,11 +10,13 @@ import {
 import { DIFFICULTY_META } from "@/components/DifficultyMeta";
 import { Difficulty } from "@/lib/puzzle-engine";
 import { useLanguage } from "@/contexts/LanguageContext";
+import LanguageSelectModal from "@/components/LanguageSelectModal";
 
 const modes: Difficulty[] = ["easy", "medium", "hard", "adaptive"];
 
 export default function Landing() {
   const { t } = useLanguage();
+  const [selectedMode, setSelectedMode] = useState<Difficulty | null>(null);
 
   const features = [
     { icon: GraduationCap, title: t.landing.features.learnFirst.title,       desc: t.landing.features.learnFirst.desc },
@@ -121,9 +123,9 @@ export default function Landing() {
                 viewport={{ once: true, margin: "-60px" }}
                 transition={{ delay: i * 0.05 }}
               >
-                <Link
-                  to={`/play/${d}`}
-                  className="card-surface rounded-xl p-6 group hover:border-primary/40 hover:-translate-y-0.5 transition-all block h-full"
+                <button
+                  onClick={() => setSelectedMode(d)}
+                  className="card-surface rounded-xl p-6 group hover:border-primary/40 hover:-translate-y-0.5 transition-all block h-full w-full text-left"
                 >
                   <div className={`w-10 h-10 rounded-lg inline-flex items-center justify-center border ${m.chip} mb-4`}>
                     <Icon className="w-5 h-5" />
@@ -136,7 +138,7 @@ export default function Landing() {
                   <div className="mt-5 inline-flex items-center text-sm text-primary-glow opacity-80 group-hover:opacity-100 transition-opacity">
                     {t.landingUI.modes} <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
                   </div>
-                </Link>
+                </button>
               </motion.div>
             );
           })}
@@ -196,6 +198,10 @@ export default function Landing() {
           <span className="font-mono text-xs opacity-70">// 0 bugs survive · DebugQuest</span>
         </div>
       </footer>
+
+      {selectedMode && (
+        <LanguageSelectModal mode={selectedMode} onClose={() => setSelectedMode(null)} />
+      )}
     </div>
   );
 }

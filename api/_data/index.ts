@@ -108,13 +108,25 @@ export async function pickNext(opts: {
 
   const { difficulty, lang = "en", progLang, solved = [], recent = [] } = opts;
 
-  // Determine effective difficulty for adaptive mode
+  // Determine effective difficulty for adaptive mode.
+  // Since only correct answers are recorded, we use attempts count and hints used
+  // as the performance signal: few tries + no hints → too easy → go harder.
   let effectiveDiff: Exclude<Difficulty, "adaptive">;
   if (difficulty === "adaptive") {
     const last5 = recent.slice(-5);
-    const correctRate = last5.length ? last5.filter(a => a.correct).length / last5.length : 0.5;
-    const avgHints = last5.length ? last5.reduce((s, a) => s + a.hintsUsed, 0) / last5.length : 1;
-    effectiveDiff = correctRate > 0.7 && avgHints < 1 ? "hard" : correctRate > 0.5 ? "medium" : "easy";
+    const avgAttempts = last5.length
+      ? last5.reduce((s, a) => s + (a.attempts ?? 1), 0) / last5.length
+      : 1.5;
+    const avgHints = last5.length
+      ? last5.reduce((s, a) => s + a.hintsUsed, 0) / last5.length
+      : 1;
+    if (avgAttempts <= 1.3 && avgHints < 0.5) {
+      effectiveDiff = "hard";
+    } else if (avgAttempts <= 2.2 && avgHints < 2) {
+      effectiveDiff = "medium";
+    } else {
+      effectiveDiff = "easy";
+    }
   } else {
     effectiveDiff = difficulty;
   }

@@ -10,7 +10,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   puzzle: TextFillBlankPuzzle;
-  onSolved: (score: number) => void;
+  onSolved: (score: number, attempts: number) => void;
   onNext: () => void;
 }
 
@@ -24,7 +24,7 @@ export default function TextFillBlank({ puzzle, onSolved, onNext }: Props) {
     if (solved) return;
     setPicked(opt);
     setAttempts(a => a + 1);
-    if (opt.correct) onSolved(Math.max(50, 200 - attempts * 40));
+    if (opt.correct) onSolved(Math.max(50, 200 - attempts * 40), attempts + 1);
   }
 
   const lang = puzzle.programmingLanguage === "any" ? undefined : puzzle.programmingLanguage;

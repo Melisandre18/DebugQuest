@@ -115,6 +115,7 @@ export interface AttemptSummary {
   puzzleId: string;
   correct: boolean;
   hintsUsed: number;
+  attempts: number;   // total tries including wrong ones
 }
 
 export interface NextPuzzleRequest {
