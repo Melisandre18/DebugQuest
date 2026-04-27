@@ -9,6 +9,8 @@ export interface FeedbackEntry {
   message: string;
   puzzleId?: string;
   route?: string;
+  senderEmail?: string;
+  senderName?: string;
   at: number;
 }
 
@@ -37,13 +39,13 @@ export function submitFeedback(entry: Omit<FeedbackEntry, "id" | "at">): Feedbac
   return full;
 }
 
-/** POSTs the entry to the backend so it is emailed to the owner. */
-export async function sendFeedbackToServer(entry: Omit<FeedbackEntry, "id" | "at">): Promise<void> {
-  await fetch("/api/feedback", {
+/** Fire-and-forget POST to the backend — does not throw. */
+export function sendFeedbackToServer(entry: Omit<FeedbackEntry, "id" | "at">): void {
+  fetch("/api/feedback", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(entry),
-  });
+  }).catch(() => { /* silent — localStorage copy is the fallback */ });
 }
 
 export const FEEDBACK_CATEGORIES = ["Bug", "Idea", "Difficulty", "Praise", "Other"] as const;

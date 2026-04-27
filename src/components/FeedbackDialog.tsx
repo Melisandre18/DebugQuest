@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { MessageSquare, Star, Send, Loader2 } from "lucide-react";
+import { MessageSquare, Star, Send } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -33,40 +34,45 @@ export default function FeedbackDialog({
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [category, setCategory] = useState<string>(context === "puzzle" ? "Difficulty" : "Idea");
   const [message, setMessage] = useState("");
-  const [sending, setSending] = useState(false);
+  const [senderName, setSenderName] = useState("");
+  const [senderEmail, setSenderEmail] = useState("");
 
   function reset() {
     setRating(5);
     setCategory(context === "puzzle" ? "Difficulty" : "Idea");
     setMessage("");
+    setSenderName("");
+    setSenderEmail("");
   }
 
-  async function handleSubmit() {
+  function handleSubmit() {
     if (message.trim().length < 3) {
       toast.error("Please write a few words so we can act on it.");
       return;
     }
 
-    const entry = { context, rating, category, message: message.trim(), puzzleId, route: pathname };
+    const entry = {
+      context,
+      rating,
+      category,
+      message: message.trim(),
+      puzzleId,
+      route: pathname,
+      senderName: senderName.trim() || undefined,
+      senderEmail: senderEmail.trim() || undefined,
+    };
 
-    setSending(true);
-    try {
-      // Save locally first so nothing is lost
-      submitFeedback(entry);
-      // Send to backend (emails the owner)
-      await sendFeedbackToServer(entry);
-      toast.success("Thanks — feedback sent!", {
-        description: "Your message has been delivered.",
-      });
-    } catch {
-      toast.success("Thanks — feedback saved.", {
-        description: "Stored locally on this device.",
-      });
-    } finally {
-      setSending(false);
-      setOpen(false);
-      reset();
-    }
+    // Save locally immediately
+    submitFeedback(entry);
+    // Fire-and-forget to backend (non-blocking)
+    sendFeedbackToServer(entry);
+
+    // Close and confirm right away — don't make the user wait for the email
+    setOpen(false);
+    reset();
+    toast.success("Thanks for your feedback!", {
+      description: "Your message has been sent.",
+    });
   }
 
   return (
@@ -91,6 +97,32 @@ export default function FeedbackDialog({
         </DialogHeader>
 
         <div className="space-y-4 py-2">
+          {/* Optional sender info */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Name (optional)</label>
+              <Input
+                value={senderName}
+                onChange={(e) => setSenderName(e.target.value)}
+                placeholder="Your name"
+                className="mt-1.5 h-8 text-sm"
+                maxLength={80}
+              />
+            </div>
+            <div>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">Email (optional)</label>
+              <Input
+                type="email"
+                value={senderEmail}
+                onChange={(e) => setSenderEmail(e.target.value)}
+                placeholder="for a reply"
+                className="mt-1.5 h-8 text-sm"
+                maxLength={120}
+              />
+            </div>
+          </div>
+
+          {/* Rating */}
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">{t.common.rating}</label>
             <div className="mt-1.5 flex items-center gap-1">
@@ -111,6 +143,7 @@ export default function FeedbackDialog({
             </div>
           </div>
 
+          {/* Category */}
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">Category</label>
             <Select value={category} onValueChange={setCategory}>
@@ -125,6 +158,7 @@ export default function FeedbackDialog({
             </Select>
           </div>
 
+          {/* Message */}
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
               {context === "puzzle" ? "Your thoughts on this puzzle" : "What's on your mind?"}
@@ -144,13 +178,9 @@ export default function FeedbackDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={sending}>
-            {t.common.cancel}
-          </Button>
-          <Button variant="hero" onClick={handleSubmit} disabled={sending}>
-            {sending
-              ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Sending…</>
-              : <><Send className="w-4 h-4 mr-1" /> {t.common.send}</>}
+          <Button variant="ghost" onClick={() => setOpen(false)}>{t.common.cancel}</Button>
+          <Button variant="hero" onClick={handleSubmit}>
+            <Send className="w-4 h-4 mr-1" /> {t.common.send}
           </Button>
         </DialogFooter>
       </DialogContent>
