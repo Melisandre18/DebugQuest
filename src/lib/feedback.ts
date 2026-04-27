@@ -1,4 +1,3 @@
-// Local-only feedback storage. Survives reloads via localStorage.
 const KEY = "debugquest.feedback.v1";
 
 export type FeedbackContext = "general" | "puzzle";
@@ -6,11 +5,11 @@ export interface FeedbackEntry {
   id: string;
   context: FeedbackContext;
   rating: 1 | 2 | 3 | 4 | 5;
-  category: string;          // e.g. "Bug", "Idea", "Difficulty", "Praise"
+  category: string;
   message: string;
   puzzleId?: string;
   route?: string;
-  at: number;                // unix ms
+  at: number;
 }
 
 export function loadFeedback(): FeedbackEntry[] {
@@ -34,10 +33,17 @@ export function submitFeedback(entry: Omit<FeedbackEntry, "id" | "at">): Feedbac
   list.push(full);
   try {
     localStorage.setItem(KEY, JSON.stringify(list));
-  } catch {
-    /* quota — silent */
-  }
+  } catch { /* quota — silent */ }
   return full;
+}
+
+/** POSTs the entry to the backend so it is emailed to the owner. */
+export async function sendFeedbackToServer(entry: Omit<FeedbackEntry, "id" | "at">): Promise<void> {
+  await fetch("/api/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(entry),
+  });
 }
 
 export const FEEDBACK_CATEGORIES = ["Bug", "Idea", "Difficulty", "Praise", "Other"] as const;

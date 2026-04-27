@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "react-router-dom";
-import { MessageSquare, Star, Send } from "lucide-react";
+import { MessageSquare, Star, Send, Loader2 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -11,22 +11,16 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { FEEDBACK_CATEGORIES, FeedbackContext, submitFeedback } from "@/lib/feedback";
+import { FEEDBACK_CATEGORIES, FeedbackContext, submitFeedback, sendFeedbackToServer } from "@/lib/feedback";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   context?: FeedbackContext;
   puzzleId?: string;
-  /** Custom trigger; defaults to a small ghost button. */
   trigger?: React.ReactNode;
-  /** Optional label shown next to the icon in the default trigger. */
   triggerLabel?: string;
 }
 
-/**
- * Reusable feedback dialog. Stores submissions in localStorage
- * (no backend yet — see lib/feedback.ts).
- */
 export default function FeedbackDialog({
   context = "general",
   puzzleId,
@@ -39,24 +33,40 @@ export default function FeedbackDialog({
   const [rating, setRating] = useState<1 | 2 | 3 | 4 | 5>(5);
   const [category, setCategory] = useState<string>(context === "puzzle" ? "Difficulty" : "Idea");
   const [message, setMessage] = useState("");
+  const [sending, setSending] = useState(false);
 
   function reset() {
-    setRating(5); setCategory(context === "puzzle" ? "Difficulty" : "Idea"); setMessage("");
+    setRating(5);
+    setCategory(context === "puzzle" ? "Difficulty" : "Idea");
+    setMessage("");
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (message.trim().length < 3) {
       toast.error("Please write a few words so we can act on it.");
       return;
     }
-    submitFeedback({
-      context, rating, category, message: message.trim(), puzzleId, route: pathname,
-    });
-    toast.success("Thanks — feedback saved.", {
-      description: "Stored locally on this device for now.",
-    });
-    setOpen(false);
-    reset();
+
+    const entry = { context, rating, category, message: message.trim(), puzzleId, route: pathname };
+
+    setSending(true);
+    try {
+      // Save locally first so nothing is lost
+      submitFeedback(entry);
+      // Send to backend (emails the owner)
+      await sendFeedbackToServer(entry);
+      toast.success("Thanks — feedback sent!", {
+        description: "Your message has been delivered.",
+      });
+    } catch {
+      toast.success("Thanks — feedback saved.", {
+        description: "Stored locally on this device.",
+      });
+    } finally {
+      setSending(false);
+      setOpen(false);
+      reset();
+    }
   }
 
   return (
@@ -122,13 +132,10 @@ export default function FeedbackDialog({
             <Textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder={
-                context === "puzzle"
-                  ? t.feedback.puzzleQuestion
-                  : t.feedback.generalQuestion
-              }
+              placeholder={context === "puzzle" ? t.feedback.puzzleQuestion : t.feedback.generalQuestion}
               rows={4}
               className="mt-1.5 resize-none"
+              maxLength={600}
             />
             <div className="text-[11px] text-muted-foreground mt-1 text-right">
               {message.length} / 600
@@ -137,9 +144,13 @@ export default function FeedbackDialog({
         </div>
 
         <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)}>{t.common.cancel}</Button>
-          <Button variant="hero" onClick={handleSubmit}>
-            <Send className="w-4 h-4 mr-1" /> {t.common.send}
+          <Button variant="ghost" onClick={() => setOpen(false)} disabled={sending}>
+            {t.common.cancel}
+          </Button>
+          <Button variant="hero" onClick={handleSubmit} disabled={sending}>
+            {sending
+              ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Sending…</>
+              : <><Send className="w-4 h-4 mr-1" /> {t.common.send}</>}
           </Button>
         </DialogFooter>
       </DialogContent>

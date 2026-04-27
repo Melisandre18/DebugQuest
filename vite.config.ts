@@ -23,6 +23,7 @@ function apiDevPlugin(): Plugin {
           "/api/next-puzzle":   () => import("./api/next-puzzle.js"),
           "/api/puzzle-counts": () => import("./api/puzzle-counts.js"),
           "/api/health":        () => import("./api/health.js"),
+          "/api/feedback":      () => import("./api/feedback.js"),
         };
 
         const loader = routes[pathname];
