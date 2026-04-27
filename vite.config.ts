@@ -18,10 +18,11 @@ function apiDevPlugin(): Plugin {
 
         // Route table
         const routes: Record<string, () => Promise<{ default: Function }>> = {
-          "/api/puzzles":      () => import("./api/puzzles.js"),
-          "/api/puzzle":       () => import("./api/puzzle.js"),
-          "/api/next-puzzle":  () => import("./api/next-puzzle.js"),
-          "/api/health":       () => import("./api/health.js"),
+          "/api/puzzles":       () => import("./api/puzzles.js"),
+          "/api/puzzle":        () => import("./api/puzzle.js"),
+          "/api/next-puzzle":   () => import("./api/next-puzzle.js"),
+          "/api/puzzle-counts": () => import("./api/puzzle-counts.js"),
+          "/api/health":        () => import("./api/health.js"),
         };
 
         const loader = routes[pathname];

@@ -1,93 +1,103 @@
 // Frontend API client for DebugQuest puzzles.
-// Fetches puzzle data from /api/* (Vite dev plugin in dev, Vercel functions in prod).
-// Converts SerializedFix.appliedProgram back into a callable FixOption.apply function.
-
-import { useQuery, useMutation } from "@tanstack/react-query";
+// Converts serialized wire types into runtime objects the Game component can use.
+import { useQuery } from "@tanstack/react-query";
 import type { Difficulty, FixOption, Language, Program, Puzzle } from "./puzzle-engine";
 
-interface SerializedFix {
-  id: string;
-  correct: boolean;
-  label: string;
-  explanation: string;
-  appliedProgram: Program;
+// ─── Wire types (as sent by the API) ──────────────────────────────────────
+
+export interface SerializedFix {
+  id: string; correct: boolean; label: string; explanation: string; appliedProgram: Program;
 }
 
-interface SerializedPuzzle {
-  id: string;
-  difficulty: Exclude<Difficulty, "adaptive">;
-  bugType: string;
-  bugStmtId: string;
-  concept: string;
-  title: string;
-  story: string;
-  task: string;
-  program: Program;
+export interface AstPickFixPuzzle {
+  format: "ast"; interaction: "pick-fix";
+  id: string; difficulty: Exclude<Difficulty,"adaptive">; bugType: string;
+  programmingLanguage: string; concept: string; title: string; story: string; task: string;
+  bugStmtId: string; program: Program;
   expected: { output?: string[]; returned?: number | string };
-  fixes: SerializedFix[];
-  hints: string[];
+  fixes: SerializedFix[]; hints: string[];
 }
 
-interface NextPuzzleRequest {
-  difficulty: Difficulty;
-  lang?: string;
-  solved?: string[];
-  recent?: { puzzleId: string; correct: boolean; hintsUsed: number }[];
+export interface AstReorderPuzzle {
+  format: "ast"; interaction: "reorder";
+  id: string; difficulty: Exclude<Difficulty,"adaptive">; bugType: string;
+  programmingLanguage: string; concept: string; title: string; story: string; task: string;
+  scrambledProgram: Program; correctOrder: string[]; explanation: string; hints: string[];
 }
 
-// Rebuild a runtime Puzzle from the serialized DTO
-function hydratePuzzle(dto: SerializedPuzzle): Puzzle {
+export interface TextFix { id: string; correct: boolean; label: string; explanation: string; }
+
+export interface TextPickFixPuzzle {
+  format: "text"; interaction: "pick-fix";
+  id: string; difficulty: Exclude<Difficulty,"adaptive">; bugType: string;
+  programmingLanguage: string; concept: string; title: string; story: string; task: string;
+  code: string; bugLine?: number; fixes: TextFix[]; hints: string[];
+}
+
+export interface BlankOption { id: string; value: string; correct: boolean; explanation: string; }
+
+export interface TextFillBlankPuzzle {
+  format: "text"; interaction: "fill-blank";
+  id: string; difficulty: Exclude<Difficulty,"adaptive">; bugType: string;
+  programmingLanguage: string; concept: string; title: string; story: string; task: string;
+  codeBefore: string; codeAfter: string; options: BlankOption[]; hints: string[];
+}
+
+export type AnyPuzzle = AstPickFixPuzzle | AstReorderPuzzle | TextPickFixPuzzle | TextFillBlankPuzzle;
+
+// ─── Hydration (wire → runtime) ───────────────────────────────────────────
+
+// For AST pick-fix, rebuild the apply() function from the pre-computed appliedProgram
+function hydrateAstPickFix(dto: AstPickFixPuzzle): Puzzle {
   return {
-    id: dto.id,
-    difficulty: dto.difficulty,
-    bugType: dto.bugType as Puzzle["bugType"],
-    bugStmtId: dto.bugStmtId,
-    concept: dto.concept,
-    title: dto.title,
-    story: dto.story,
-    task: dto.task,
-    program: dto.program,
-    expected: dto.expected,
-    hints: dto.hints,
+    id: dto.id, difficulty: dto.difficulty, bugType: dto.bugType as Puzzle["bugType"],
+    bugStmtId: dto.bugStmtId, concept: dto.concept, title: dto.title, story: dto.story,
+    task: dto.task, program: dto.program, expected: dto.expected, hints: dto.hints,
     fixes: dto.fixes.map((f): FixOption => ({
-      id: f.id,
-      correct: f.correct,
-      label: f.label,
-      explanation: f.explanation,
+      id: f.id, correct: f.correct, label: f.label, explanation: f.explanation,
       apply: () => f.appliedProgram,
     })),
   };
 }
 
-async function fetchNextPuzzle(req: NextPuzzleRequest): Promise<Puzzle> {
+// ─── Fetch helpers ────────────────────────────────────────────────────────
+
+interface NextPuzzleRequest {
+  difficulty: Difficulty;
+  lang?: string;
+  progLang?: string;
+  solved?: string[];
+  recent?: { puzzleId: string; correct: boolean; hintsUsed: number }[];
+}
+
+async function fetchNextPuzzle(req: NextPuzzleRequest): Promise<AnyPuzzle> {
   const resp = await fetch("/api/next-puzzle", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(req),
   });
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
-  const dto: SerializedPuzzle = await resp.json();
-  return hydratePuzzle(dto);
+  return resp.json();
 }
 
-async function fetchPuzzleById(id: string, lang = "en"): Promise<Puzzle> {
+async function fetchPuzzleById(id: string, lang = "en"): Promise<AnyPuzzle> {
   const resp = await fetch(`/api/puzzle?id=${encodeURIComponent(id)}&lang=${lang}`);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
-  const dto: SerializedPuzzle = await resp.json();
-  return hydratePuzzle(dto);
+  return resp.json();
 }
 
-async function fetchPuzzlesByDifficulty(
-  difficulty: Exclude<Difficulty, "adaptive">,
-  lang = "en"
-): Promise<Puzzle[]> {
-  const resp = await fetch(`/api/puzzles?difficulty=${difficulty}&lang=${lang}`);
-  if (!resp.ok) throw new Error(`API error ${resp.status}`);
-  const dtos: SerializedPuzzle[] = await resp.json();
-  return dtos.map(hydratePuzzle);
+// ─── Public API ───────────────────────────────────────────────────────────
+
+export async function getNextPuzzle(req: NextPuzzleRequest): Promise<AnyPuzzle> {
+  return fetchNextPuzzle(req);
 }
 
-// ─── React Query hooks ────────────────────────────────────────────────────────
+/** Convert an AstPickFixPuzzle (wire) to the runtime Puzzle type used by the debugger. */
+export function toRuntimePuzzle(p: AstPickFixPuzzle): Puzzle {
+  return hydrateAstPickFix(p);
+}
+
+// ─── React Query hooks ────────────────────────────────────────────────────
 
 export function usePuzzle(id: string, lang: Language) {
   return useQuery({
@@ -97,25 +107,15 @@ export function usePuzzle(id: string, lang: Language) {
   });
 }
 
-export function usePuzzlesByDifficulty(
-  difficulty: Exclude<Difficulty, "adaptive">,
-  lang: Language
-) {
+export function usePuzzleCounts(progLang?: Language) {
   return useQuery({
-    queryKey: ["puzzles", difficulty, lang],
-    queryFn: () => fetchPuzzlesByDifficulty(difficulty, lang),
-    staleTime: Infinity,
+    queryKey: ["puzzle-counts", progLang ?? "any"],
+    queryFn: async () => {
+      const url = progLang ? `/api/puzzle-counts?progLang=${progLang}` : "/api/puzzle-counts";
+      const resp = await fetch(url);
+      if (!resp.ok) throw new Error("counts error");
+      return resp.json() as Promise<Record<string, number>>;
+    },
+    staleTime: 5 * 60 * 1000,
   });
-}
-
-export function useNextPuzzleMutation() {
-  return useMutation({
-    mutationFn: fetchNextPuzzle,
-  });
-}
-
-// ─── Standalone imperative fetch (for initial load in Game) ──────────────────
-
-export async function getNextPuzzle(req: NextPuzzleRequest): Promise<Puzzle> {
-  return fetchNextPuzzle(req);
 }

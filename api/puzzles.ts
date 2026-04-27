@@ -1,18 +1,16 @@
-// GET /api/puzzles?difficulty=easy|medium|hard&lang=en|ka
-// Returns an array of serialized puzzles for the given difficulty.
+// GET /api/puzzles?difficulty=easy|medium|hard&lang=en|ka&progLang=python|javascript|cpp|java
 import type { IncomingMessage, ServerResponse } from "http";
-import { getPuzzlesByDifficulty } from "./_data/puzzles-source.js";
-import type { UiLanguage } from "./_lib/types.js";
+import { getAllPuzzles } from "./_data/index.js";
+import type { UiLanguage, ProgrammingLanguage } from "./_lib/types.js";
 
-export default function handler(req: IncomingMessage, res: ServerResponse) {
+export default async function handler(req: IncomingMessage, res: ServerResponse) {
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Content-Type", "application/json");
 
   const url = new URL(req.url ?? "/", "http://localhost");
-  const difficulty = url.searchParams.get("difficulty") as
-    | "easy" | "medium" | "hard"
-    | null;
+  const difficulty = url.searchParams.get("difficulty") as "easy" | "medium" | "hard" | null;
   const lang = (url.searchParams.get("lang") ?? "en") as UiLanguage;
+  const progLang = url.searchParams.get("progLang") as ProgrammingLanguage | null;
 
   if (!difficulty || !["easy", "medium", "hard"].includes(difficulty)) {
     res.writeHead(400);
@@ -20,7 +18,7 @@ export default function handler(req: IncomingMessage, res: ServerResponse) {
     return;
   }
 
-  const puzzles = getPuzzlesByDifficulty(difficulty, lang);
+  const puzzles = await getAllPuzzles(difficulty, lang, progLang ?? undefined);
   res.writeHead(200);
   res.end(JSON.stringify(puzzles));
 }

@@ -13,7 +13,7 @@ import TopNav from "@/components/TopNav";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ACHIEVEMENTS, loadProgress, resetProgress } from "@/lib/progress";
-import { puzzlesByDifficulty } from "@/lib/puzzle-engine";
+import { usePuzzleCounts } from "@/lib/puzzle-service";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -21,6 +21,7 @@ export default function Trophies() {
   const progress = loadProgress();
   const { t } = useLanguage();
   const a = progress.attempts;
+  const { data: puzzleCounts } = usePuzzleCounts();
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -49,10 +50,11 @@ export default function Trophies() {
   }, [a]);
 
   const byDifficulty = useMemo(() => {
+    const totals = puzzleCounts ?? { easy: 0, medium: 0, hard: 0 };
     const counts: Record<string, { difficulty: string; solved: number; total: number; fill: string }> = {
-      easy:     { difficulty: "Easy",     solved: 0, total: puzzlesByDifficulty("easy").length,     fill: "hsl(var(--diff-easy))" },
-      medium:   { difficulty: "Medium",   solved: 0, total: puzzlesByDifficulty("medium").length,   fill: "hsl(var(--diff-medium))" },
-      hard:     { difficulty: "Hard",     solved: 0, total: puzzlesByDifficulty("hard").length,     fill: "hsl(var(--diff-hard))" },
+      easy:   { difficulty: "Easy",   solved: 0, total: totals.easy   ?? 0, fill: "hsl(var(--diff-easy))" },
+      medium: { difficulty: "Medium", solved: 0, total: totals.medium ?? 0, fill: "hsl(var(--diff-medium))" },
+      hard:   { difficulty: "Hard",   solved: 0, total: totals.hard   ?? 0, fill: "hsl(var(--diff-hard))" },
     };
     progress.solved.forEach(id => {
       if (id.startsWith("easy"))   counts.easy.solved++;
@@ -60,7 +62,7 @@ export default function Trophies() {
       if (id.startsWith("hard"))   counts.hard.solved++;
     });
     return Object.values(counts);
-  }, [progress.solved]);
+  }, [progress.solved, puzzleCounts]);
 
   const recent = a.slice(-8).reverse();
 

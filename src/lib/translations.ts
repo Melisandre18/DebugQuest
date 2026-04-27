@@ -113,6 +113,14 @@ export interface Translations {
       "wrong-init": string;
       "swapped-branches": string;
     };
+
+    // Session & interaction types
+    sessionSolved: string;
+    chooseExpression: string;
+    reorderInstructions: string;
+    checkOrder: string;
+    orderWrong: string;
+    tryAgain: string;
   };
 
   difficulty: {
@@ -299,6 +307,13 @@ export const translations: Record<Language, Translations> = {
         "wrong-init":       "The initial value of an accumulator (sum, max, min, count) defines what the loop is actually computing.",
         "swapped-branches": "Programs execute statements in order. Ordering itself is logic.",
       },
+
+      sessionSolved: "Solved this session: {n}",
+      chooseExpression: "Choose the correct expression",
+      reorderInstructions: "Drag the blocks into the correct order",
+      checkOrder: "Check order",
+      orderWrong: "Wrong order — try again",
+      tryAgain: "Try again",
     },
 
     difficulty: {
@@ -503,6 +518,13 @@ export const translations: Record<Language, Translations> = {
         "wrong-init":       "ა კუმულატორის (ჯამი, მაქსიმუმი, მინიმუმი, დათვლა) საწყისი მნიშვნელობა განსაზღვრავს, რას ითვლის მარყუჟი.",
         "swapped-branches": "პროგრამები ბრძანებებს თანმიმდევრობით ასრულებენ. თანმიმდევრობა თავად ლოგიკაა.",
       },
+
+      sessionSolved: "ამ სესიაში ამოხსნილი: {n}",
+      chooseExpression: "აირჩიე სწორი გამოთქმა",
+      reorderInstructions: "ბლოკები სწორი თანმიმდევრობით დააწყე",
+      checkOrder: "თანმიმდევრობის შემოწმება",
+      orderWrong: "არასწორი თანმიმდევრობა — კვლავ სცადე",
+      tryAgain: "კვლავ სცადე",
     },
 
     difficulty: {

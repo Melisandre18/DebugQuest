@@ -1,9 +1,8 @@
 // POST /api/next-puzzle
-// Body: { difficulty, lang?, solved?: string[], recent?: AttemptSummary[] }
-// Runs adaptive selection on the server and returns the next SerializedPuzzle.
+// Body: { difficulty, lang?, progLang?, solved?: string[], recent?: AttemptSummary[] }
 import type { IncomingMessage, ServerResponse } from "http";
-import { pickNextPuzzle } from "./_data/puzzles-source.js";
-import type { NextPuzzleRequest, UiLanguage } from "./_lib/types.js";
+import { pickNext } from "./_data/index.js";
+import type { NextPuzzleRequest, UiLanguage, ProgrammingLanguage } from "./_lib/types.js";
 
 function readBody(req: IncomingMessage): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -21,37 +20,29 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   if (req.method === "OPTIONS") {
     res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
     res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.writeHead(204);
-    res.end();
-    return;
+    res.writeHead(204); res.end(); return;
   }
 
   if (req.method !== "POST") {
-    res.writeHead(405);
-    res.end(JSON.stringify({ error: "method not allowed" }));
-    return;
+    res.writeHead(405); res.end(JSON.stringify({ error: "method not allowed" })); return;
   }
 
   let body: NextPuzzleRequest;
   try {
-    const raw = await readBody(req);
-    body = JSON.parse(raw);
+    body = JSON.parse(await readBody(req));
   } catch {
-    res.writeHead(400);
-    res.end(JSON.stringify({ error: "invalid JSON body" }));
-    return;
+    res.writeHead(400); res.end(JSON.stringify({ error: "invalid JSON body" })); return;
   }
 
-  const { difficulty, lang = "en", solved = [], recent = [] } = body;
-  if (!["easy", "medium", "hard", "adaptive"].includes(difficulty ?? "")) {
-    res.writeHead(400);
-    res.end(JSON.stringify({ error: "difficulty must be easy | medium | hard | adaptive" }));
-    return;
+  const { difficulty, lang = "en", progLang, solved = [], recent = [] } = body;
+  if (!["easy","medium","hard","adaptive"].includes(difficulty ?? "")) {
+    res.writeHead(400); res.end(JSON.stringify({ error: "invalid difficulty" })); return;
   }
 
-  const puzzle = pickNextPuzzle({
+  const puzzle = await pickNext({
     difficulty,
     lang: lang as UiLanguage,
+    progLang: progLang as ProgrammingLanguage | undefined,
     solved,
     recent,
   });
