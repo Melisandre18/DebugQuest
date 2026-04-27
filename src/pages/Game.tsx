@@ -35,6 +35,7 @@ import {
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import type { Translations } from "@/lib/translations";
 
 type View = "blocks" | "code";
 type Tab  = "learn" | "play";
@@ -466,7 +467,7 @@ export default function Game() {
             tryFix={tryFix} step={step} startAuto={startAuto}
             resetExecution={resetExecution} revealHint={revealHint}
             loadNewPuzzle={loadNewPuzzle}
-            handleSolve={handleSolve} setTab={() => {}}
+            handleSolve={handleSolve} setFeedback={setFeedback} setTab={setTab}
             d={d} t={t}
           />
         )}
@@ -493,9 +494,9 @@ interface PlayAreaProps {
   loadNewPuzzle: () => void;
   handleSolve: (p: { id: string; difficulty: string }, score: number, att?: number) => void;
   setFeedback: (v: null) => void;
-  setTab: (t: string) => void;
+  setTab: (t: Tab) => void;
   d: Difficulty;
-  t: ReturnType<typeof useLanguage>["t"];
+  t: Translations;
 }
 
 function PlayArea({
@@ -720,7 +721,7 @@ function PlayArea({
 // ─── HintsPanel ───────────────────────────────────────────────────────────
 
 function HintsPanel({ hints, maxHintsCount, hintsRevealed, revealHint, setTab, t }:
-  { hints: string[]; maxHintsCount: number; hintsRevealed: number; revealHint: () => void; setTab: (s: string) => void; t: any }) {
+  { hints: string[]; maxHintsCount: number; hintsRevealed: number; revealHint: () => void; setTab: (s: Tab) => void; t: Translations }) {
   return (
     <div className="card-surface rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
