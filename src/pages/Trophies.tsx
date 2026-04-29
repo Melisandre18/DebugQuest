@@ -1,4 +1,4 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -7,13 +7,17 @@ import {
 } from "recharts";
 import {
   Trophy, Award, Target, Clock, Lightbulb, Flame, Zap, Activity, ArrowRight,
-  CheckCircle2, XCircle,
+  CheckCircle2, XCircle, Globe,
 } from "lucide-react";
 import TopNav from "@/components/TopNav";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { ACHIEVEMENTS, loadProgress, resetProgress } from "@/lib/progress";
 import { usePuzzleCounts } from "@/lib/puzzle-service";
+import { LANGUAGES, type Language } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -22,32 +26,45 @@ export default function Trophies() {
   const { t } = useLanguage();
   const a = progress.attempts;
   const { data: puzzleCounts } = usePuzzleCounts();
+  const [selectedLang, setSelectedLang] = useState<Language | "all">("all");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
+  // Filter attempts by selected language ("all" = no filter)
+  const filtered = useMemo(
+    () => selectedLang === "all" ? a : a.filter(x => x.language === selectedLang),
+    [a, selectedLang]
+  );
+
+  const filteredScore = useMemo(
+    () => filtered.filter(x => x.correct).reduce((s, x) => s + x.score, 0),
+    [filtered]
+  );
+
   const stats = useMemo(() => {
-    const correct = a.filter(x => x.correct);
-    const accuracy = a.length ? Math.round((correct.length / a.length) * 100) : 0;
+    const correct = filtered.filter(x => x.correct);
+    // Accuracy: quality of answers — deducted for wrong attempts and hints used
+    const quality = (x: typeof filtered[0]) => Math.max(0, 100 - (x.attempts - 1) * 30 - x.hintsUsed * 15);
+    const accuracy = filtered.length ? Math.round(filtered.reduce((s, x) => s + quality(x), 0) / filtered.length) : 0;
     const avgTime = correct.length
       ? Math.round(correct.reduce((s, x) => s + x.timeMs, 0) / correct.length / 100) / 10
       : 0;
-    const avgHints = a.length ? Math.round((a.reduce((s, x) => s + x.hintsUsed, 0) / a.length) * 10) / 10 : 0;
+    const avgHints = filtered.length ? Math.round((filtered.reduce((s, x) => s + x.hintsUsed, 0) / filtered.length) * 10) / 10 : 0;
     const best = correct.reduce((m, x) => Math.max(m, x.score), 0);
-    // best streak of consecutive first-try correct
     let bestStreak = 0, cur = 0;
-    a.forEach(x => { if (x.correct && x.attempts === 1) { cur++; bestStreak = Math.max(bestStreak, cur); } else cur = 0; });
+    filtered.forEach(x => { if (x.correct && x.attempts === 1) { cur++; bestStreak = Math.max(bestStreak, cur); } else cur = 0; });
     return { accuracy, avgTime, avgHints, best, bestStreak };
-  }, [a]);
+  }, [filtered]);
 
   const scoreSeries = useMemo(() => {
     let running = 0;
-    return a.map((x, i) => {
+    return filtered.map((x, i) => {
       running += x.correct ? x.score : 0;
       return { i: i + 1, score: running, gain: x.correct ? x.score : 0 };
     });
-  }, [a]);
+  }, [filtered]);
 
   const byDifficulty = useMemo(() => {
     const totals = puzzleCounts ?? { easy: 0, medium: 0, hard: 0 };
@@ -56,15 +73,17 @@ export default function Trophies() {
       medium: { difficulty: "Medium", solved: 0, total: totals.medium ?? 0, fill: "hsl(var(--diff-medium))" },
       hard:   { difficulty: "Hard",   solved: 0, total: totals.hard   ?? 0, fill: "hsl(var(--diff-hard))" },
     };
-    progress.solved.forEach(id => {
+    // Derive solved from filtered correct attempts (so language filter applies)
+    const filteredSolvedIds = new Set(filtered.filter(x => x.correct).map(x => x.puzzleId));
+    filteredSolvedIds.forEach(id => {
       if (id.startsWith("easy"))   counts.easy.solved++;
-      if (id.startsWith("med"))    counts.medium.solved++;
-      if (id.startsWith("hard"))   counts.hard.solved++;
+      else if (id.startsWith("med"))    counts.medium.solved++;
+      else if (id.startsWith("hard"))   counts.hard.solved++;
     });
     return Object.values(counts);
-  }, [progress.solved, puzzleCounts]);
+  }, [filtered, puzzleCounts]);
 
-  const recent = a.slice(-8).reverse();
+  const recent = filtered.slice(-8).reverse();
 
   const totalUnlocks = Object.keys(ACHIEVEMENTS).length;
   const unlocked = progress.achievements.length;
@@ -85,11 +104,27 @@ export default function Trophies() {
           <div className="absolute -right-10 -top-10 w-72 h-72 rounded-full bg-accent/20 blur-3xl animate-glow-pulse" />
           <div className="relative flex flex-wrap items-end justify-between gap-6">
             <div>
-              <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-accent">
-                <Trophy className="w-3.5 h-3.5" /> {t.trophies.trophyRoom}
+              <div className="flex flex-wrap items-center gap-3 mb-1">
+                <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-accent">
+                  <Trophy className="w-3.5 h-3.5" /> {t.trophies.trophyRoom}
+                </div>
+                <div className="inline-flex items-center gap-1.5">
+                  <Globe className="w-3.5 h-3.5 text-muted-foreground" />
+                  <Select value={selectedLang} onValueChange={(v) => setSelectedLang(v as Language | "all")}>
+                    <SelectTrigger className="h-7 w-[150px] text-xs font-mono border-border/60">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all" className="text-xs">{t.trophiesUI.allLanguages}</SelectItem>
+                      {LANGUAGES.map(l => (
+                        <SelectItem key={l.id} value={l.id} className="font-mono text-xs">{l.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
               <h1 className="font-display text-4xl md:text-6xl font-bold tracking-tight mt-2">
-                <span className="text-gradient-accent">{progress.totalScore.toLocaleString()}</span>
+                <span className="text-gradient-accent">{filteredScore.toLocaleString()}</span>
                 <span className="text-muted-foreground text-2xl md:text-3xl ml-2">{t.trophies.pointsUnit}</span>
               </h1>
               <p className="mt-2 text-muted-foreground">
@@ -118,14 +153,14 @@ export default function Trophies() {
 
             <div className="grid grid-cols-2 gap-3 min-w-[260px]">
               <KPI icon={Target}   label={t.trophiesUI.accuracy}    value={`${stats.accuracy}%`} tone="primary" />
-              <KPI icon={Clock}    label={t.trophiesUI.avgTime}     value={a.length ? `${stats.avgTime}s` : "—"} tone="accent" />
-              <KPI icon={Lightbulb} label={t.trophiesUI.avgHints}   value={a.length ? stats.avgHints : "—"} tone="accent" />
+              <KPI icon={Clock}    label={t.trophiesUI.avgTime}     value={filtered.length ? `${stats.avgTime}s` : "—"} tone="accent" />
+              <KPI icon={Lightbulb} label={t.trophiesUI.avgHints}   value={filtered.length ? stats.avgHints : "—"} tone="accent" />
               <KPI icon={Flame}    label={t.trophiesUI.bestStreak} value={stats.bestStreak} tone="primary" />
             </div>
           </div>
         </motion.div>
 
-        {a.length === 0 ? (
+        {filtered.length === 0 ? (
           <EmptyState t={t} />
         ) : (
           <>

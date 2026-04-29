@@ -161,6 +161,7 @@ export interface Translations {
     avgTime: string; avgHints: string; bestStreak: string;
     noTrophies: string; noTrophiesDesc: string;
     scoreOverTime: string; solvedByDifficulty: string; recentAttempts: string;
+    filterByLanguage: string; allLanguages: string;
   };
 
   feedback: {
@@ -366,6 +367,7 @@ export const translations: Record<Language, Translations> = {
       accuracy: "Accuracy", avgTime: "Avg. time", avgHints: "Avg. hints",
       bestStreak: "Best streak", noTrophies: "No trophies yet", noTrophiesDesc: "Solve your first puzzle.",
       scoreOverTime: "Score over time", solvedByDifficulty: "Solved by difficulty", recentAttempts: "Recent attempts",
+      filterByLanguage: "Language", allLanguages: "All languages",
     },
 
     feedback: {
@@ -601,6 +603,8 @@ export const translations: Record<Language, Translations> = {
       scoreOverTime: "ქულა დროში",
       solvedByDifficulty: "ამოხსნილი სირთულის მიხედვით",
       recentAttempts: "ბოლო მცდელობები",
+      filterByLanguage: "ენა",
+      allLanguages: "ყველა ენა",
     },
 
     feedback: {

@@ -1,5 +1,5 @@
 // Lightweight progress + adaptive logic stored in localStorage.
-import type { Difficulty, Puzzle } from "./puzzle-engine";
+import type { Difficulty, Language, Puzzle } from "./puzzle-engine";
 
 const KEY = "debugquest.progress.v1";
 
@@ -11,6 +11,7 @@ export interface AttemptRecord {
   attempts: number;
   score: number;
   at: number;
+  language?: Language;
 }
 
 export interface Progress {
