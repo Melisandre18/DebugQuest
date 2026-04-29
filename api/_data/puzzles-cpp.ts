@@ -461,6 +461,225 @@ const cpp10: TextFillBlankDef = {
   ],
 };
 
+// ─── cpp-11: std::endl flushes buffer; '\n' does not ─────────────────────────
+
+const cpp11: TextFillBlankDef = {
+  id: "cpp-11",
+  difficulty: "easy",
+  bugType: "wrong-operator",
+  programmingLanguage: "cpp",
+  concept: { en: "std::endl flushes the output buffer every call; use '\\n' for better performance in tight loops", ka: "std::endl ყოველ გამოძახებაზე ბუფერს ჩამოყრის; მჭიდრო მარყუჟებში '\\n' გამოიყენე სიჩქარისთვის" },
+  title: { en: "The Slow Logger", ka: "ნელი ლოგერი" },
+  story: { en: "A logging function that prints millions of lines is 10× slower than expected because it flushes the buffer every line.", ka: "ლოგის ფუნქცია, რომელიც მილიონობით სტრიქონს ბეჭდავს, 10-ჯერ უფრო ნელია მოსალოდნელზე, რადგან ყოველ სტრიქონს ბუფერს ჩამოყრის." },
+  task: { en: "Replace the output with the character that adds a newline without forcing a flush.", ka: "გამოსავალი შეცვალე სიმბოლოთი, რომელიც ახალ სტრიქონს ამატებს flush-ის გარეშე." },
+  hints: [
+    { en: "std::endl = '\\n' + flush. What does flushing the buffer do?", ka: "std::endl = '\\n' + flush. ბუფერის ჩამოყრა რას ახდენს?" },
+    { en: "Flushing writes buffered data to the OS immediately — expensive if done millions of times.", ka: "ჩამოყრა ბუფერულ მონაცემებს OS-ზე მაშინვე წერს — ძვირია მილიონობითჯერ." },
+    { en: "Use '\\n' to get a newline without the flush overhead.", ka: "'\\n' გამოიყენე flush-ის ხარჯების გარეშე ახალი სტრიქონისთვის." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `#include <iostream>
+
+void log_values(int n) {
+    for (int i = 0; i < n; ++i) {
+        std::cout << i << `,
+  codeAfter: `;
+    }
+}`,
+  options: [
+    {
+      id: "a", value: "'\\n'", correct: true,
+      explanation: { en: "'\\n' appends a newline character without triggering a buffer flush, which is much faster in loops.", ka: "'\\n' flush-ის გარეშე ახალ სტრიქონს ამატებს, რაც მარყუჟებში გაცილებით სწრაფია." },
+    },
+    {
+      id: "b", value: "std::endl", correct: false,
+      explanation: { en: "std::endl writes '\\n' AND flushes the buffer on every iteration — very slow for tight loops.", ka: "std::endl '\\n'-ს წერს და ბუფერს ყოველ იტერაციაზე ჩამოყრის — მჭიდრო მარყუჟებისთვის ძალიან ნელია." },
+    },
+    {
+      id: "c", value: "std::flush", correct: false,
+      explanation: { en: "std::flush only flushes without adding a newline — output would run together on one line.", ka: "std::flush მხოლოდ ჩამოყრის ახალი სტრიქონის გარეშე — გამოსავალი ერთ სტრიქონზე გაერთიანდება." },
+    },
+  ],
+};
+
+// ─── cpp-12: string.empty() check ────────────────────────────────────────────
+
+const cpp12: TextFillBlankDef = {
+  id: "cpp-12",
+  difficulty: "easy",
+  bugType: "wrong-condition",
+  programmingLanguage: "cpp",
+  concept: { en: "std::string::size() returns size_t (unsigned); use .empty() to check for an empty string", ka: "std::string::size() size_t-ს (unsigned) აბრუნებს; ცარიელი სტრიქონის შესამოწმებლად .empty() გამოიყენე" },
+  title: { en: "The Empty Guard", ka: "ცარიელი სტრიქონის დამცავი" },
+  story: { en: "A validator that should reject empty strings always passes them because the wrong method is used to check length.", ka: "ვალიდატორი, რომელიც ცარიელ სტრიქონებს უარყოფს, ყოველთვის ათავისუფლებს, რადგან სიგრძის შემოწმებისთვის არასწორი მეთოდი გამოიყენება." },
+  task: { en: "Use the std::string method designed specifically for checking if a string is empty.", ka: "გამოიყენე std::string მეთოდი, რომელიც სტრიქონის სიცარიელის შემოსაწმებლად შეიქმნა." },
+  hints: [
+    { en: "What does size() return for an empty string?", ka: "size() ცარიელი სტრიქონისთვის რას აბრუნებს?" },
+    { en: "size() returns 0 for an empty string, but the idiomatic check in C++ uses a dedicated method.", ka: "size() ცარიელი სტრიქონისთვის 0-ს აბრუნებს, მაგრამ C++-ში სტანდარტული შემოწმება სპეციალიზებულ მეთოდს იყენებს." },
+    { en: "str.empty() returns true if and only if the string has zero characters.", ka: "str.empty() true-ს აბრუნებს მხოლოდ მაშინ, როცა სტრიქონს ნულოვანი სიმბოლო აქვს." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `#include <string>
+#include <stdexcept>
+
+void validate(const std::string& name) {
+    if (`,
+  codeAfter: `)
+        throw std::invalid_argument("Name cannot be empty");
+}`,
+  options: [
+    {
+      id: "a", value: "name.empty()", correct: true,
+      explanation: { en: "empty() is the idiomatic, clear, and correct way to check if a string has no characters.", ka: "empty() სტანდარტული, გასაგები და სწორი გზაა სტრიქონის სიმბოლოების არარსებობის შესამოწმებლად." },
+    },
+    {
+      id: "b", value: "name.size() == 0", correct: false,
+      explanation: { en: "Correct but less readable than .empty(), and size() returns size_t (unsigned) which can cause surprises.", ka: "სწორია, მაგრამ .empty()-ზე ნაკლებად წასაკითხი, ხოლო size() size_t-ს (unsigned) აბრუნებს, რაც სიურპრიზებს შეიძლება გამოიწვიოს." },
+    },
+    {
+      id: "c", value: "name.length() < 1", correct: false,
+      explanation: { en: "Equivalent but unnecessarily verbose — .empty() communicates intent more clearly.", ka: "ეკვივალენტია, მაგრამ ზედმეტად ვრცელი — .empty() განზრახვას უფრო ნათლად გამოხატავს." },
+    },
+  ],
+};
+
+// ─── cpp-13: vector passed by value copies it ─────────────────────────────────
+
+const cpp13: TextPickFixDef = {
+  id: "cpp-13",
+  difficulty: "medium",
+  bugType: "mutation-error",
+  programmingLanguage: "cpp",
+  concept: { en: "Passing std::vector by value copies the entire container; pass by const reference to avoid the copy", ka: "std::vector-ის მნიშვნელობით გადაცემა მთელ კონტეინერს კოპირებს; კოპირების თავიდან ასაცილებლად const reference-ით გადე" },
+  title: { en: "The Hidden Copy", ka: "დამალული კოპია" },
+  story: { en: "A statistics function works correctly but is unexpectedly slow on large vectors because every call duplicates the entire dataset.", ka: "სტატისტიკის ფუნქცია სწორად მუშაობს, მაგრამ დიდ ვექტორებზე მოულოდნელად ნელია, რადგან ყოველ გამოძახებაზე მთელი მონაცემთა ბაზა კოპირდება." },
+  task: { en: "Change the parameter to avoid copying the vector on every function call.", ka: "პარამეტრი შეცვალე, რომ ყოველ გამოძახებაზე ვექტორი არ კოპირდეს." },
+  hints: [
+    { en: "What happens when you pass a large vector by value?", ka: "რა მოხდება, თუ დიდ ვექტორს მნიშვნელობით გადასცემ?" },
+    { en: "Passing by value triggers the copy constructor — O(n) for every call.", ka: "მნიშვნელობით გადაცემა copy constructor-ს ააქტიურებს — ყოველ გამოძახებაზე O(n)." },
+    { en: "const std::vector<int>& v gives read-only access with zero copies.", ka: "const std::vector<int>& v კოპირების გარეშე მხოლოდ წასაკითხ წვდომას იძლევა." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `#include <vector>
+#include <numeric>
+
+double average(std::vector<int> v) {
+    if (v.empty()) return 0.0;
+    return static_cast<double>(std::accumulate(v.begin(), v.end(), 0)) / v.size();
+}`,
+  bugLine: 4,
+  fixes: [
+    {
+      id: "const-ref", correct: true,
+      label: { en: "Change to const std::vector<int>& v", ka: "const std::vector<int>& v-ად შეცვლა" },
+      explanation: { en: "A const reference passes a pointer to the existing vector — no copy is made. The function can still read all elements.", ka: "const reference არსებული ვექტორის მაჩვენებელს გადასცემს — კოპირება არ ხდება. ფუნქცია ჯერ კიდევ ყველა ელემენტს კითხულობს." },
+    },
+    {
+      id: "move", correct: false,
+      label: { en: "Pass by std::vector<int>&& v (rvalue reference)", ka: "std::vector<int>&& v-ით გადაცემა (rvalue reference)" },
+      explanation: { en: "An rvalue reference enables move semantics but transfers ownership — callers lose their vector after the call.", ka: "Rvalue reference move სემანტიკას ახდენს, მაგრამ მფლობელობას გადასცემს — გამომძახებლები ვექტორს კარგავენ გამოძახების შემდეგ." },
+    },
+    {
+      id: "pointer", correct: false,
+      label: { en: "Pass as const std::vector<int>* v (pointer)", ka: "const std::vector<int>* v-ად (მაჩვენებლად) გადაცემა" },
+      explanation: { en: "A pointer also avoids copying, but requires null checks and dereferencing — a const reference is cleaner here.", ka: "მაჩვენებელი ასევე კოპირებას ერიდება, მაგრამ null-შემოწმება და დერეფერენცია სჭირდება — const reference აქ სუფთაა." },
+    },
+  ],
+};
+
+// ─── cpp-14: nullptr vs NULL ──────────────────────────────────────────────────
+
+const cpp14: TextFillBlankDef = {
+  id: "cpp-14",
+  difficulty: "medium",
+  bugType: "type-error",
+  programmingLanguage: "cpp",
+  concept: { en: "nullptr is a typed null pointer constant in C++11; NULL is just an integer 0 that can cause ambiguous overload resolution", ka: "nullptr C++11-ის ტიპიზებული null მაჩვენებლის კონსტანტაა; NULL მხოლოდ 0 მთელი რიცხვია, რომელსაც ორაზროვანი overload გადაწყვეტა შეუძლია გამოიწვიოს" },
+  title: { en: "Ambiguous NULL", ka: "ორაზროვანი NULL" },
+  story: { en: "A function is overloaded for both int and pointer arguments. Calling it with NULL picks the wrong overload.", ka: "ფუნქცია int-ისა და მაჩვენებლის არგუმენტებისთვის overload-ებულია. NULL-ით გამოძახება არასწორ overload-ს ირჩევს." },
+  task: { en: "Use the C++11 null pointer literal that unambiguously represents a null pointer.", ka: "C++11-ის null მაჩვენებლის ლიტერალი გამოიყენე, რომელიც null მაჩვენებელს ცალსახად წარმოადგენს." },
+  hints: [
+    { en: "NULL is typically defined as 0 or (void*)0. What type is 0?", ka: "NULL ჩვეულებრივ 0 ან (void*)0-ად განისაზღვრება. 0 რა ტიპია?" },
+    { en: "When both f(int) and f(int*) exist, f(NULL) is ambiguous — the compiler may pick f(int).", ka: "f(int)-ი და f(int*)-ი ორივე არსებობს, f(NULL)-ი ორაზროვანია — კომპილატორი f(int)-ს შეიძლება ავარჩიოს." },
+    { en: "nullptr has type std::nullptr_t and converts only to pointer types, never to int.", ka: "nullptr-ს std::nullptr_t ტიპი აქვს და მხოლოდ მაჩვენებლის ტიპებად გარდაიქმნება, არასდროს int-ად." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `#include <iostream>
+
+void process(int* ptr) { std::cout << "pointer\\n"; }
+void process(int val)   { std::cout << "integer\\n"; }
+
+int main() {
+    process(`,
+  codeAfter: `);  // should print "pointer"
+}`,
+  options: [
+    {
+      id: "a", value: "nullptr", correct: true,
+      explanation: { en: "nullptr has type nullptr_t which converts to any pointer type but never to int, so process(int*) is chosen unambiguously.", ka: "nullptr-ს nullptr_t ტიპი აქვს, რომელიც ნებისმიერ მაჩვენებლის ტიპად გარდაიქმნება, მაგრამ არასდროს int-ად, ამიტომ process(int*)-ი ცალსახად ირჩევა." },
+    },
+    {
+      id: "b", value: "NULL", correct: false,
+      explanation: { en: "NULL is an integer constant (0). process(NULL) is ambiguous between process(int) and process(int*) and may not compile or pick the wrong overload.", ka: "NULL მთელი რიცხვის კონსტანტაა (0). process(NULL)-ი process(int)-სა და process(int*)-ს შორის ორაზროვანია და შეიძლება არ კომპილირდეს ან არასწორ overload-ს ავარჩიოს." },
+    },
+    {
+      id: "c", value: "0", correct: false,
+      explanation: { en: "Passing 0 will call process(int), not process(int*) — 0 is an integer literal.", ka: "0-ის გადაცემა process(int)-ს გამოიძახებს, არა process(int*)-ს — 0 მთელი რიცხვის ლიტერალია." },
+    },
+  ],
+};
+
+// ─── cpp-15: delete[] vs delete for arrays ────────────────────────────────────
+
+const cpp15: TextPickFixDef = {
+  id: "cpp-15",
+  difficulty: "hard",
+  bugType: "mutation-error",
+  programmingLanguage: "cpp",
+  concept: { en: "Arrays allocated with new[] must be freed with delete[]; using delete alone is undefined behavior", ka: "new[]-ით გამოყოფილი მასივები delete[]-ით უნდა გათავისუფლდეს; delete-ის გამოყენება undefined behavior-ია" },
+  title: { en: "Array Delete Bug", ka: "მასივის წაშლის ბაგი" },
+  story: { en: "A buffer manager uses new[] to allocate an array but frees it with plain delete, causing a memory corruption bug.", ka: "ბუფერის მენეჯერი new[]-ს იყენებს მასივის გამოსაყოფად, მაგრამ ჩვეულებრივი delete-ით ათავისუფლებს, მეხსიერების კორუფციის ბაგის გამოწვევით." },
+  task: { en: "Use the correct operator to free a dynamically allocated array.", ka: "სწორი ოპერატორი გამოიყენე დინამიურად გამოყოფილი მასივის გასათავისუფლებლად." },
+  hints: [
+    { en: "How was the array allocated — with new or new[]?", ka: "მასივი new-ით გამოიყო თუ new[]-ით?" },
+    { en: "new[] and delete[] are paired — just like malloc and free must be paired.", ka: "new[]-ი და delete[]-ი წყვილდება — ისევე, როგორც malloc-ი და free-ი უნდა წყვილდებოდეს." },
+    { en: "delete buf frees only the first element's destructor — the rest of the array leaks or corrupts memory.", ka: "delete buf მხოლოდ პირველი ელემენტის destructor-ს ათავისუფლებს — დანარჩენი მასივი გადადის ან მეხსიერებას ახინჯებს." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `class Buffer {
+    int* data;
+    int  size;
+public:
+    Buffer(int n) : data(new int[n]), size(n) {}
+    ~Buffer() {
+        delete data;  // wrong: should be delete[]
+    }
+};`,
+  bugLine: 7,
+  fixes: [
+    {
+      id: "delete-array", correct: true,
+      label: { en: "Change delete data to delete[] data", ka: "delete data → delete[] data" },
+      explanation: { en: "delete[] calls the destructor for each element and tells the allocator the full size to free. Plain delete only processes one element, causing undefined behavior.", ka: "delete[] ყოველი ელემენტის destructor-ს ააქტიურებს და allocator-ს სრულ ზომას ეუბნება. ჩვეულებრივი delete მხოლოდ ერთ ელემენტს ამუშავებს, undefined behavior-ს იწვევს." },
+    },
+    {
+      id: "free", correct: false,
+      label: { en: "Use free(data) instead", ka: "free(data) გამოიყენე" },
+      explanation: { en: "free() is a C function for malloc/calloc allocations. Using free() on new[]-allocated memory is undefined behavior.", ka: "free() C ფუნქციაა malloc/calloc-ით გამოყოფილი მეხსიერებისთვის. new[]-ით გამოყოფილ მეხსიერებაზე free()-ის გამოყენება undefined behavior-ია." },
+    },
+    {
+      id: "smart-ptr", correct: false,
+      label: { en: "Replace with std::unique_ptr<int[]>", ka: "std::unique_ptr<int[]>-ით ჩანაცვლება" },
+      explanation: { en: "unique_ptr is the modern RAII approach and avoids manual delete entirely — but the task is to fix the existing delete expression.", ka: "unique_ptr თანამედროვე RAII მიდგომაა და ხელით delete-ს მთლიანად გამორიცხავს — მაგრამ ამოცანა არსებული delete გამოთქმის გამოსწორებაა." },
+    },
+  ],
+};
+
 // ─── serialize helper ─────────────────────────────────────────────────────────
 
 export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
@@ -489,4 +708,5 @@ export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
 
 export const PUZZLE_DEFS_CPP: AnyTextPuzzleDef[] = [
   cpp1, cpp2, cpp3, cpp4, cpp5, cpp6, cpp7, cpp8, cpp9, cpp10,
+  cpp11, cpp12, cpp13, cpp14, cpp15,
 ];

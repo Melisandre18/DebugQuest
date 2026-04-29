@@ -463,6 +463,228 @@ class HitCounter {
   ],
 };
 
+// ─── java-11: List.of() is immutable ─────────────────────────────────────────
+
+const java11: TextPickFixDef = {
+  id: "java-11",
+  difficulty: "easy",
+  bugType: "mutation-error",
+  programmingLanguage: "java",
+  concept: { en: "List.of() returns an unmodifiable list — calling add() or remove() throws UnsupportedOperationException", ka: "List.of() შეუცვლელ სიას აბრუნებს — add() ან remove()-ის გამოძახება UnsupportedOperationException-ს გამოიძახებს" },
+  title: { en: "The Immutable Trap", ka: "შეუცვლელი მახე" },
+  story: { en: "A helper that seeds a mutable list crashes when it tries to add items to a List.of() collection.", ka: "ჩამყრელი helper ჭედება, როცა ელემენტების List.of() კოლექციაში დამატებას ცდილობს." },
+  task: { en: "Create a mutable list instead of an immutable one.", ka: "შეუცვლელის ნაცვლად შეცვლადი სია შექმენი." },
+  hints: [
+    { en: "What does List.of() guarantee about mutability?", ka: "List.of() მუტაბელობაზე რას გარანტიას იძლევა?" },
+    { en: "List.of() is factory method that returns a fixed-size, unmodifiable view.", ka: "List.of() ფაქტორ-მეთოდია, რომელიც ფიქსირებული ზომის, შეუცვლელ ხედვას აბრუნებს." },
+    { en: "Use new ArrayList<>(List.of(...)) or just new ArrayList<>() to get a mutable list.", ka: "new ArrayList<>(List.of(...)) ან new ArrayList<>() გამოიყენე შეცვლადი სიის მისაღებად." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `import java.util.*;
+
+public class Seeder {
+    public List<String> seed() {
+        List<String> items = List.of("alpha", "beta");
+        items.add("gamma");  // throws UnsupportedOperationException
+        return items;
+    }
+}`,
+  bugLine: 5,
+  fixes: [
+    {
+      id: "arraylist", correct: true,
+      label: { en: "new ArrayList<>(List.of(\"alpha\", \"beta\"))", ka: "new ArrayList<>(List.of(\"alpha\", \"beta\"))" },
+      explanation: { en: "Wrapping List.of() in a new ArrayList copies the elements into a mutable list that supports add/remove.", ka: "List.of()-ის ახალ ArrayList-ში გახვევა ელემენტებს შეცვლად სიაში კოპირებს, რომელიც add/remove-ს მხარს უჭერს." },
+    },
+    {
+      id: "arrays-aslist", correct: false,
+      label: { en: "Arrays.asList(\"alpha\", \"beta\")", ka: "Arrays.asList(\"alpha\", \"beta\")" },
+      explanation: { en: "Arrays.asList returns a fixed-size list backed by an array — add/remove still throws UnsupportedOperationException.", ka: "Arrays.asList ფიქსირებული ზომის სიას აბრუნებს მასივის მხარდაჭერით — add/remove კვლავ UnsupportedOperationException-ს გამოიძახებს." },
+    },
+    {
+      id: "collections-singleton", correct: false,
+      label: { en: "Collections.singletonList(\"alpha\")", ka: "Collections.singletonList(\"alpha\")" },
+      explanation: { en: "singletonList holds exactly one element and is immutable — still can't add.", ka: "singletonList ზუსტად ერთ ელემენტს ინახავს და შეუცვლელია — კვლავ ვერ ემატება." },
+    },
+  ],
+};
+
+// ─── java-12: char arithmetic ─────────────────────────────────────────────────
+
+const java12: TextFillBlankDef = {
+  id: "java-12",
+  difficulty: "easy",
+  bugType: "type-error",
+  programmingLanguage: "java",
+  concept: { en: "char + int promotes to int in Java; cast back to char or use String.valueOf() to keep it a character", ka: "Java-ში char + int int-ად ქვეყნდება; char-ად დაბრუნების ან String.valueOf()-ის გამოყენება სიმბოლოს შესანარჩუნებლად" },
+  title: { en: "Character Lost in Math", ka: "მათემატიკაში დაკარგული სიმბოლო" },
+  story: { en: "A cipher shifts each letter by 1 but prints ASCII numbers instead of characters because char arithmetic promotes to int.", ka: "შიფრი თითოეულ ასოს 1-ით ცვლის, მაგრამ ASCII რიცხვებს ბეჭდავს სიმბოლოების ნაცვლად, რადგან char-ის არითმეტიკა int-ად ქვეყნდება." },
+  task: { en: "Add a cast so the shifted value is printed as a character, not an integer.", ka: "დაამატე cast, რომ გადაადგილებული მნიშვნელობა სიმბოლოდ, არა მთელ რიცხვად, დაიბეჭდოს." },
+  hints: [
+    { en: "What type does 'a' + 1 have in Java?", ka: "'a' + 1-ს Java-ში რა ტიპი აქვს?" },
+    { en: "Adding an int to a char promotes the result to int — you need to cast back.", ka: "char-ზე int-ის დამატება შედეგს int-ად ქვეყნებს — უკან cast-ი გჭირდება." },
+    { en: "Cast the expression to char: (char)('a' + 1) gives 'b'.", ka: "გამოთქმა char-ად cast-ე: (char)('a' + 1) 'b'-ს იძლევა." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `public class Cipher {
+    public static void shiftPrint(char c, int shift) {
+        System.out.println(`,
+  codeAfter: `);
+    }
+    public static void main(String[] args) {
+        shiftPrint('A', 1);  // should print B, not 66
+    }
+}`,
+  options: [
+    {
+      id: "a", value: "(char)(c + shift)", correct: true,
+      explanation: { en: "Casting back to char converts the int result to its corresponding character, so 65+1=66 becomes 'B'.", ka: "char-ად cast-ი int შედეგს შესაბამის სიმბოლოდ გარდაქმნის, ამიტომ 65+1=66 'B'-ს ხდება." },
+    },
+    {
+      id: "b", value: "c + shift", correct: false,
+      explanation: { en: "char + int promotes to int — println prints the numeric value (e.g., 66) instead of 'B'.", ka: "char + int int-ად ქვეყნდება — println ციფრულ მნიშვნელობას (მაგ. 66) ბეჭდავს 'B'-ის ნაცვლად." },
+    },
+    {
+      id: "c", value: "String.valueOf(c + shift)", correct: false,
+      explanation: { en: "String.valueOf(int) converts the integer to its decimal string representation — '66' not 'B'.", ka: "String.valueOf(int) მთელ რიცხვს ათობით სტრიქონად გარდაქმნის — 'B'-ის ნაცვლად '66'." },
+    },
+  ],
+};
+
+// ─── java-13: Optional.orElseGet() vs orElse() ───────────────────────────────
+
+const java13: TextFillBlankDef = {
+  id: "java-13",
+  difficulty: "medium",
+  bugType: "wrong-condition",
+  programmingLanguage: "java",
+  concept: { en: "Optional.orElse() always evaluates its argument; orElseGet() is lazy — use it when the default is expensive to compute", ka: "Optional.orElse() ყოველთვის ამოწმებს არგუმენტს; orElseGet() ზარმაცია — გამოიყენე, თუ default-ი ძვირია გამოსათვლელად" },
+  title: { en: "The Eager Default", ka: "გულმოდგინე Default" },
+  story: { en: "A cache lookup always runs an expensive database query even when the cached value is present, because of the wrong Optional method.", ka: "ქეშის ძიება ყოველთვის ძვირი მონაცემთა ბაზის მოთხოვნას ახდენს, თუნდაც ქეშირებული მნიშვნელობა არსებობდეს, არასწორი Optional მეთოდის გამო." },
+  task: { en: "Use the Optional method that only calls the fallback supplier when the value is absent.", ka: "გამოიყენე Optional მეთოდი, რომელიც fallback supplier-ს მხოლოდ მაშინ გამოიძახებს, თუ მნიშვნელობა არ არის." },
+  hints: [
+    { en: "What is the difference between orElse(T other) and orElseGet(Supplier<T> supplier)?", ka: "რა განსხვავებაა orElse(T other)-სა და orElseGet(Supplier<T> supplier)-ს შორის?" },
+    { en: "orElse() evaluates its argument eagerly — even when the Optional is non-empty.", ka: "orElse() არგუმენტს eagerly-ს ამოწმებს — თუნდაც Optional არ იყოს ცარიელი." },
+    { en: "orElseGet(() -> expensiveQuery()) only runs the lambda when needed.", ka: "orElseGet(() -> expensiveQuery()) lambda-ს მხოლოდ საჭიროებისას გაუშვებს." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `public String getUser(String id) {
+    Optional<String> cached = cache.get(id);
+    return cached.`,
+  codeAfter: `(() -> database.query(id));
+}`,
+  options: [
+    {
+      id: "a", value: "orElseGet", correct: true,
+      explanation: { en: "orElseGet takes a Supplier and only calls it when the Optional is empty — the expensive query only runs on cache misses.", ka: "orElseGet Supplier-ს იღებს და მხოლოდ მაშინ გამოიძახებს, თუ Optional ცარიელია — ძვირი query მხოლოდ ქეშის miss-ებზე გაეშვება." },
+    },
+    {
+      id: "b", value: "orElse", correct: false,
+      explanation: { en: "orElse() takes a value, not a Supplier — it doesn't compile with a lambda argument. Even if it did, it would evaluate eagerly.", ka: "orElse() მნიშვნელობას იღებს, არა Supplier-ს — lambda არგუმენტით კომპილირება ვერ ხდება. თუნდაც ხდებოდეს, eagerly-ს გამოიანგარიშებდა." },
+    },
+    {
+      id: "c", value: "or", correct: false,
+      explanation: { en: "or() returns Optional<T>, not T — the return type doesn't match.", ka: "or() Optional<T>-ს აბრუნებს, არა T-ს — return ტიპი არ ემთხვევა." },
+    },
+  ],
+};
+
+// ─── java-14: Objects.requireNonNull for null checks ─────────────────────────
+
+const java14: TextPickFixDef = {
+  id: "java-14",
+  difficulty: "medium",
+  bugType: "null-error",
+  programmingLanguage: "java",
+  concept: { en: "Explicit null-check with Objects.requireNonNull() throws NullPointerException at the call site with a clear message", ka: "Objects.requireNonNull()-ით ცხადი null-შემოწმება NullPointerException-ს გამოძახების ადგილზე ნათელი შეტყობინებით გამოიძახებს" },
+  title: { en: "The Distant Crash", ka: "დაშორებული ავარია" },
+  story: { en: "A service stores a null repository reference and crashes deep in a call chain, making the root cause hard to find.", ka: "სერვისი null repository-ს ინახავს და გამოძახების ჯაჭვში ღრმად ჭედება, root cause-ის პოვნას ართულებს." },
+  task: { en: "Add an early null check so the constructor fails immediately with a meaningful error.", ka: "ადრეული null-შემოწმება დაამატე, რომ constructor-ი დაუყოვნებლივ მნიშვნელოვანი შეცდომით ვერ შეასრულოს." },
+  hints: [
+    { en: "When should you check for null — when storing it or when using it?", ka: "null-ის შემოწმება როდის უნდა მოხდეს — შენახვისას თუ გამოყენებისას?" },
+    { en: "Failing fast at the constructor gives a clear error message right where the bad input arrives.", ka: "constructor-ში სწრაფი ვარდნა ნათელ შეცდომის შეტყობინებას იძლევა ზუსტად იქ, სადაც ცუდი შეყვანა მოდის." },
+    { en: "Objects.requireNonNull(value, \"message\") throws NPE with the message if value is null.", ka: "Objects.requireNonNull(value, \"message\") NPE-ს გამოიძახებს შეტყობინებით, თუ value null-ია." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `import java.util.Objects;
+
+public class UserService {
+    private final UserRepository repo;
+
+    public UserService(UserRepository repo) {
+        this.repo = repo;  // null silently stored
+    }
+}`,
+  bugLine: 7,
+  fixes: [
+    {
+      id: "require-non-null", correct: true,
+      label: { en: "this.repo = Objects.requireNonNull(repo, \"repo must not be null\")", ka: "this.repo = Objects.requireNonNull(repo, \"repo must not be null\")" },
+      explanation: { en: "requireNonNull throws NullPointerException immediately at construction time with a descriptive message — fail fast, fail clearly.", ka: "requireNonNull NullPointerException-ს დაუყოვნებლივ კონსტრუქციის დროს გამოიძახებს აღწერილობითი შეტყობინებით — სწრაფი, ნათელი ვარდნა." },
+    },
+    {
+      id: "if-throw", correct: false,
+      label: { en: "if (repo == null) throw new IllegalArgumentException(\"null\")", ka: "if (repo == null) throw new IllegalArgumentException(\"null\")" },
+      explanation: { en: "IllegalArgumentException is reasonable but Objects.requireNonNull is the idiomatic Java pattern for this use case.", ka: "IllegalArgumentException გონივრულია, მაგრამ Objects.requireNonNull ამ გამოყენების შემთხვევის სტანდარტული Java შაბლონია." },
+    },
+    {
+      id: "assert", correct: false,
+      label: { en: "assert repo != null : \"repo must not be null\"", ka: "assert repo != null : \"repo must not be null\"" },
+      explanation: { en: "Assertions are disabled by default in production JVMs — this guard would be silently skipped in most deployments.", ka: "Assertions წარმოების JVM-ებში ნაგულისხმევად გამორთულია — ეს გამოყოფა წარმოების უმეტეს განლაგებაში ჩუმად გამოტოვდება." },
+    },
+  ],
+};
+
+// ─── java-15: try-with-resources ─────────────────────────────────────────────
+
+const java15: TextPickFixDef = {
+  id: "java-15",
+  difficulty: "hard",
+  bugType: "return-error",
+  programmingLanguage: "java",
+  concept: { en: "AutoCloseable resources must be opened in a try-with-resources statement to be closed even when exceptions occur", ka: "AutoCloseable რესურსები try-with-resources-ში უნდა გაიხსნას, რომ გამონაკლისების დროსაც დაიხუროს" },
+  title: { en: "The Leaky Reader", ka: "გაჟონვადი Reader" },
+  story: { en: "A file reader leaks its stream when an exception is thrown during processing because close() is only called in the happy path.", ka: "ფაილის reader-ი ნაკადს გაჟონავს, თუ დამუშავების დროს გამონაკლისი ჩნდება, რადგან close() მხოლოდ წარმატების შემთხვევაში გამოიძახება." },
+  task: { en: "Ensure the reader is always closed, even if an exception is thrown inside the block.", ka: "დარწმუნდი, რომ reader ყოველთვის დაიხურება, თუნდაც ბლოკის შიგნით გამონაკლისი ჩნდეს." },
+  hints: [
+    { en: "What happens to reader.close() if processLine() throws?", ka: "reader.close()-ს რა ემართება, თუ processLine() გამოისვრის?" },
+    { en: "Java 7+ added try-with-resources to automatically close AutoCloseable objects.", ka: "Java 7+-მა try-with-resources დაამატა AutoCloseable ობიექტების ავტომატურად დასახურავად." },
+    { en: "try (BufferedReader br = new BufferedReader(...)) { ... } closes br on exit, even if an exception throws.", ka: "try (BufferedReader br = new BufferedReader(...)) { ... } br-ს გასვლაზე ხურავს, თუნდაც გამონაკლისი ჩნდეს." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `public void readFile(String path) throws IOException {
+    BufferedReader reader = new BufferedReader(new FileReader(path));
+    String line;
+    while ((line = reader.readLine()) != null) {
+        processLine(line);  // may throw
+    }
+    reader.close();  // skipped if exception thrown above
+}`,
+  bugLine: 2,
+  fixes: [
+    {
+      id: "try-resources", correct: true,
+      label: { en: "try (BufferedReader reader = new BufferedReader(new FileReader(path))) { ... }", ka: "try (BufferedReader reader = new BufferedReader(new FileReader(path))) { ... }" },
+      explanation: { en: "try-with-resources guarantees close() is called on exit — normal or exceptional — because the JVM inserts it in a synthetic finally block.", ka: "try-with-resources close()-ის გამოძახებას გარანტიას იძლევა გასვლაზე — ნორმალური ან გამონაკლისი — რადგან JVM მას სინთეზურ finally ბლოკში ჩდებს." },
+    },
+    {
+      id: "finally", correct: false,
+      label: { en: "Add a finally { reader.close(); } block", ka: "finally { reader.close(); } ბლოკი დაამატე" },
+      explanation: { en: "finally works but reader could be null if the constructor threw — requiring a null check. try-with-resources handles this automatically.", ka: "finally მუშაობს, მაგრამ reader null შეიძლება იყოს, თუ constructor-მა გამოისვრა — null-შემოწმება სჭირდება. try-with-resources ამას ავტომატურად მართავს." },
+    },
+    {
+      id: "catch-close", correct: false,
+      label: { en: "Wrap in try/catch and call close() in catch", ka: "try/catch-ში გახვიე და catch-ში close() გამოიძახე" },
+      explanation: { en: "Calling close() only in catch still leaks on the normal path if you forget to also call it after the loop.", ka: "close()-ის მხოლოდ catch-ში გამოძახება კვლავ გაჟონავს ნორმალურ გზაზე, თუ მარყუჟის შემდეგ გამოძახებასაც დაივიწყებ." },
+    },
+  ],
+};
+
 // ─── serialize helper ─────────────────────────────────────────────────────────
 
 export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
@@ -491,4 +713,5 @@ export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
 
 export const PUZZLE_DEFS_JAVA: AnyTextPuzzleDef[] = [
   java1, java2, java3, java4, java5, java6, java7, java8, java9, java10,
+  java11, java12, java13, java14, java15,
 ];

@@ -464,6 +464,223 @@ print(page_count(9, 3))   # expected: 3`,
   ],
 };
 
+// ─── py-11: dict.get() with default ──────────────────────────────────────────
+
+const py11: TextFillBlankDef = {
+  id: "py-11",
+  difficulty: "easy",
+  bugType: "wrong-condition",
+  programmingLanguage: "python",
+  concept: { en: "dict.get(key, default) returns a fallback instead of raising KeyError", ka: "dict.get(key, default) სათადარიგო მნიშვნელობას აბრუნებს KeyError-ის ნაცვლად" },
+  title: { en: "Missing Key Crash", ka: "არარსებული გასაღების ავარია" },
+  story: { en: "A word counter crashes on the first new word because it reads from the dict before the key exists.", ka: "სიტყვათა მთვლელი პირველ ახალ სიტყვაზე ჭედება, რადგან dict-ს კითხულობს გასაღების გამოჩენამდე." },
+  task: { en: "Use the dict method that returns 0 when the word is not yet in the counter.", ka: "გამოიყენე dict-ის მეთოდი, რომელიც 0-ს დაბრუნებს, თუ სიტყვა ჯერ მთვლელში არ არის." },
+  hints: [
+    { en: "Accessing d[key] when key is absent raises a KeyError.", ka: "d[key]-ით არარსებულ გასაღებზე წვდომა KeyError-ს გამოიძახებს." },
+    { en: "dict has a .get() method that accepts a fallback value.", ka: "dict-ს გააჩნია .get() მეთოდი სათადარიგო მნიშვნელობით." },
+    { en: "counter.get(word, 0) safely returns 0 for a new word.", ka: "counter.get(word, 0) ახალი სიტყვისთვის 0-ს უსაფრთხოდ დაბრუნებს." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `def count_words(words):
+    counter = {}
+    for word in words:
+        counter[word] = `,
+  codeAfter: ` + 1
+    return counter
+
+print(count_words(["cat", "dog", "cat"]))  # {'cat': 2, 'dog': 1}`,
+  options: [
+    {
+      id: "a", value: "counter.get(word, 0)", correct: true,
+      explanation: { en: "counter.get(word, 0) returns 0 for an unknown word, so the first occurrence becomes 0+1=1.", ka: "counter.get(word, 0) უცნობი სიტყვისთვის 0-ს დაბრუნებს, ამიტომ პირველი გამოჩენა 0+1=1 ხდება." },
+    },
+    {
+      id: "b", value: "counter[word]", correct: false,
+      explanation: { en: "counter[word] raises KeyError on the first occurrence of any new word.", ka: "counter[word] ნებისმიერი ახალი სიტყვის პირველ გამოჩენაზე KeyError-ს გამოიძახებს." },
+    },
+    {
+      id: "c", value: "counter.pop(word, 0)", correct: false,
+      explanation: { en: "pop() removes the key and returns its value — the opposite of what you want here.", ka: "pop() გასაღებს შლის და მის მნიშვნელობას აბრუნებს — ზუსტად საპირისპიროა." },
+    },
+  ],
+};
+
+// ─── py-12: enumerate() vs manual counter ────────────────────────────────────
+
+const py12: TextPickFixDef = {
+  id: "py-12",
+  difficulty: "easy",
+  bugType: "wrong-condition",
+  programmingLanguage: "python",
+  concept: { en: "enumerate(iterable) yields (index, value) pairs — no manual counter needed", ka: "enumerate(iterable) (ინდექსი, მნიშვნელობა) წყვილებს გასცემს — ხელით მთვლელი საჭირო არ არის" },
+  title: { en: "The Manual Counter", ka: "ხელით მთვლელი" },
+  story: { en: "A labeling function maintains a separate counter variable that it forgets to reset between calls.", ka: "ლეიბლების ფუნქცია ცალკე მთვლელ ცვლადს ინარჩუნებს, რომლის გამოძახებებს შორის გადაყენებაც ავიწყდება." },
+  task: { en: "Replace the manual index variable with enumerate() to cleanly get both index and item.", ka: "ხელით ინდექსი enumerate()-ით შეცვალე, რომ ინდექსი და ელემენტი სუფთად მიიღო." },
+  hints: [
+    { en: "Python's for loop gives you the value, not the index. How do you get both?", ka: "Python-ის for მარყუჟი მნიშვნელობას გაძლევს, არა ინდექსს. ორივეს როგორ მიიღებ?" },
+    { en: "enumerate() wraps any iterable and adds an automatic counter.", ka: "enumerate() ნებისმიერ iterable-ს ახვევს და ავტომატური მთვლელი ემატება." },
+    { en: "for i, item in enumerate(items): is the idiomatic pattern.", ka: "for i, item in enumerate(items): სტანდარტული Python შაბლონია." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `def label_items(items):
+    idx = 0
+    for item in items:
+        print(f"{idx}: {item}")
+        idx += 1
+
+label_items(["apple", "banana", "cherry"])`,
+  bugLine: 2,
+  fixes: [
+    {
+      id: "enumerate", correct: true,
+      label: { en: "for i, item in enumerate(items): (remove idx)", ka: "for i, item in enumerate(items): (idx ამოიღე)" },
+      explanation: { en: "enumerate yields (index, item) pairs automatically, eliminating the error-prone manual counter.", ka: "enumerate (ინდექსი, ელემენტი) წყვილებს ავტომატურად გასცემს, შეცდომისადმი მიდრეკილ ხელით მთვლელს გამორიცხავს." },
+    },
+    {
+      id: "range-len", correct: false,
+      label: { en: "for i in range(len(items)): item = items[i]", ka: "for i in range(len(items)): item = items[i]" },
+      explanation: { en: "Works but un-Pythonic — manual indexing when enumerate exists is an anti-pattern.", ka: "მუშაობს, მაგრამ un-Pythonic-ია — ხელით ინდექსი enumerate-ს არსებობისას ანტი-შაბლონია." },
+    },
+    {
+      id: "global-idx", correct: false,
+      label: { en: "Make idx a global variable", ka: "idx გლობალური ცვლადი გახადე" },
+      explanation: { en: "A global counter makes things worse — it persists across calls and introduces shared mutable state.", ka: "გლობალური მთვლელი მდგომარეობას აუარესებს — გამოძახებებს შორის რჩება და გაზიარებულ ცვლად მდგომარეობას ქმნის." },
+    },
+  ],
+};
+
+// ─── py-13: zip() for parallel iteration ─────────────────────────────────────
+
+const py13: TextFillBlankDef = {
+  id: "py-13",
+  difficulty: "medium",
+  bugType: "wrong-condition",
+  programmingLanguage: "python",
+  concept: { en: "zip(a, b) iterates two sequences in parallel — no manual index needed", ka: "zip(a, b) ორ მიმდევრობას პარალელურად გადის — ხელით ინდექსი საჭირო არ არის" },
+  title: { en: "Parallel Mismatch", ka: "პარალელური შეუსაბამობა" },
+  story: { en: "A price formatter pairs product names with prices using an index, but crashes when the lists have different lengths.", ka: "ფასების ფორმატირება სახელებსა და ფასებს ინდექსით აწყვილებს, მაგრამ სხვადასხვა სიგრძის სიებისას ჭედება." },
+  task: { en: "Use zip() to pair each name with its price without an explicit index.", ka: "გამოიყენე zip() ყოველი სახელის ფასთან გაწყვილებისთვის ინდექსის გარეშე." },
+  hints: [
+    { en: "You have two lists of the same length. How do you iterate them together?", ka: "ორი ერთი სიგრძის სია გაქვს. მათ ერთდროულად როგორ გაივლი?" },
+    { en: "zip(names, prices) yields (name, price) tuples one at a time.", ka: "zip(names, prices) (სახელი, ფასი) კორტეჟებს გასცემს ერთ-ერთს." },
+    { en: "for name, price in zip(names, prices): is clean and index-free.", ka: "for name, price in zip(names, prices): სუფთა და ინდექსის გარეშეა." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `def show_prices(names, prices):
+    for `,
+  codeAfter: `:
+        print(f"{name}: ${price}")
+
+show_prices(["apple", "bread"], [1.2, 2.5])`,
+  options: [
+    {
+      id: "a", value: "name, price in zip(names, prices)", correct: true,
+      explanation: { en: "zip pairs each element from both lists, yielding (name, price) tuples cleanly.", ka: "zip ორი სიის თითოეულ ელემენტს აწყვილებს, (სახელი, ფასი) კორტეჟებს სუფთად გასცემს." },
+    },
+    {
+      id: "b", value: "i in range(len(names))", correct: false,
+      explanation: { en: "range(len()) works but requires names[i] and prices[i] — verbose and error-prone with mismatched lengths.", ka: "range(len()) მუშაობს, მაგრამ names[i] და prices[i] სჭირდება — ვრცელი და სხვადასხვა სიგრძეებთან შეცდომებისადმი მიდრეკილი." },
+    },
+    {
+      id: "c", value: "name, price in enumerate(names)", correct: false,
+      explanation: { en: "enumerate yields (index, name) — price is not accessible that way.", ka: "enumerate (ინდექსი, სახელი)-ს გასცემს — price ამ გზით ხელმიუწვდომელია." },
+    },
+  ],
+};
+
+// ─── py-14: walrus operator misuse ───────────────────────────────────────────
+
+const py14: TextPickFixDef = {
+  id: "py-14",
+  difficulty: "medium",
+  bugType: "syntax-logic",
+  programmingLanguage: "python",
+  concept: { en: "The walrus operator := assigns and returns a value inside an expression", ka: "Walrus ოპერატორი := გამოთქმაში ანიჭებს და მნიშვნელობას აბრუნებს" },
+  title: { en: "The Stale Buffer", ka: "მოძველებული ბუფერი" },
+  story: { en: "A streaming reader checks an empty string each iteration instead of the freshly read chunk because assignment and condition are on separate lines.", ka: "ნაკადის წამკითხველი ყოველ იტერაციაზე ცარიელ სტრიქონს ამოწმებს განახლებული ფრაგმენტის ნაცვლად." },
+  task: { en: "Use the walrus operator so the read and the while-check happen in the same expression.", ka: "Walrus ოპერატორი გამოიყენე, რომ წაკითხვა და while-შემოწმება ერთ გამოთქმაში მოხდეს." },
+  hints: [
+    { en: "The chunk is assigned before the loop, so the while condition checks the initial empty value forever.", ka: "ფრაგმენტი მარყუჟამდე ენიჭება, ამიტომ while პირობა ყოველთვის თავდაპირველ ცარიელ მნიშვნელობას ამოწმებს." },
+    { en: "The walrus operator := can assign inside a condition: while chunk := read().", ka: "Walrus ოპერატორი := პირობაში ახდენს მინიჭებას: while chunk := read()." },
+    { en: "Place the assignment inside the while condition using :=.", ka: "მინიჭება := გამოყენებით while პირობაში მოათავსე." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `def process_stream(stream):
+    chunk = stream.read(1024)
+    while chunk:
+        process(chunk)
+        chunk = stream.read(1024)`,
+  bugLine: 2,
+  fixes: [
+    {
+      id: "walrus", correct: true,
+      label: { en: "while chunk := stream.read(1024): (remove priming read)", ka: "while chunk := stream.read(1024): (პირველი წაკითხვა ამოიღე)" },
+      explanation: { en: "The walrus operator reads and assigns in the while condition itself, eliminating the duplicated stream.read() call.", ka: "Walrus ოპერატორი while პირობაში კითხულობს და ანიჭებს, გამეორებული stream.read()-ის გამოძახებას გამორიცხავს." },
+    },
+    {
+      id: "while-true", correct: false,
+      label: { en: "while True: chunk = stream.read(1024); if not chunk: break", ka: "while True: chunk = stream.read(1024); if not chunk: break" },
+      explanation: { en: "This works but is more verbose — the walrus pattern is the idiomatic Python 3.8+ solution.", ka: "მუშაობს, მაგრამ ვრცელია — walrus შაბლონი Python 3.8+-ის სტანდარტული გამოსავალია." },
+    },
+    {
+      id: "iter-partial", correct: false,
+      label: { en: "for chunk in iter(lambda: stream.read(1024), b''):", ka: "for chunk in iter(lambda: stream.read(1024), b''):" },
+      explanation: { en: "iter() with a sentinel also works for binary streams but is harder to read — walrus is simpler here.", ka: "iter() სენტინელით ასევე მუშაობს ბინარული ნაკადებისთვის, მაგრამ წასაკითხად ძნელია — walrus მარტივია." },
+    },
+  ],
+};
+
+// ─── py-15: deepcopy vs shallow copy ─────────────────────────────────────────
+
+const py15: TextPickFixDef = {
+  id: "py-15",
+  difficulty: "hard",
+  bugType: "mutation-error",
+  programmingLanguage: "python",
+  concept: { en: "copy.copy() is shallow — nested objects are still shared; copy.deepcopy() clones everything", ka: "copy.copy() ზედაპირულია — ჩადგმული ობიექტები ისევ გაზიარებულია; copy.deepcopy() ყველაფერს კლონავს" },
+  title: { en: "The Shared Roster", ka: "გაზიარებული სია" },
+  story: { en: "A team manager copies a roster to create a new team but modifying the copy's players still changes the original.", ka: "გუნდის მენეჯერი სიას კოპირებს ახალი გუნდის შესაქმნელად, მაგრამ ასლის მოთამაშეების ცვლა ორიგინალსაც ცვლის." },
+  task: { en: "Use the copy function that recursively clones all nested objects.", ka: "გამოიყენე copy ფუნქცია, რომელიც ყველა ჩადგმულ ობიექტს რეკურსიულად კლონავს." },
+  hints: [
+    { en: "A shallow copy copies the outer list, but the inner lists still point to the same objects.", ka: "ზედაპირული ასლი გარე სიას კოპირებს, მაგრამ შიდა სიები ჯერ კიდევ ერთ ობიექტებს მიუთითებენ." },
+    { en: "Mutating a nested object in the copy also mutates it in the original.", ka: "ასლში ჩადგმული ობიექტის ცვლა ორიგინალშიც ცვლის." },
+    { en: "import copy; copy.deepcopy(obj) creates completely independent clones of all nested objects.", ka: "import copy; copy.deepcopy(obj) ყველა ჩადგმული ობიექტის სრულად დამოუკიდებელ კლონებს ქმნის." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `import copy
+
+def clone_roster(roster):
+    return copy.copy(roster)
+
+team_a = {"players": ["Alice", "Bob"]}
+team_b = clone_roster(team_a)
+team_b["players"].append("Charlie")
+print(team_a["players"])  # expected ['Alice','Bob'], got ['Alice','Bob','Charlie']`,
+  bugLine: 4,
+  fixes: [
+    {
+      id: "deepcopy", correct: true,
+      label: { en: "Return copy.deepcopy(roster)", ka: "copy.deepcopy(roster) დაბრუნება" },
+      explanation: { en: "deepcopy recursively clones all nested objects so team_b['players'] is a separate list from team_a['players'].", ka: "deepcopy ყველა ჩადგმულ ობიექტს რეკურსიულად კლონავს, ამიტომ team_b['players'] team_a['players']-ისგან განსხვავებული სიაა." },
+    },
+    {
+      id: "dict-copy", correct: false,
+      label: { en: "Return roster.copy()", ka: "roster.copy() დაბრუნება" },
+      explanation: { en: "dict.copy() is also a shallow copy — the nested 'players' list is still shared.", ka: "dict.copy() ასევე ზედაპირული ასლია — ჩადგმული 'players' სია ისევ გაზიარებულია." },
+    },
+    {
+      id: "spread", correct: false,
+      label: { en: "Return {**roster}", ka: "{**roster} დაბრუნება" },
+      explanation: { en: "Unpacking with ** also creates a shallow copy — same problem as .copy().", ka: "**-ით გაშლა ასევე ზედაპირულ ასლს ქმნის — .copy()-ის ისეთივე პრობლემა." },
+    },
+  ],
+};
+
 // ─── serialize helper ─────────────────────────────────────────────────────────
 
 export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
@@ -492,4 +709,5 @@ export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
 
 export const PUZZLE_DEFS_PYTHON: AnyTextPuzzleDef[] = [
   py1, py2, py3, py4, py5, py6, py7, py8, py9, py10,
+  py11, py12, py13, py14, py15,
 ];

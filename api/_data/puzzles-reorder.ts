@@ -174,7 +174,216 @@ const r3: AstReorderDef = {
   },
 };
 
-export const PUZZLE_DEFS_REORDER: AstReorderDef[] = [r1, r2, r3];
+// ─── Reorder 4: Fibonacci step (medium) ───────────────────────────────────────
+// To advance Fibonacci: save a+b in a temp, then shift a←b, b←temp.
+// Scrambled: a=b first (overwrites a before saving), then new_b = a+b (wrong!), then b=new_b.
+const r4: AstReorderDef = {
+  id: "reorder-fibonacci",
+  difficulty: "medium",
+  bugType: "swapped-branches",
+  programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
+  concept: {
+    en: "Fibonacci step: compute the next value before overwriting either variable",
+    ka: "Fibonacci ნაბიჯი: შემდეგი მნიშვნელობა გამოთვალე ორივე ცვლადის გადაწერამდე",
+  },
+  title: { en: "Fibonacci Tangle", ka: "Fibonacci-ს გახლართვა" },
+  story: {
+    en: "A Fibonacci generator produces wrong numbers because it overwrites 'a' before computing the next value.",
+    ka: "Fibonacci-ს გენერატორი არასწორ რიცხვებს გამოაქვს, რადგან 'a'-ს გადასწერს შემდეგი მნიშვნელობის გამოთვლამდე.",
+  },
+  task: {
+    en: "Reorder so new_b = a+b is computed first, then a = b, then b = new_b.",
+    ka: "გადაალაგე ისე, რომ ჯერ new_b = a+b გამოითვლოს, შემდეგ a = b, შემდეგ b = new_b.",
+  },
+  hints: [
+    {
+      en: "If you do a = b first, the original value of a is lost before you can add it to b.",
+      ka: "თუ ჯერ a = b შეასრულებ, a-ს ორიგინალი მნიშვნელობა დაიკარგება b-ზე დამატებამდე.",
+    },
+    {
+      en: "Compute the next Fibonacci number into a temporary variable first.",
+      ka: "შემდეგი Fibonacci-ს რიცხვი ჯერ დამხმარე ცვლადში გამოთვალე.",
+    },
+    {
+      en: "Correct order: new_b = a+b → a = b → b = new_b.",
+      ka: "სწორი: new_b = a+b → a = b → b = new_b.",
+    },
+  ],
+  // scrambled: a=b, new_b=a+b, b=new_b
+  scrambledProgram: [
+    { id: "rf4-2", kind: "assign", name: "a",     value: { kind: "var", name: "b" } },
+    { id: "rf4-1", kind: "assign", name: "new_b", value: { kind: "bin", op: "+", left: { kind: "var", name: "a" }, right: { kind: "var", name: "b" } } },
+    { id: "rf4-3", kind: "assign", name: "b",     value: { kind: "var", name: "new_b" } },
+  ],
+  correctOrder: ["rf4-1", "rf4-2", "rf4-3"],
+  explanation: {
+    en: "You must compute new_b = a+b first so the original 'a' is still available. Then slide a←b and b←new_b to advance the sequence.",
+    ka: "ჯერ new_b = a+b უნდა გამოითვალო, რომ 'a'-ს ორიგინალი ჯერ კიდევ ხელმისაწვდომი იყოს. შემდეგ a←b და b←new_b მიდგენი მიმდევრობის გასაგრძელებლად.",
+  },
+};
+
+// ─── Reorder 5: Area with formula (easy) ──────────────────────────────────────
+// Variables must be defined before use: width=8, height=5, area=width*height, print area.
+// Scrambled: area=width*height first, then width, then print, then height.
+const r5: AstReorderDef = {
+  id: "reorder-area",
+  difficulty: "easy",
+  bugType: "wrong-init",
+  programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
+  concept: {
+    en: "Variables must be assigned before they appear in an expression",
+    ka: "ცვლადები გამოთქმაში გამოჩენამდე მინიჭებული უნდა იყოს",
+  },
+  title: { en: "Unbuilt Rectangle", ka: "გაუმართავი მართკუთხედი" },
+  story: {
+    en: "A geometry program crashes because it tries to multiply width and height before either variable has been set.",
+    ka: "გეომეტრიის პროგრამა ჭედება, რადგან სიგანისა და სიმაღლის ცვლადების დაყენებამდე გამრავლებას ცდილობს.",
+  },
+  task: {
+    en: "Reorder so width and height are assigned before area is computed. Expected output: 40.",
+    ka: "გადაალაგე ისე, რომ width და height area-ს გამოთვლამდე მიენიჭოს. მოსალოდნელი გამოსავალი: 40.",
+  },
+  hints: [
+    {
+      en: "area = width * height uses both variables — they must exist first.",
+      ka: "area = width * height ორივე ცვლადს იყენებს — ისინი ჯერ უნდა არსებობდნენ.",
+    },
+    {
+      en: "print area needs area to already have a value.",
+      ka: "print area-ს სჭირდება, რომ area-ს უკვე ჰქონდეს მნიშვნელობა.",
+    },
+    {
+      en: "Correct order: width=8 → height=5 → area=width*height → print area.",
+      ka: "სწორი: width=8 → height=5 → area=width*height → print area.",
+    },
+  ],
+  // scrambled: area=w*h, width=8, print area, height=5
+  scrambledProgram: [
+    { id: "ra5-3", kind: "assign", name: "area",   value: { kind: "bin", op: "*", left: { kind: "var", name: "width" }, right: { kind: "var", name: "height" } } },
+    { id: "ra5-1", kind: "assign", name: "width",  value: { kind: "num", value: 8 } },
+    { id: "ra5-4", kind: "print",  value: { kind: "var", name: "area" } },
+    { id: "ra5-2", kind: "assign", name: "height", value: { kind: "num", value: 5 } },
+  ],
+  correctOrder: ["ra5-1", "ra5-2", "ra5-3", "ra5-4"],
+  explanation: {
+    en: "width and height must both be assigned before area = width * height can run. Then print area displays the result: 8 × 5 = 40.",
+    ka: "width-ი და height-ი ორივე მინიჭებული უნდა იყოს area = width * height-ის გაშვებამდე. შემდეგ print area შედეგს აჩვენებს: 8 × 5 = 40.",
+  },
+};
+
+// ─── Reorder 6: Discount price (medium) ───────────────────────────────────────
+// price=100, discount=20, savings=price*(discount/100), final=price-savings, print final.
+// Scrambled: final=price-savings first, then print, then savings=..., then price, then discount.
+const r6: AstReorderDef = {
+  id: "reorder-discount",
+  difficulty: "medium",
+  bugType: "wrong-init",
+  programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
+  concept: {
+    en: "Multi-step computations require each intermediate result to be ready before it is used",
+    ka: "მრავალსაფეხურიანი გამოთვლები მოითხოვს, რომ ყოველი შუალედური შედეგი გამოყენებამდე მზად იყოს",
+  },
+  title: { en: "Discount Disaster", ka: "ფასდაკლების კატასტროფა" },
+  story: {
+    en: "A checkout system computes the wrong final price because the discount and savings are calculated out of order.",
+    ka: "გადახდის სისტემა არასწორ საბოლოო ფასს გამოთვლის, რადგან ფასდაკლება და დანაზოგი არასწორი თანმიმდევრობით გამოიანგარიშება.",
+  },
+  task: {
+    en: "Reorder so price and discount are set, savings computed, then final = price - savings printed. Expected: 80.",
+    ka: "გადაალაგე ისე, რომ price და discount დაყენდეს, savings გამოითვალოს, შემდეგ final = price - savings დაიბეჭდოს. მოსალოდნელი: 80.",
+  },
+  hints: [
+    {
+      en: "savings depends on price and discount — both must be defined first.",
+      ka: "savings price-ზე და discount-ზეა დამოკიდებული — ორივე ჯერ განსაზღვრული უნდა იყოს.",
+    },
+    {
+      en: "final depends on savings — savings must be computed before final.",
+      ka: "final savings-ზეა დამოკიდებული — savings final-მდე გამოთვლილი უნდა იყოს.",
+    },
+    {
+      en: "Correct order: price=100 → discount=20 → savings=price*discount/100 → final=price-savings → print final.",
+      ka: "სწორი: price=100 → discount=20 → savings=price*discount/100 → final=price-savings → print final.",
+    },
+  ],
+  // scrambled: final=price-savings, print final, savings=price*discount/100, price=100, discount=20
+  scrambledProgram: [
+    { id: "rd6-4", kind: "assign", name: "final",    value: { kind: "bin", op: "-", left: { kind: "var", name: "price" },   right: { kind: "var", name: "savings" } } },
+    { id: "rd6-5", kind: "print",  value: { kind: "var", name: "final" } },
+    { id: "rd6-3", kind: "assign", name: "savings",  value: { kind: "bin", op: "*", left: { kind: "var", name: "price" },   right: { kind: "bin", op: "/", left: { kind: "var", name: "discount" }, right: { kind: "num", value: 100 } } } },
+    { id: "rd6-1", kind: "assign", name: "price",    value: { kind: "num", value: 100 } },
+    { id: "rd6-2", kind: "assign", name: "discount", value: { kind: "num", value: 20 } },
+  ],
+  correctOrder: ["rd6-1", "rd6-2", "rd6-3", "rd6-4", "rd6-5"],
+  explanation: {
+    en: "price and discount must exist before savings can be computed. savings must exist before final. final must exist before it can be printed. Result: 100 - 100*20/100 = 80.",
+    ka: "price-ი და discount-ი savings-ის გამოთვლამდე უნდა არსებობდეს. savings-ი final-მდე. final-ი print-მდე. შედეგი: 100 - 100*20/100 = 80.",
+  },
+};
+
+// ─── Reorder 7: Speed-distance-time (hard) ────────────────────────────────────
+// Compute average speed: time=4, distance=200, speed=distance/time, print speed.
+// But also: a second trip is added halfway. Scrambled in a tricky order with 5 statements.
+// Simpler version: total_dist = d1+d2, total_time = t1+t2, speed = total_dist/total_time, print.
+const r7: AstReorderDef = {
+  id: "reorder-speed",
+  difficulty: "hard",
+  bugType: "wrong-init",
+  programmingLanguage: "any",
+  format: "ast",
+  interaction: "reorder",
+  concept: {
+    en: "Average speed requires total distance and total time before dividing",
+    ka: "საშუალო სიჩქარე მოიცავს მთლიანი მანძილის და დროის გაყოფას",
+  },
+  title: { en: "Race Calculation", ka: "რბოლის გამოთვლა" },
+  story: {
+    en: "A race tracker computes average speed over two legs but the intermediate totals are used before they're calculated.",
+    ka: "რბოლის ტრეკერი ორ მონაკვეთზე საშუალო სიჩქარეს გამოთვლის, მაგრამ შუალედური ჯამები გამოთვლამდე გამოიყენება.",
+  },
+  task: {
+    en: "Reorder: assign d1, d2, t1, t2 first, then total_dist=d1+d2, total_time=t1+t2, speed=total_dist/total_time, print speed. Expected: 60.",
+    ka: "გადაალაგე: ჯერ d1, d2, t1, t2 მიანიჭე, შემდეგ total_dist=d1+d2, total_time=t1+t2, speed=total_dist/total_time, print speed. მოსალოდნელი: 60.",
+  },
+  hints: [
+    {
+      en: "total_dist needs d1 and d2; total_time needs t1 and t2.",
+      ka: "total_dist-ს d1 და d2 სჭირდება; total_time-ს t1 და t2.",
+    },
+    {
+      en: "speed = total_dist / total_time — both totals must be ready first.",
+      ka: "speed = total_dist / total_time — ორივე ჯამი ჯერ მზად უნდა იყოს.",
+    },
+    {
+      en: "Assign the raw measurements (d1, d2, t1, t2), then compute totals, then speed, then print.",
+      ka: "ჯერ ნედლი გაზომვები (d1, d2, t1, t2) მიანიჭე, შემდეგ ჯამები, შემდეგ სიჩქარე, შემდეგ print.",
+    },
+  ],
+  // scrambled: speed=total_dist/total_time, d1=120, total_time=t1+t2, t2=2, total_dist=d1+d2, t1=1, print speed, d2=60
+  scrambledProgram: [
+    { id: "rs7-7", kind: "assign", name: "speed",      value: { kind: "bin", op: "/", left: { kind: "var", name: "total_dist" }, right: { kind: "var", name: "total_time" } } },
+    { id: "rs7-1", kind: "assign", name: "d1",         value: { kind: "num", value: 120 } },
+    { id: "rs7-6", kind: "assign", name: "total_time", value: { kind: "bin", op: "+", left: { kind: "var", name: "t1" },          right: { kind: "var", name: "t2" } } },
+    { id: "rs7-4", kind: "assign", name: "t2",         value: { kind: "num", value: 2 } },
+    { id: "rs7-5", kind: "assign", name: "total_dist", value: { kind: "bin", op: "+", left: { kind: "var", name: "d1" },          right: { kind: "var", name: "d2" } } },
+    { id: "rs7-3", kind: "assign", name: "t1",         value: { kind: "num", value: 1 } },
+    { id: "rs7-8", kind: "print",  value: { kind: "var", name: "speed" } },
+    { id: "rs7-2", kind: "assign", name: "d2",         value: { kind: "num", value: 60 } },
+  ],
+  correctOrder: ["rs7-1", "rs7-2", "rs7-3", "rs7-4", "rs7-5", "rs7-6", "rs7-7", "rs7-8"],
+  explanation: {
+    en: "Raw values (d1=120, d2=60, t1=1, t2=2) must come first. Then total_dist=180 and total_time=3 can be computed. Only then can speed = 180/3 = 60 be found and printed.",
+    ka: "ნედლი მნიშვნელობები (d1=120, d2=60, t1=1, t2=2) ჯერ უნდა მოვიდეს. შემდეგ total_dist=180 და total_time=3 შეიძლება გამოითვალოს. მხოლოდ შემდეგ შეიძლება speed = 180/3 = 60 იქნეს ნაპოვნი და დაბეჭდილი.",
+  },
+};
+
+export const PUZZLE_DEFS_REORDER: AstReorderDef[] = [r1, r2, r3, r4, r5, r6, r7];
 
 export function serializeReorder(def: AstReorderDef, lang: UiLanguage = "en") {
   const p = (t: LocalizedText) => t[lang] ?? t.en;

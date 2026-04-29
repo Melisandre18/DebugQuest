@@ -478,6 +478,217 @@ console.log(items);                 // expected [1,2,3,4,5,6], got [4,5,6]`,
   ],
 };
 
+// ─── js-11: Array.isArray vs typeof ──────────────────────────────────────────
+
+const js11: TextFillBlankDef = {
+  id: "js-11",
+  difficulty: "easy",
+  bugType: "comparison-error",
+  programmingLanguage: "javascript",
+  concept: { en: "typeof [] === 'object' — use Array.isArray() to reliably detect arrays", ka: "typeof [] === 'object' — მასივების სანდოდ გამოსავლენად Array.isArray() გამოიყენე" },
+  title: { en: "The False Object", ka: "ყალბი ობიექტი" },
+  story: { en: "A type-checker approves arrays as plain objects because typeof cannot distinguish between them.", ka: "ტიპის შემმოწმებელი მასივებს plain ობიექტებად ღებულობს, რადგან typeof ვერ განასხვავებს." },
+  task: { en: "Use the built-in that correctly identifies an array.", ka: "გამოიყენე ჩაშენებული საშუალება, რომელიც მასივს სწორად ამოიცნობს." },
+  hints: [
+    { en: "What does typeof [] return? Test it in the console.", ka: "typeof []-ი რას დაბრუნებს? კონსოლში სცადე." },
+    { en: "Arrays have typeof 'object' — same as plain objects.", ka: "მასივების typeof 'object'-ია — ისეთივე, როგორც plain ობიექტებისა." },
+    { en: "Array.isArray(value) returns true only for arrays.", ka: "Array.isArray(value) true-ს მხოლოდ მასივებისთვის აბრუნებს." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `function isArray(value) {
+  return `,
+  codeAfter: `;
+}
+
+console.log(isArray([1, 2, 3]));  // true
+console.log(isArray({ a: 1 }));   // false`,
+  options: [
+    {
+      id: "a", value: "Array.isArray(value)", correct: true,
+      explanation: { en: "Array.isArray() returns true for arrays and false for everything else, including plain objects.", ka: "Array.isArray() true-ს აბრუნებს მასივებისთვის და false-ს ყველა სხვასთვის, plain ობიექტების ჩათვლით." },
+    },
+    {
+      id: "b", value: "typeof value === 'array'", correct: false,
+      explanation: { en: "'array' is not a typeof result — typeof returns 'object' for both arrays and objects.", ka: "'array' typeof-ის შედეგი არ არის — typeof ობიექტებისა და მასივებისთვის 'object'-ს აბრუნებს." },
+    },
+    {
+      id: "c", value: "typeof value === 'object'", correct: false,
+      explanation: { en: "typeof [] and typeof {} both return 'object' — no distinction between arrays and plain objects.", ka: "typeof []-ი და typeof {}-ი ორივე 'object'-ს აბრუნებს — მასივებსა და plain ობიექტებს ვერ განასხვავებს." },
+    },
+  ],
+};
+
+// ─── js-12: optional chaining ?. ─────────────────────────────────────────────
+
+const js12: TextFillBlankDef = {
+  id: "js-12",
+  difficulty: "medium",
+  bugType: "null-error",
+  programmingLanguage: "javascript",
+  concept: { en: "Optional chaining ?. short-circuits to undefined instead of throwing when a property is null/undefined", ka: "Optional chaining ?. undefined-ს აბრუნებს short-circuit-ით, ბრასვლის ნაცვლად, null/undefined-ზე" },
+  title: { en: "The Missing Address", ka: "არარსებული მისამართი" },
+  story: { en: "A user profile renderer crashes when a user has no address set, because it chains property access without guarding against null.", ka: "მომხმარებლის პროფილის renderer ჭედება, თუ მომხმარებელს მისამართი არ აქვს, რადგან property-ებს null-ის შემოწმების გარეშე ჯაჭვავს." },
+  task: { en: "Access user.address.city safely so it returns undefined instead of throwing.", ka: "user.address.city-ზე უსაფრთხოდ შეიარე, რომ გაგდების ნაცვლად undefined დაბრუნდეს." },
+  hints: [
+    { en: "What happens when you try to read .city from null?", ka: "რა მოხდება, თუ null-დან .city-ს წაკითხვას სცდი?" },
+    { en: "ES2020 introduced ?. to safely access nested properties.", ka: "ES2020-მა ?. შემოიტანა ჩადგმული property-ების უსაფრთხო წვდომისთვის." },
+    { en: "user?.address?.city returns undefined without throwing if any part is null.", ka: "user?.address?.city undefined-ს აბრუნებს გაგდების გარეშე, თუ რომელიმე ნაწილი null-ია." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `function getCity(user) {
+  return `,
+  codeAfter: `;
+}
+
+console.log(getCity({ address: { city: "Tbilisi" } }));  // "Tbilisi"
+console.log(getCity({ address: null }));                  // undefined (not a crash)`,
+  options: [
+    {
+      id: "a", value: "user?.address?.city", correct: true,
+      explanation: { en: "?. short-circuits and returns undefined at the first null/undefined in the chain.", ka: "?. პირველ null/undefined-ზე ჯაჭვში short-circuit-ს ახდენს და undefined-ს აბრუნებს." },
+    },
+    {
+      id: "b", value: "user.address.city", correct: false,
+      explanation: { en: "When address is null, .city throws: 'Cannot read properties of null'.", ka: "address null-ია, .city-ი გაისვრის: 'Cannot read properties of null'." },
+    },
+    {
+      id: "c", value: "user && user.address && user.address.city", correct: false,
+      explanation: { en: "Short-circuit with && works but is verbose — optional chaining is the modern idiomatic replacement.", ka: "&&-ით short-circuit მუშაობს, მაგრამ ვრცელია — optional chaining თანამედროვე სტანდარტული ჩანაცვლებაა." },
+    },
+  ],
+};
+
+// ─── js-13: nullish coalescing ?? vs || ──────────────────────────────────────
+
+const js13: TextFillBlankDef = {
+  id: "js-13",
+  difficulty: "medium",
+  bugType: "comparison-error",
+  programmingLanguage: "javascript",
+  concept: { en: "?? only falls back for null/undefined; || falls back for any falsy value including 0 and ''", ka: "?? მხოლოდ null/undefined-ისთვის ირჩევს სათადარიგოს; || ნებისმიერ falsy მნიშვნელობაზე, 0-ისა და ''-ის ჩათვლით" },
+  title: { en: "The Vanishing Zero", ka: "გამქრალი ნული" },
+  story: { en: "A config reader replaces a valid timeout of 0ms with the default 1000ms because the fallback operator treats 0 as falsy.", ka: "კონფიგის წამკითხველი ვალიდ 0ms timeout-ს 1000ms default-ით ანაცვლებს, რადგან სათადარიგო ოპერატორი 0-ს falsy-ად მიიჩნევს." },
+  task: { en: "Use the operator that only falls back when the value is null or undefined.", ka: "გამოიყენე ოპერატორი, რომელიც სათადარიგოს მხოლოდ null ან undefined-ისთვის ირჩევს." },
+  hints: [
+    { en: "What does 0 || 1000 evaluate to? Why?", ka: "0 || 1000-ი რას გამოიანგარიშებს? რატომ?" },
+    { en: "|| uses JavaScript's falsy check: 0, '', false, null, undefined are all falsy.", ka: "|| JavaScript-ის falsy შემოწმებას იყენებს: 0, '', false, null, undefined ყველა falsy-ია." },
+    { en: "?? (nullish coalescing) only falls back for null or undefined.", ka: "?? (nullish coalescing) მხოლოდ null ან undefined-ისთვის ირჩევს სათადარიგოს." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `function getTimeout(config) {
+  return config.timeout `,
+  codeAfter: ` 1000;
+}
+
+console.log(getTimeout({ timeout: 0 }));     // should be 0, not 1000
+console.log(getTimeout({ timeout: null }));  // 1000`,
+  options: [
+    {
+      id: "a", value: "??", correct: true,
+      explanation: { en: "?? returns the right side only when the left side is null or undefined — 0 is neither, so 0 is returned.", ka: "?? მარჯვენა მხარეს მხოლოდ მაშინ აბრუნებს, როცა მარცხენა null ან undefined-ია — 0 ასე არ არის, ამიტომ 0 ბრუნდება." },
+    },
+    {
+      id: "b", value: "||", correct: false,
+      explanation: { en: "0 || 1000 evaluates to 1000 because 0 is falsy — the valid zero timeout is lost.", ka: "0 || 1000-ი 1000-ს გამოიანგარიშებს, რადგან 0 falsy-ია — ვალიდ ნულოვანი timeout იკარგება." },
+    },
+    {
+      id: "c", value: "&&", correct: false,
+      explanation: { en: "&& returns the first falsy value or the last value — the opposite of what a fallback needs.", ka: "&& პირველ falsy მნიშვნელობას ან ბოლოს აბრუნებს — სათადარიგოს საჭიროების საპირისპიროა." },
+    },
+  ],
+};
+
+// ─── js-14: destructuring with defaults ──────────────────────────────────────
+
+const js14: TextFillBlankDef = {
+  id: "js-14",
+  difficulty: "medium",
+  bugType: "wrong-init",
+  programmingLanguage: "javascript",
+  concept: { en: "Destructuring defaults apply only when the value is undefined, not when it is null or 0", ka: "Destructuring default-ები მხოლოდ undefined-ზე გამოიყენება, null-ზე ან 0-ზე არა" },
+  title: { en: "The Stubborn Null", ka: "ჯიუტი Null" },
+  story: { en: "A function destructures an options object but the timeout default never kicks in, even when options.timeout is explicitly set to null.", ka: "ფუნქცია options ობიექტს destructs-ავს, მაგრამ timeout default არასდროს ამოქმედდება, თუნდაც options.timeout ცხადად null-ად იყოს." },
+  task: { en: "Fill in the expression that handles null by converting it to undefined before destructuring.", ka: "შეავსე გამოთქმა, რომელიც null-ს undefined-ად გარდაქმნის destructuring-მდე." },
+  hints: [
+    { en: "Destructuring default: const { x = 5 } = obj — this sets x=5 only when obj.x is undefined.", ka: "Destructuring default: const { x = 5 } = obj — x=5-ს მხოლოდ მაშინ სვამს, როცა obj.x undefined-ია." },
+    { en: "null !== undefined in JavaScript — a default in destructuring does NOT apply to null.", ka: "null !== undefined JavaScript-ში — destructuring-ის default null-ზე არ გამოიყენება." },
+    { en: "Use ?? to convert null to undefined: options ?? {} lets destructuring's defaults work.", ka: "?? გამოიყენე null-ის undefined-ად გასარდაქმნელად: options ?? {} destructuring-ის defaults-ს გამოიყენებს." },
+  ],
+  format: "text",
+  interaction: "fill-blank",
+  codeBefore: `function request(options) {
+  const { timeout = 3000, retries = 3 } = `,
+  codeAfter: `;
+  return { timeout, retries };
+}
+
+console.log(request(null));             // { timeout: 3000, retries: 3 }
+console.log(request({ timeout: 500 })); // { timeout: 500, retries: 3 }`,
+  options: [
+    {
+      id: "a", value: "options ?? {}", correct: true,
+      explanation: { en: "options ?? {} returns {} when options is null or undefined, so the destructuring defaults take effect.", ka: "options ?? {} {}-ს აბრუნებს, თუ options null ან undefined-ია, ამიტომ destructuring defaults ამოქმედდება." },
+    },
+    {
+      id: "b", value: "options", correct: false,
+      explanation: { en: "Destructuring null throws: 'Cannot destructure property of null'.", ka: "null-ის destructuring-ი გაისვრის: 'Cannot destructure property of null'." },
+    },
+    {
+      id: "c", value: "options || {}", correct: false,
+      explanation: { en: "Works for null, but || also replaces 0, false, and '' — nullish coalescing is the safer choice.", ka: "null-ისთვის მუშაობს, მაგრამ || ასევე 0-ს, false-ს და ''-ს ანაცვლებს — nullish coalescing უსაფრთხო არჩევანია." },
+    },
+  ],
+};
+
+// ─── js-15: Promise.all rejects on first failure ──────────────────────────────
+
+const js15: TextPickFixDef = {
+  id: "js-15",
+  difficulty: "hard",
+  bugType: "wrong-condition",
+  programmingLanguage: "javascript",
+  concept: { en: "Promise.all rejects immediately on the first failure; Promise.allSettled waits for all and reports each outcome", ka: "Promise.all პირველ წარუმატებლობაზე მაშინვე უარყოფს; Promise.allSettled ყველას ელოდება და თითოეულ შედეგს ახსენებს" },
+  title: { en: "The Silent Failure", ka: "ჩუმი წარუმატებლობა" },
+  story: { en: "A dashboard loads data from three APIs in parallel, but if any one fails the whole page goes blank — the other successful responses are discarded.", ka: "Dashboard სამი API-დან პარალელურად ტვირთავს, მაგრამ ერთის წარუმატებლობა მთელ გვერდს ბლანკს ხდის — სხვა წარმატებული პასუხები გაიყრება." },
+  task: { en: "Use the method that gives you all results even when some promises fail.", ka: "გამოიყენე მეთოდი, რომელიც ყველა შედეგს გაძლევს, თუნდაც ზოგი promise ვერ შესრულდეს." },
+  hints: [
+    { en: "What happens to Promise.all when one of the promises rejects?", ka: "Promise.all-ს რა ემართება, თუ ერთ-ერთი promise უარყოფილია?" },
+    { en: "Promise.all short-circuits on the first rejection.", ka: "Promise.all პირველ უარყოფაზე short-circuit-ს ახდენს." },
+    { en: "Promise.allSettled returns { status, value/reason } for every promise regardless of outcome.", ka: "Promise.allSettled ყველა promise-სთვის { status, value/reason }-ს აბრუნებს შედეგის მიუხედავად." },
+  ],
+  format: "text",
+  interaction: "pick-fix",
+  code: `async function loadDashboard() {
+  const results = await Promise.all([
+    fetchUsers(),
+    fetchProducts(),
+    fetchOrders(),
+  ]);
+  return results;
+}`,
+  bugLine: 2,
+  fixes: [
+    {
+      id: "all-settled", correct: true,
+      label: { en: "Replace Promise.all with Promise.allSettled", ka: "Promise.all → Promise.allSettled" },
+      explanation: { en: "Promise.allSettled waits for every promise and returns an array of {status, value/reason} objects — no short-circuit on failure.", ka: "Promise.allSettled ყველა promise-ს ელოდება და {status, value/reason} ობიექტების მასივს აბრუნებს — წარუმატებლობაზე short-circuit არ ხდება." },
+    },
+    {
+      id: "try-catch", correct: false,
+      label: { en: "Wrap each fetch in try/catch before Promise.all", ka: "ყოველი fetch-ი try/catch-ში გახვიე Promise.all-მდე" },
+      explanation: { en: "Wrapping each fetch works but requires more boilerplate. Promise.allSettled handles this cleanly at the coordination level.", ka: "ყოველი fetch-ის გახვევა მუშაობს, მაგრამ მეტ boilerplate-ს საჭიროებს. Promise.allSettled ამას სუფთად კოორდინაციის დონეზე გვარავს." },
+    },
+    {
+      id: "promise-any", correct: false,
+      label: { en: "Replace with Promise.any()", ka: "Promise.any()-ით ჩანაცვლება" },
+      explanation: { en: "Promise.any resolves with the first successful result — the opposite of what a dashboard needs.", ka: "Promise.any პირველ წარმატებულ შედეგს ირჩევს — ზუსტად საპირისპირო იმისა, რაც dashboard-ს სჭირდება." },
+    },
+  ],
+};
+
 // ─── serialize helper ─────────────────────────────────────────────────────────
 
 export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
@@ -506,4 +717,5 @@ export function serialize(def: AnyTextPuzzleDef, lang: "en" | "ka") {
 
 export const PUZZLE_DEFS_JAVASCRIPT: AnyTextPuzzleDef[] = [
   js1, js2, js3, js4, js5, js6, js7, js8, js9, js10,
+  js11, js12, js13, js14, js15,
 ];
