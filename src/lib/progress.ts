@@ -12,6 +12,7 @@ export interface AttemptRecord {
   score: number;
   at: number;
   language?: Language;
+  difficulty?: string;
 }
 
 export interface Progress {

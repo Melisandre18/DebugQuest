@@ -161,9 +161,10 @@ export default function Game() {
   }
 
   function handleSolve(puzzle: { id: string; difficulty: string }, score: number, att?: number) {
+    const elapsed = performance.now() - startedAt.current;
     const progress = loadProgress();
     const { newAchievements } = recordAttempt(
-      { puzzleId: puzzle.id, correct: true, timeMs: 0, hintsUsed: hintsRevealed, attempts: att ?? 1, score, at: Date.now(), language: progLang },
+      { puzzleId: puzzle.id, correct: true, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att ?? 1, score, at: Date.now(), language: progLang, difficulty: puzzle.difficulty },
       puzzle as any
     );
     toast.success(`+${score} ${t.messages.points}`, { description: t.messages.correct });

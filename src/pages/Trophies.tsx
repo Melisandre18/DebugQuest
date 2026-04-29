@@ -74,11 +74,19 @@ export default function Trophies() {
       hard:   { difficulty: "Hard",   solved: 0, total: totals.hard   ?? 0, fill: "hsl(var(--diff-hard))" },
     };
     // Derive solved from filtered correct attempts (so language filter applies)
-    const filteredSolvedIds = new Set(filtered.filter(x => x.correct).map(x => x.puzzleId));
-    filteredSolvedIds.forEach(id => {
-      if (id.startsWith("easy"))   counts.easy.solved++;
-      else if (id.startsWith("med"))    counts.medium.solved++;
-      else if (id.startsWith("hard"))   counts.hard.solved++;
+    // Use stored difficulty field; fall back to ID prefix for legacy records.
+    const seenIds = new Set<string>();
+    filtered.filter(x => x.correct).forEach(x => {
+      if (seenIds.has(x.puzzleId)) return;
+      seenIds.add(x.puzzleId);
+      const diff = x.difficulty
+        ?? (x.puzzleId.startsWith("easy") ? "easy"
+          : x.puzzleId.startsWith("med") ? "medium"
+          : x.puzzleId.startsWith("hard") ? "hard"
+          : null);
+      if (diff === "easy")   counts.easy.solved++;
+      else if (diff === "medium") counts.medium.solved++;
+      else if (diff === "hard")   counts.hard.solved++;
     });
     return Object.values(counts);
   }, [filtered, puzzleCounts]);
