@@ -13,6 +13,7 @@ export interface AttemptRecord {
   at: number;
   language?: Language;
   difficulty?: string;
+  puzzleTitle?: string;
 }
 
 export interface Progress {

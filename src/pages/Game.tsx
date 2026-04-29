@@ -160,12 +160,12 @@ export default function Game() {
     } else if (!correct) { toast.error(t.messages.incorrect); }
   }
 
-  function handleSolve(puzzle: { id: string; difficulty: string }, score: number, att?: number) {
+  function handleSolve(puzzle: { id: string; difficulty: string; title?: string }, score: number, att?: number) {
     const elapsed = performance.now() - startedAt.current;
     setSolved(true);
     const progress = loadProgress();
     const { newAchievements } = recordAttempt(
-      { puzzleId: puzzle.id, correct: true, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att ?? 1, score, at: Date.now(), language: progLang, difficulty: puzzle.difficulty },
+      { puzzleId: puzzle.id, correct: true, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att ?? 1, score, at: Date.now(), language: progLang, difficulty: puzzle.difficulty, puzzleTitle: puzzle.title },
       puzzle as any
     );
     toast.success(`+${score} ${t.messages.points}`, { description: t.messages.correct });
@@ -494,7 +494,7 @@ interface PlayAreaProps {
   tryFix: (o: FixOption) => void;
   step: () => void; startAuto: () => void; resetExecution: () => void; revealHint: () => void;
   loadNewPuzzle: () => void;
-  handleSolve: (p: { id: string; difficulty: string }, score: number, att?: number) => void;
+  handleSolve: (p: { id: string; difficulty: string; title?: string }, score: number, att?: number) => void;
   setFeedback: (v: null) => void;
   setTab: (t: Tab) => void;
   d: Difficulty;

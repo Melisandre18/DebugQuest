@@ -306,7 +306,7 @@ export default function Trophies() {
                         {r.correct
                           ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                           : <XCircle className="w-4 h-4 text-destructive shrink-0" />}
-                        <span className="font-mono text-xs text-muted-foreground truncate">{r.puzzleId}</span>
+                        <span className="text-xs text-muted-foreground truncate">{r.puzzleTitle ?? r.puzzleId}</span>
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
                         <span>{(r.timeMs / 1000).toFixed(1)}s</span>
