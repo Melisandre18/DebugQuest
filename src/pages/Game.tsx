@@ -162,6 +162,7 @@ export default function Game() {
 
   function handleSolve(puzzle: { id: string; difficulty: string }, score: number, att?: number) {
     const elapsed = performance.now() - startedAt.current;
+    setSolved(true);
     const progress = loadProgress();
     const { newAchievements } = recordAttempt(
       { puzzleId: puzzle.id, correct: true, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att ?? 1, score, at: Date.now(), language: progLang, difficulty: puzzle.difficulty },
@@ -518,7 +519,7 @@ function PlayArea({
         onSolved={(score, att) => handleSolve(anyPuzzle, score, att)}
         onNext={loadNewPuzzle}
       />
-      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} />
+      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
     </div>
   );
 
@@ -530,7 +531,7 @@ function PlayArea({
         onSolved={(score, att) => handleSolve(anyPuzzle, score, att)}
         onNext={loadNewPuzzle}
       />
-      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} />
+      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
     </div>
   );
 
@@ -543,7 +544,7 @@ function PlayArea({
         onSolved={(score, att) => handleSolve(anyPuzzle, score, att)}
         onNext={loadNewPuzzle}
       />
-      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} />
+      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
     </div>
   );
 
@@ -694,7 +695,7 @@ function PlayArea({
         </div>
 
         <aside className="space-y-4">
-          <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} />
+          <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
           <div className="card-surface rounded-xl p-5 text-sm space-y-2">
             <div className="font-display font-semibold inline-flex items-center gap-2">
               <Target className="w-4 h-4 text-primary-glow" /> {t.game.debugStrategy}
@@ -721,15 +722,18 @@ function PlayArea({
 
 // ─── HintsPanel ───────────────────────────────────────────────────────────
 
-function HintsPanel({ hints, maxHintsCount, hintsRevealed, revealHint, setTab, t }:
-  { hints: string[]; maxHintsCount: number; hintsRevealed: number; revealHint: () => void; setTab: (s: Tab) => void; t: Translations }) {
+function HintsPanel({ hints, maxHintsCount, hintsRevealed, revealHint, setTab, t, solved }:
+  { hints: string[]; maxHintsCount: number; hintsRevealed: number; revealHint: () => void; setTab: (s: Tab) => void; t: Translations; solved: boolean }) {
   return (
     <div className="card-surface rounded-xl p-5">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-display font-semibold inline-flex items-center gap-2">
           <Lightbulb className="w-4 h-4 text-accent" /> {t.game.hints}
         </h3>
-        <span className="text-xs text-muted-foreground">{hintsRevealed} / {maxHintsCount}</span>
+        {solved
+          ? <span className="text-[10px] uppercase tracking-wider font-semibold text-success px-2 py-0.5 rounded-md bg-success/10 border border-success/30">Solved</span>
+          : <span className="text-xs text-muted-foreground">{hintsRevealed} / {maxHintsCount}</span>
+        }
       </div>
       <div className="space-y-2">
         {hints.slice(0, maxHintsCount).map((h, i) => {
@@ -748,11 +752,13 @@ function HintsPanel({ hints, maxHintsCount, hintsRevealed, revealHint, setTab, t
           );
         })}
       </div>
-      <Button variant="outline" size="sm" className="mt-3 w-full" onClick={revealHint} disabled={hintsRevealed >= maxHintsCount}>
+      <Button variant="outline" size="sm" className="mt-3 w-full" onClick={revealHint}
+        disabled={hintsRevealed >= maxHintsCount || solved}
+      >
         <Lightbulb className="w-4 h-4 mr-1" />
-        {hintsRevealed >= maxHintsCount ? t.game.allHintsRevealed : t.buttons.hint}
+        {solved ? "Puzzle solved" : hintsRevealed >= maxHintsCount ? t.game.allHintsRevealed : t.buttons.hint}
       </Button>
-      <p className="text-[11px] text-muted-foreground mt-2">{t.game.hintCostNote}</p>
+      {!solved && <p className="text-[11px] text-muted-foreground mt-2">{t.game.hintCostNote}</p>}
     </div>
   );
 }

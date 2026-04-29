@@ -7,7 +7,7 @@ import {
 } from "recharts";
 import {
   Trophy, Award, Target, Clock, Lightbulb, Flame, Zap, Activity, ArrowRight,
-  CheckCircle2, XCircle, Globe,
+  CheckCircle2, XCircle, Globe, Trash2, AlertTriangle,
 } from "lucide-react";
 import TopNav from "@/components/TopNav";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,10 @@ import { Progress } from "@/components/ui/progress";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, loadProgress, resetProgress } from "@/lib/progress";
 import { usePuzzleCounts } from "@/lib/puzzle-service";
 import { LANGUAGES, type Language } from "@/lib/puzzle-engine";
@@ -143,18 +147,35 @@ export default function Trophies() {
                   <Link to="/modes">{t.trophies.earnMorePoints} <ArrowRight className="ml-1 w-4 h-4" /></Link>
                 </Button>
                 {a.length > 0 && (
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => {
-                      if (confirm(t.trophiesUI.confirmReset)) {
-                        resetProgress();
-                        location.reload();
-                      }
-                    }}
-                  >
-                    {t.trophiesUI.resetProgress}
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="lg">
+                        <Trash2 className="w-4 h-4 mr-2" /> {t.trophiesUI.resetProgress}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent className="max-w-md">
+                      <AlertDialogHeader>
+                        <div className="flex items-center gap-3 mb-1">
+                          <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/30 flex items-center justify-center shrink-0">
+                            <AlertTriangle className="w-5 h-5 text-destructive" />
+                          </div>
+                          <AlertDialogTitle className="text-xl">Reset all progress?</AlertDialogTitle>
+                        </div>
+                        <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
+                          This will permanently erase your <span className="text-foreground font-medium">score</span>, <span className="text-foreground font-medium">solved puzzles</span>, and <span className="text-foreground font-medium">all achievements</span>. There is no way to undo this.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="gap-2 sm:gap-2">
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
+                          onClick={() => { resetProgress(); location.reload(); }}
+                        >
+                          <Trash2 className="w-4 h-4" /> Reset everything
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 )}
               </div>
             </div>
