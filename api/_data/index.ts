@@ -30,6 +30,19 @@ async function loadTextPuzzles() {
 
 function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
   const p = (t: { en: string; ka: string }) => t[lang] ?? t.en;
+
+  let starterCode: string;
+  let solution: string;
+  if (def.interaction === "pick-fix") {
+    starterCode = def.code;
+    const correct = (def.fixes as any[]).find((f: any) => f.correct);
+    solution = correct ? p(correct.label) : "";
+  } else {
+    starterCode = def.codeBefore + "___" + def.codeAfter;
+    const correct = (def.options as any[]).find((o: any) => o.correct);
+    solution = correct ? correct.value : "";
+  }
+
   const base = {
     id: def.id,
     difficulty: def.difficulty,
@@ -40,7 +53,11 @@ function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
     story: p(def.story),
     task: p(def.task),
     hints: (def.hints as any[]).map(p),
+    starterCode,
+    expectedBehavior: p(def.task),
+    solution,
   };
+
   if (def.interaction === "pick-fix") {
     return {
       ...base,

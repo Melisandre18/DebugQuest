@@ -1,6 +1,7 @@
 // AST-based block-reorder puzzles.
 // The user drags program blocks into the correct execution order.
 import type { Program, UiLanguage } from "../_lib/types.js";
+import { astToCode } from "../_lib/ast-to-code.js";
 
 interface LocalizedText { en: string; ka: string; }
 
@@ -402,5 +403,8 @@ export function serializeReorder(def: AstReorderDef, lang: UiLanguage = "en") {
     scrambledProgram: def.scrambledProgram,
     correctOrder: def.correctOrder,
     explanation: p(def.explanation),
+    starterCode: astToCode(def.scrambledProgram),
+    expectedBehavior: p(def.task),
+    solution: p(def.explanation),
   };
 }

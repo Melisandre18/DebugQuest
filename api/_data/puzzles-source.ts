@@ -4,6 +4,7 @@
 // The /api/puzzles* handlers serialize these into SerializedPuzzle for the client.
 
 import type { BugType, Difficulty, Expr, Program, Stmt, UiLanguage } from "../_lib/types.js";
+import { astToCode } from "../_lib/ast-to-code.js";
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
 
@@ -661,6 +662,7 @@ export const PUZZLE_DEFS: PuzzleDef[] = [p1, p2, p3, p4, p5, p6];
 
 export function serializePuzzle(def: PuzzleDef, lang: UiLanguage = "en") {
   const pick = (t: LocalizedText) => t[lang] ?? t.en;
+  const correctFix = def.fixes.find(f => f.correct)!;
   return {
     id: def.id,
     difficulty: def.difficulty,
@@ -683,6 +685,9 @@ export function serializePuzzle(def: PuzzleDef, lang: UiLanguage = "en") {
       explanation: pick(f.explanation),
       appliedProgram: f.applyToProgram(def.program),
     })),
+    starterCode: astToCode(def.program),
+    expectedBehavior: pick(def.task),
+    solution: pick(correctFix.label),
   };
 }
 

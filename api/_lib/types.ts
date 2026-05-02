@@ -42,6 +42,12 @@ interface BasePuzzle {
   hints: string[];
   /** "any" = works regardless of selected programming language */
   programmingLanguage: ProgrammingLanguage | "any";
+  /** The buggy / incomplete code shown to the player */
+  starterCode: string;
+  /** Plain-language description of what the correct code must do */
+  expectedBehavior: string;
+  /** The correct fix: label text for pick-fix, blank value for fill-blank, explanation for reorder */
+  solution: string;
 }
 
 // AST-based pick-fix (full step debugger)
