@@ -18,7 +18,7 @@ import {
 import { toast } from "sonner";
 
 export type View = "blocks" | "code";
-export type Tab  = "learn" | "play";
+export type Tab  = "learn" | "play" | "run";
 
 export function maxHints(total: number, d: Difficulty): number {
   if (d === "easy") return total;

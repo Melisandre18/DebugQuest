@@ -1,6 +1,6 @@
 # DebugQuest
 
-An interactive coding game where players debug real programs by reading, reasoning, and picking the right fix. Supports Python, JavaScript, C++, and Java puzzles across three difficulty levels, with a step-by-step visual execution engine, bilingual UI (English / Georgian), a persistent progress/trophy system, and a formal scoring model that feeds an adaptive difficulty engine.
+An interactive coding game where players debug real programs by reading, reasoning, and picking the right fix. Supports Python, JavaScript, C++, and Java puzzles across three difficulty levels, with a step-by-step visual execution engine, bilingual UI (English / Georgian), a persistent progress/trophy system, a formal scoring model that feeds an adaptive difficulty engine, and a live code editor available from any solved puzzle.
 
 ---
 
@@ -10,52 +10,51 @@ An interactive coding game where players debug real programs by reading, reasoni
 DebugQuest/
 │
 ├── src/                              React + Vite + TypeScript frontend
-│   ├── App.tsx                       Provider tree: Language → Auth → Progress → Router
+│   ├── App.tsx                       Provider tree — see "Context order" below
 │   │
 │   ├── contexts/
-│   │   ├── AuthContext.tsx           Auth state — username + id, persisted in localStorage
-│   │   ├── LanguageContext.tsx       UI language toggle (en / ka)
+│   │   ├── AuthContext.tsx           Auth state (username + id → localStorage)
+│   │   ├── LanguageContext.tsx       UI language toggle (en / ka → localStorage)
 │   │   └── ProgressContext.tsx       Score + attempts + achievements
-│   │                                  • logged in  → loads from DB, kept in memory only
-│   │                                  • logged out → reads/writes localStorage cache
+│   │                                  • logged in  → DB-sourced, memory only
+│   │                                  • logged out → localStorage cache
 │   │
 │   ├── hooks/
-│   │   └── useGameSession.ts         All game logic (state + actions) extracted from UI
+│   │   └── useGameSession.ts         All game state + actions extracted from UI
+│   │                                  Tab type: "learn" | "play" | "run"
 │   │
 │   ├── components/
-│   │   ├── TopNav.tsx                Nav bar (Play link, score chip, auth, lang toggle)
+│   │   ├── CodeEditor.tsx            Reusable Monaco wrapper (vs-dark, lazy-loaded)
+│   │   ├── TopNav.tsx                Nav bar — Play, Trophies, Editor links + auth
 │   │   └── AuthModal.tsx             Sign in / Register modal (username + password)
 │   │
-│   ├── lib/
-│   │   ├── progress.ts               SCORING_CONFIG · computeScore() · computePerformance()
-│   │   ├── api.ts                    Fetch helpers for the Express backend
-│   │   ├── user.ts                   getUserId() — real id when logged in, UUID otherwise
-│   │   └── puzzle-service.ts         Fetch helpers for the Vercel puzzle API
-│   │
 │   ├── components/game/
-│   │   ├── SolvedEditor.tsx         Monaco editor + run panel revealed after every puzzle solve
+│   │   ├── SolvedEditor.tsx          "Run it yourself" tab content (Monaco + output)
 │   │   ├── TextPickFix.tsx
 │   │   ├── TextFillBlank.tsx
 │   │   └── AstReorder.tsx
-│   ├── components/
-│   │   ├── CodeEditor.tsx           Reusable Monaco wrapper (vs-dark, lazy-loaded)
-│   │   ├── TopNav.tsx
-│   │   └── AuthModal.tsx
+│   │
+│   ├── lib/
+│   │   ├── progress.ts               SCORING_CONFIG · computeScore() · computePerformance()
+│   │   ├── api.ts                    Fetch helpers — backend auth, progress, runCode()
+│   │   ├── user.ts                   getUserId() — real id when logged in, UUID otherwise
+│   │   └── puzzle-service.ts         Fetch helpers for the Vercel puzzle API
+│   │
 │   └── pages/
 │       ├── Landing.tsx
-│       ├── Modes.tsx                 Difficulty selector (route /modes → labelled "Play")
+│       ├── Modes.tsx                 Difficulty selector (route /modes, nav label "Play")
 │       ├── Game.tsx                  Main puzzle page (/play/:difficulty/:language?)
-│       ├── Trophies.tsx             Stats, charts, achievements
+│       ├── Trophies.tsx              Stats, charts, achievements (/trophies)
 │       └── Sandbox.tsx              Standalone code editor (/editor)
 │
 ├── api/                              Vercel serverless functions
 │   ├── next-puzzle.ts                Adaptive puzzle selection (POST)
-│   ├── puzzle.ts                     Fetch by ID (GET)
-│   ├── puzzle-counts.ts              Counts per difficulty (GET)
+│   ├── puzzle.ts                     Fetch puzzle by ID (GET)
+│   ├── puzzle-counts.ts              Count by difficulty (GET)
 │   ├── feedback.ts                   Feedback submission (POST)
 │   └── _data/                        Puzzle content + selection logic
 │       ├── puzzles-source.ts         AST pick-fix puzzles
-│       ├── puzzles-reorder.ts        AST drag-and-drop reorder puzzles
+│       ├── puzzles-reorder.ts        AST drag-and-drop reorder
 │       ├── puzzles-python.ts
 │       ├── puzzles-javascript.ts
 │       ├── puzzles-cpp.ts
@@ -64,28 +63,26 @@ DebugQuest/
 │
 └── server/                           Express backend (port 5000)
     ├── src/
-    │   ├── app.ts                    Entry point — dotenv, cors, json, routes
-    │   ├── routes/
-    │   │   └── index.ts              All /api/* routes wired here
-    │   ├── controllers/
-    │   │   ├── authController.ts     register + login (bcrypt, username validation)
-    │   │   ├── attemptController.ts  POST /attempt — logs solve to Postgres
-    │   │   └── progressController.ts GET + DELETE /progress — user history
-    │   └── models/
-    │       └── prisma.ts             PrismaClient singleton
+    │   ├── app.ts                    Entry point — dotenv first, then cors/json/routes
+    │   ├── routes/index.ts           All /api/* routes
+    │   └── controllers/
+    │       ├── authController.ts     register + login (bcrypt, username validation)
+    │       ├── attemptController.ts  POST /attempt — writes solve to Postgres
+    │       ├── progressController.ts GET + DELETE /progress — user history
+    │       └── codeController.ts     POST /run — sandboxed code execution
     └── prisma/
-        └── schema.prisma             Database schema (Prisma v5, prisma-client-js)
+        └── schema.prisma             User + Attempt models (Prisma v5)
 ```
 
 ---
 
-## Provider / context order
+## Context / provider order
 
 ```
 QueryClientProvider        (React Query — puzzle fetch cache)
-└── LanguageProvider       (en / ka, persisted in localStorage)
-    └── AuthProvider       (username + id, persisted in localStorage)
-        └── ProgressProvider  (reads auth; DB when logged in, localStorage when not)
+└── LanguageProvider       (en / ka, localStorage)
+    └── AuthProvider       (username + id, localStorage)
+        └── ProgressProvider  (DB when logged in, localStorage when logged out)
             └── TooltipProvider
                 └── BrowserRouter → Routes
 ```
@@ -98,30 +95,30 @@ QueryClientProvider        (React Query — puzzle fetch cache)
 
 ```bash
 npm install
-cp .env.example .env.local          # fill in GMAIL_USER + GMAIL_PASS
-npm run dev                          # http://localhost:8080
+cp .env.example .env.local     # fill in GMAIL_USER + GMAIL_PASS
+npm run dev                     # http://localhost:8080
 ```
 
 ### Backend
 
 ```bash
 # 1. Create a local Postgres database
-createdb debugquest                  # or use pgAdmin
+createdb debugquest              # or use pgAdmin
 
-# 2. Configure the connection string
+# 2. Configure the connection
 cd server
 # edit server/.env:
 # DATABASE_URL="postgresql://USER:PASS@localhost:5432/debugquest?schema=public"
 
-# 3. Create tables
+# 3. Install + migrate
 npm install
-npm run db:migrate                   # first run: name the migration e.g. "init"
+npm run db:migrate               # prompts for a migration name (e.g. "init")
 
 # 4. Start
-npm run dev                          # http://localhost:5000
+npm run dev                      # http://localhost:5000
 ```
 
-> If port 5000 is already in use:
+> **Port already in use?**
 > ```
 > netstat -ano | findstr ":5000"
 > taskkill /PID <pid> /F
@@ -149,8 +146,8 @@ npm run dev                          # http://localhost:5000
 | `npm run dev` | TypeScript server — hot reload via `node --watch` |
 | `npm start` | Production start |
 | `npm run db:generate` | Regenerate Prisma client after schema changes |
-| `npm run db:migrate` | Apply pending migrations to the database |
-| `npm run db:studio` | Open Prisma Studio (visual database browser) |
+| `npm run db:migrate` | Apply pending migrations |
+| `npm run db:studio` | Open Prisma Studio at http://localhost:5555 |
 
 ---
 
@@ -177,7 +174,7 @@ npm run dev                          # http://localhost:5000
 
 Username + password only. No OAuth, no email magic links.
 
-### Username rules (enforced on both client and server)
+### Username rules (enforced client-side and server-side)
 
 | Rule | Value |
 |---|---|
@@ -190,21 +187,21 @@ Username + password only. No OAuth, no email magic links.
 ### Sign-up / sign-in flow
 
 ```
-User clicks "Sign in" in nav (top-right)
+User clicks "Sign in" (top-right nav)
   │
   ├─ Register tab ──→ POST /api/auth/register { username, password }
-  │                         ↓ bcrypt hash (cost 10)
-  │                         ↓ INSERT User row
-  │                         ↓ { id, username } stored in localStorage["debugquest.auth"]
+  │                       ↓ bcrypt hash (cost 10)
+  │                       ↓ INSERT User row
+  │                       ↓ { id, username } → localStorage["debugquest.auth"]
   │
   └─ Sign in tab  ──→ POST /api/auth/login { username, password }
-                            ↓ bcrypt.compare
-                            ↓ { id, username } stored in localStorage["debugquest.auth"]
+                          ↓ bcrypt.compare
+                          ↓ { id, username } → localStorage["debugquest.auth"]
 ```
 
-### Session persistence
+### localStorage keys
 
-| Storage key | Contents | Lifetime |
+| Key | Contents | Lifetime |
 |---|---|---|
 | `debugquest.auth` | `{ id, username }` | Until sign-out |
 | `debugquest.userId` | Anonymous UUID | Forever (browser) |
@@ -213,21 +210,21 @@ User clicks "Sign in" in nav (top-right)
 
 ### Progress isolation
 
-- **Logged in** — progress lives in memory only, sourced from `GET /api/progress?userId=`. Anonymous localStorage cache is never written to or overwritten.
-- **Logged out** — progress reads/writes `localStorage["debugquest.progress.v1"]`. The anonymous cache is untouched during a logged-in session, so sign-out always restores the exact pre-login state.
+- **Logged in** — progress is loaded from `GET /api/progress?userId=` into memory. The anonymous localStorage cache is never touched, so sign-out always restores the exact pre-login state.
+- **Logged out** — progress reads/writes `localStorage["debugquest.progress.v1"]` only.
 
 ---
 
 ## Scoring model
 
-Defined in `src/lib/progress.ts` → `SCORING_CONFIG`.
+Defined in `src/lib/progress.ts` as `SCORING_CONFIG`.
 
 ```
 score       = base × performance
 performance = 1 − time_deduction − hint_deduction − retry_deduction
 ```
 
-### Base points by difficulty
+### Base points
 
 | Difficulty | Base |
 |---|---|
@@ -237,16 +234,16 @@ performance = 1 − time_deduction − hint_deduction − retry_deduction
 
 ### Deductions
 
-| Component | Formula | Cap |
+| Component | Formula | Max |
 |---|---|---|
-| Time | `clamp((seconds − par) / (cap − par), 0, 1) × 0.40` | −40% |
-| Hints | `min(hints_used, 3) × 0.15` | −45% |
+| Time | `clamp((s − par) / (cap − par), 0, 1) × 0.40` | −40% |
+| Hints | `min(hints, 3) × 0.15` | −45% |
 | Retries | `min(wrong_attempts, 5) × 0.10` | −50% |
-| Floor | `max(performance, 0.10)` | ≥ 10% of base |
+| Floor | `max(performance, 0.10)` | ≥ 10% of base always |
 
-### Time par and cap (seconds)
+### Time par / cap (seconds)
 
-| Difficulty | Par (no penalty) | Cap (full −40%) |
+| Difficulty | Par (free zone) | Cap (full −40%) |
 |---|---|---|
 | Easy | 60 s | 150 s |
 | Medium | 90 s | 210 s |
@@ -254,15 +251,15 @@ performance = 1 − time_deduction − hint_deduction − retry_deduction
 
 ### `performance` signal
 
-`computePerformance()` returns `PerformanceBreakdown`:
+`computePerformance()` → `PerformanceBreakdown`:
 ```ts
-{ performance: number   // 0.10–1.0 — primary adaptive engine input
+{ performance: number   // 0.10–1.0 — adaptive engine primary input
   timePenalty: number
   hintPenalty: number
   retryPenalty: number }
 ```
 
-`performance` is stored in `Attempt.performance` on every solve. The adaptive puzzle selector reads the last 5 values to decide whether to bump, hold, or lower difficulty.
+Stored in `Attempt.performance` on every solve. The adaptive selector reads the last 5 values to choose the next puzzle difficulty.
 
 ---
 
@@ -283,7 +280,7 @@ datasource db {
 model User {
   id           String    @id @default(uuid())
   username     String    @unique
-  email        String?   @unique          // reserved for future password-reset
+  email        String?   @unique     // reserved for future password-reset
   passwordHash String?
   createdAt    DateTime  @default(now())
   attempts     Attempt[]
@@ -294,17 +291,17 @@ model Attempt {
   userId       String
   user         User     @relation(fields: [userId], references: [id])
 
-  challengeId  String                     // puzzle id
-  bugType      String                     // e.g. "off-by-one", "type-error"
-  difficulty   String                     // "easy" | "medium" | "hard"
-  language     String?                    // "python" | "javascript" | "cpp" | "java"
+  challengeId  String              // puzzle id
+  bugType      String              // e.g. "off-by-one", "type-error"
+  difficulty   String              // "easy" | "medium" | "hard"
+  language     String?             // "python" | "javascript" | "cpp" | "java"
 
   correct      Boolean
   score        Int
-  time         Float                      // seconds
+  time         Float               // seconds
   hintsUsed    Int
-  retriesCount Int      @default(0)       // wrong attempts before solving
-  performance  Float?                     // 0.10–1.0 adaptive signal
+  retriesCount Int      @default(0)
+  performance  Float?              // 0.10–1.0 adaptive signal
 
   createdAt    DateTime @default(now())
 
@@ -314,43 +311,33 @@ model Attempt {
 }
 ```
 
-### Migrations
-
-```bash
-cd server
-npm run db:migrate      # prompts for a migration name, applies SQL, updates migration history
-npm run db:studio       # opens Prisma Studio at http://localhost:5555
-```
-
-To query users directly:
-```sql
-SELECT id, username, "createdAt" FROM "User";   -- note capital U + quotes
-```
+> **Tip:** Table names are quoted in Postgres. Use `SELECT * FROM "User";` not `select * from user;`
 
 ---
 
 ## API reference
 
-### Vercel serverless (`api/` — deployed with the frontend)
+### Vercel serverless (`api/` — ships with the frontend)
 
 | Method | Path | Body | Description |
 |---|---|---|---|
 | `POST` | `/api/next-puzzle` | `{ difficulty, lang, progLang, solved[], recent[] }` | Adaptive puzzle selection |
 | `GET` | `/api/puzzle?id=&lang=` | — | Fetch a single puzzle by ID |
-| `GET` | `/api/puzzle-counts?progLang=` | — | Count of puzzles per difficulty |
-| `POST` | `/api/feedback` | `{ context, rating, message, … }` | Submit user feedback |
+| `GET` | `/api/puzzle-counts?progLang=` | — | Puzzle count per difficulty |
+| `POST` | `/api/feedback` | `{ context, rating, message, … }` | Submit feedback |
 
 ### Express backend (`server/` — port 5000)
 
 | Method | Path | Body / Query | Response | Description |
 |---|---|---|---|---|
-| `GET` | `/` | — | `{ status, message }` | Root health check |
+| `GET` | `/` | — | `{ status, message }` | Root health |
 | `GET` | `/api/health` | — | `{ status }` | Health check |
 | `POST` | `/api/auth/register` | `{ username, password }` | `201 { id, username }` | Create account |
 | `POST` | `/api/auth/login` | `{ username, password }` | `200 { id, username }` | Sign in |
-| `GET` | `/api/progress` | `?userId=` | `200 Attempt[]` | Load user's full attempt history |
-| `DELETE` | `/api/progress` | `?userId=` | `200 { success }` | Wipe user's attempt history |
-| `POST` | `/api/attempt` | attempt payload | `201 Attempt` | Log a solved puzzle |
+| `GET` | `/api/progress` | `?userId=` | `200 Attempt[]` | Full attempt history |
+| `DELETE` | `/api/progress` | `?userId=` | `200 { success }` | Wipe attempt history |
+| `POST` | `/api/attempt` | see below | `201 Attempt` | Log a solved puzzle |
+| `POST` | `/api/run` | see below | `200 RunResult` | Execute code in sandbox |
 
 #### `POST /api/attempt` payload
 
@@ -370,13 +357,106 @@ SELECT id, username, "createdAt" FROM "User";   -- note capital U + quotes
 }
 ```
 
+#### `POST /api/run` payload + response
+
+```ts
+// Request
+{ language: "javascript" | "python" | "cpp" | "java", code: string, stdin?: string }
+
+// Response
+{ output: string, error: string | null, executionTimeMs: number }
+```
+
 #### Auth error codes
 
 | Code | Meaning |
 |---|---|
-| `400` | Missing field or username/password fails validation |
+| `400` | Missing field or validation failure |
 | `401` | Wrong username or password |
 | `409` | Username already taken |
+
+---
+
+## Code editor
+
+### Standalone editor (`/editor`)
+
+Accessible from the nav bar (Terminal icon). Write and run code in all four languages.
+
+| Language | How it runs | Requires on server |
+|---|---|---|
+| JavaScript | Node.js `vm` module — `prompt()` reads stdin | Nothing extra |
+| Python | `child_process` → `python` (Windows) / `python3` (Mac/Linux) | Python on PATH |
+| C++ | `g++ -std=c++17` → temp binary → run | `g++` on PATH |
+| Java | `javac` → temp class → `java ClassName` | JDK on PATH |
+
+**Stdin panel** — values entered (one per line) are consumed by:
+- `prompt()` calls in JavaScript
+- `input()` calls in Python
+- `cin >>` / `Scanner` in C++ / Java
+
+**Execution limits:** 5 s timeout · 512 KB output cap · temp files deleted after each run
+
+**Installing compilers (if not present):**
+
+```bash
+# g++ on Windows
+winget install MSYS2.MSYS2
+# then in MSYS2 terminal:
+pacman -S mingw-w64-ucrt-x86_64-gcc
+# add C:\msys64\ucrt64\bin to PATH
+
+# g++ on Mac
+brew install gcc
+
+# g++ on Linux
+sudo apt install g++
+
+# JDK on Windows
+winget install Oracle.JDK.21
+
+# JDK on Mac
+brew install openjdk
+
+# JDK on Linux
+sudo apt install default-jdk
+```
+
+### In-game editor ("Run it yourself" tab)
+
+After solving any puzzle a third tab **"Run it yourself"** appears next to "Debug the program". Clicking it opens a Monaco editor pre-loaded with the corrected code and a run button.
+
+**What code is pre-loaded:**
+
+| Puzzle type | Pre-loaded code |
+|---|---|
+| AST pick-fix | Fixed program converted to the selected language (Python / JS / C++ / Java) |
+| AST reorder | Correctly-ordered program converted to source |
+| Text pick-fix | `// Fix applied: <label>` comment + original code |
+| Text fill-blank | `codeBefore + correctValue + codeAfter` — fully correct, runs as-is |
+
+The editor and output are side-by-side. Stdin is available via an expandable toggle. Code is fully editable — the player can experiment freely before or after running.
+
+---
+
+## Game flow
+
+```
+/modes          Choose difficulty (Easy / Medium / Hard / Adaptive)
+  ↓
+Language modal  Pick Python / JavaScript / C++ / Java
+  ↓
+/play/:d/:lang  Game page — two tabs by default:
+
+  [ Concept ]          Learn the bug type before debugging
+  [ Debug the program ] Pick the fix / reorder / fill the blank
+
+  After solving:
+  [ Concept ]  [ Debug the program ]  [ Run it yourself ]
+                                            ↓
+                                      Monaco editor + stdin + output
+                                      (calls POST /api/run)
+```
 
 ---
 
@@ -389,82 +469,44 @@ vercel deploy
 ```
 
 Add to Vercel **Project Settings → Environment Variables**:
-- `GMAIL_USER`, `GMAIL_PASS` (feedback emails)
+- `GMAIL_USER`, `GMAIL_PASS`
 - `VITE_SERVER_URL` → your deployed backend URL
 
-### Express backend — Render.com (recommended free tier)
+### Express backend — Render.com
 
-1. **Database** — create a free [Neon](https://neon.tech) Postgres project; copy the connection string
-2. **Server** — create a new **Web Service** on [Render](https://render.com):
+1. Create a free [Neon](https://neon.tech) Postgres database and copy the connection string
+2. Create a **Web Service** on [Render](https://render.com):
 
 | Setting | Value |
 |---|---|
 | Root directory | `server` |
 | Build command | `npm install && npx prisma generate` |
 | Start command | `npm start` |
-| Env var `DATABASE_URL` | Neon connection string |
-| Env var `NODE_VERSION` | `20` |
+| `DATABASE_URL` | Neon connection string |
+| `NODE_VERSION` | `20` |
 
-3. After first deploy, run the migration once:
+3. Run the migration once after first deploy:
 ```bash
 cd server
 DATABASE_URL="<neon-url>" npm run db:migrate
 ```
 
-> **Free-tier note** — Render spins down after 15 min of inactivity (~30 s cold start). Upgrade to the $7/month Starter plan or use Railway for always-on hosting.
-
----
-
-## Code editor
-
-### Standalone editor (`/editor`)
-
-Accessible from the nav bar (Terminal icon). Supports all four languages.
-
-| Language | Execution | Requires |
-|---|---|---|
-| JavaScript | Node.js `vm` module (built-in) | Nothing |
-| Python | `child_process` → `python` / `python3` | Python on PATH |
-| C++ | `g++ -std=c++17` → compiled binary | `g++` on PATH |
-| Java | `javac` + `java` | JDK on PATH |
-
-- `prompt()` (JS) and `input()` (Python) read from the **stdin panel** line by line
-- C++ and Java use `cin` / `Scanner` reading from the same stdin
-- 5 s execution timeout, temp files cleaned up after each run
-
-### In-game editor (post-solve)
-
-After solving any puzzle, a **"Run it yourself"** panel slides in at the bottom of the play area with:
-- Monaco editor pre-loaded with the corrected code
-  - AST pick-fix → the fixed program converted to the selected language
-  - AST reorder → the correct-order program
-  - Text pick-fix / fill-blank → the puzzle's source code as a starting point
-- Run button → calls `POST /api/run` (same backend endpoint as the standalone editor)
-- Stdin input (expandable) + output panel side by side
-- Player can edit the code freely before running
-
-### Backend endpoint
-
-```
-POST /api/run
-Body: { language: "javascript"|"python"|"cpp"|"java", code: string, stdin?: string }
-Response: { output: string, error: string|null, executionTimeMs: number }
-```
+> Render free tier spins down after 15 min (~30 s cold start). The $7/month Starter plan keeps it always-on.
 
 ---
 
 ## Adding puzzles
 
-| File | Format | Interaction |
+| File | Format | Interaction types |
 |---|---|---|
 | `api/_data/puzzles-source.ts` | AST | pick-fix (full step debugger) |
 | `api/_data/puzzles-reorder.ts` | AST | drag-and-drop reorder |
-| `api/_data/puzzles-python.ts` | Text | pick-fix + fill-blank |
-| `api/_data/puzzles-javascript.ts` | Text | pick-fix + fill-blank |
-| `api/_data/puzzles-cpp.ts` | Text | pick-fix + fill-blank |
-| `api/_data/puzzles-java.ts` | Text | pick-fix + fill-blank |
+| `api/_data/puzzles-python.ts` | Text | pick-fix, fill-blank |
+| `api/_data/puzzles-javascript.ts` | Text | pick-fix, fill-blank |
+| `api/_data/puzzles-cpp.ts` | Text | pick-fix, fill-blank |
+| `api/_data/puzzles-java.ts` | Text | pick-fix, fill-blank |
 
 Rules:
-- Every string field requires both `en` and `ka` translations
+- Every string field needs both `en` and `ka` values
 - IDs must be unique across all files
-- Run `npx tsc --noEmit` after editing to catch type errors
+- Run `npx tsc --noEmit` after editing to verify types

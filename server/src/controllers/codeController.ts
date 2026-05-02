@@ -73,13 +73,14 @@ function spawnRun(
 
     child.on("error", e => {
       clearTimeout(timer);
-      resolve({
-        output: "",
-        error: e.message.includes("ENOENT")
-          ? `"${cmd}" not found — is it installed and on PATH?`
-          : e.message,
-        executionTimeMs: Date.now() - start,
-      });
+      let error = e.message;
+      if (e.message.includes("ENOENT")) {
+        if (cmd === "g++")   error = `g++ not found.\n\nInstall on Windows:\n  winget install MSYS2.MSYS2\n  then: pacman -S mingw-w64-ucrt-x86_64-gcc\n  add C:\\msys64\\ucrt64\\bin to PATH\n\nInstall on Mac: brew install gcc\nInstall on Linux: sudo apt install g++`;
+        else if (cmd === "javac") error = `javac not found.\n\nInstall JDK:\n  Windows: winget install Oracle.JDK.21\n  Mac: brew install openjdk\n  Linux: sudo apt install default-jdk`;
+        else if (cmd === "python" || cmd === "python3") error = `Python not found.\n\nInstall from https://python.org/downloads\n(check "Add to PATH" during install)`;
+        else error = `"${cmd}" not found — is it installed and on PATH?`;
+      }
+      resolve({ output: "", error, executionTimeMs: Date.now() - start });
     });
   });
 }

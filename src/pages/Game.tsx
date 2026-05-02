@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Play, StepForward, RotateCcw, Lightbulb, CheckCircle2, XCircle,
   Code2, Blocks, ChevronRight, Sparkles, Target, BookOpen, GraduationCap,
-  MessageSquare, Globe, Loader2, Shuffle, PencilLine,
+  MessageSquare, Globe, Loader2, Shuffle, PencilLine, Terminal,
 } from "lucide-react";
 import TopNav from "@/components/TopNav";
 import { Button } from "@/components/ui/button";
@@ -96,6 +96,10 @@ export default function Game() {
     </div>
   );
 
+  const solvedEditorProps = solved && anyPuzzle
+    ? getSolvedCode(anyPuzzle, program, progLang, isAstPickFix)
+    : null;
+
   return (
     <div className="min-h-screen flex flex-col">
       <TopNav
@@ -187,16 +191,21 @@ export default function Game() {
         </motion.div>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="space-y-5">
-          <TabsList className="grid grid-cols-2 max-w-md">
-            <TabsTrigger value="learn" className="gap-2">
+          <TabsList className={cn("flex max-w-xl", solved ? "max-w-xl" : "max-w-md")}>
+            <TabsTrigger value="learn" className="flex-1 gap-2">
               <GraduationCap className="w-4 h-4" /> {t.game.conceptTab}
             </TabsTrigger>
-            <TabsTrigger value="play" className="gap-2">
+            <TabsTrigger value="play" className="flex-1 gap-2">
               {anyPuzzle.interaction === "reorder"    ? <Shuffle className="w-4 h-4" />
               : anyPuzzle.interaction === "fill-blank" ? <PencilLine className="w-4 h-4" />
               : <Code2 className="w-4 h-4" />}
               {t.game.debugTab}
             </TabsTrigger>
+            {solved && (
+              <TabsTrigger value="run" className="flex-1 gap-2 text-success data-[state=active]:text-success">
+                <Terminal className="w-4 h-4" /> Run it yourself
+              </TabsTrigger>
+            )}
           </TabsList>
 
           <div hidden={tab !== "learn"}>
@@ -314,6 +323,11 @@ export default function Game() {
               d={d} t={t}
             />
           </div>
+
+          {/* Run it yourself tab */}
+          <div hidden={tab !== "run"}>
+            {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
+          </div>
         </Tabs>
       </main>
     </div>
@@ -360,11 +374,15 @@ function getSolvedCode(
     };
   }
   if (anyPuzzle.format === "text" && anyPuzzle.interaction === "pick-fix") {
-    return { code: (anyPuzzle as TextPickFixPuzzle).code, language: lang };
+    const p = anyPuzzle as TextPickFixPuzzle;
+    const fix = p.fixes.find(f => f.correct);
+    const header = fix ? `// Fix applied: ${fix.label}\n\n` : "";
+    return { code: header + p.code, language: lang };
   }
   if (anyPuzzle.format === "text" && anyPuzzle.interaction === "fill-blank") {
     const p = anyPuzzle as TextFillBlankPuzzle;
-    return { code: p.codeBefore + "/* fill in the blank */" + p.codeAfter, language: lang };
+    const correct = p.options.find(o => o.correct)?.value ?? "???";
+    return { code: p.codeBefore + correct + p.codeAfter, language: lang };
   }
   if (anyPuzzle.format === "ast" && anyPuzzle.interaction === "reorder") {
     const p = anyPuzzle as AstReorderPuzzle;
@@ -388,53 +406,40 @@ function PlayArea({
   handleSolve, setFeedback, setTab, d, t,
 }: PlayAreaProps) {
 
-  const solvedEditorProps = solved
-    ? getSolvedCode(anyPuzzle, program, progLang, isAstPickFix)
-    : null;
-
   if (isTextPickFix) return (
-    <div className="space-y-0">
-      <div className="grid lg:grid-cols-[1fr_280px] gap-5">
-        <TextPickFix
-          key={anyPuzzle.id}
-          puzzle={anyPuzzle as TextPickFixPuzzle}
-          onSolved={(att) => handleSolve(anyPuzzle, att)}
-          onNext={loadNewPuzzle}
-        />
-        <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
-      </div>
-      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
+    <div className="grid lg:grid-cols-[1fr_280px] gap-5">
+      <TextPickFix
+        key={anyPuzzle.id}
+        puzzle={anyPuzzle as TextPickFixPuzzle}
+        onSolved={(att) => handleSolve(anyPuzzle, att)}
+        onNext={loadNewPuzzle}
+      />
+      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
     </div>
   );
 
   if (isTextFillBlank) return (
-    <div className="space-y-0">
-      <div className="grid lg:grid-cols-[1fr_280px] gap-5">
-        <TextFillBlank
-          key={anyPuzzle.id}
-          puzzle={anyPuzzle as TextFillBlankPuzzle}
-          onSolved={(att) => handleSolve(anyPuzzle, att)}
-          onNext={loadNewPuzzle}
-        />
-        <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
-      </div>
-      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
+    <div className="grid lg:grid-cols-[1fr_280px] gap-5">
+      <TextFillBlank
+        key={anyPuzzle.id}
+        puzzle={anyPuzzle as TextFillBlankPuzzle}
+        onSolved={(att) => handleSolve(anyPuzzle, att)}
+        onNext={loadNewPuzzle}
+      />
+      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
     </div>
   );
 
   if (isAstReorder) return (
-    <div className="space-y-0">
-      <div className="grid lg:grid-cols-[1fr_280px] gap-5">
-        <AstReorder
-          key={anyPuzzle.id}
-          puzzle={anyPuzzle as AstReorderPuzzle}
-          progLang={progLang}
-          onSolved={(att) => handleSolve(anyPuzzle, att)}
-          onNext={loadNewPuzzle}
-        />
-        <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
-      </div>
-      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
+    <div className="grid lg:grid-cols-[1fr_280px] gap-5">
+      <AstReorder
+        key={anyPuzzle.id}
+        puzzle={anyPuzzle as AstReorderPuzzle}
+        progLang={progLang}
+        onSolved={(att) => handleSolve(anyPuzzle, att)}
+        onNext={loadNewPuzzle}
+      />
+      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
     </div>
   );
 
@@ -605,7 +610,6 @@ function PlayArea({
           </div>
         </aside>
       </div>
-      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
     </div>
   );
 }
