@@ -1,43 +1,39 @@
 generator client {
-  provider = "prisma-client"
-  output   = "../src/generated/prisma"
+  provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
-// ─── Core models ─────────────────────────────────────────────────────────────
-
 model User {
-  id        String    @id @default(uuid())
-  email     String    @unique
-  createdAt DateTime  @default(now())
-  attempts  Attempt[]
+  id           String    @id @default(uuid())
+  username     String    @unique
+  email        String?   @unique
+  passwordHash String?
+  createdAt    DateTime  @default(now())
+  attempts     Attempt[]
 }
 
 model Attempt {
-  id          String   @id @default(uuid())
-  userId      String
-  user        User     @relation(fields: [userId], references: [id])
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id])
 
-  // Puzzle identity
-  challengeId String
-  bugType     String
-  difficulty  String   // "easy" | "medium" | "hard"
-  language    String?  // programming language: python | javascript | cpp | java
+  challengeId  String
+  bugType      String
+  difficulty   String
+  language     String?
 
-  // Outcome
-  correct     Boolean
-  score       Int
-  time        Float    // seconds
-  hintsUsed   Int
-  retriesCount Int     @default(0)   // wrong attempts before solving (first try = 0)
+  correct      Boolean
+  score        Int
+  time         Float
+  hintsUsed    Int
+  retriesCount Int      @default(0)
+  performance  Float?
 
-  // Adaptive signal — 0.10 (floor) to 1.0 (perfect). Primary input for the adaptive engine.
-  performance Float?
-
-  createdAt   DateTime @default(now())
+  createdAt    DateTime @default(now())
 
   @@index([userId])
   @@index([challengeId])

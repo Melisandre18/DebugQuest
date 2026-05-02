@@ -109,7 +109,7 @@ export default function Trophies() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <TopNav backTo={{ to: "/modes", label: t.nav.modes }} />
+      <TopNav />
 
       <main className="container py-10 md:py-14 flex-1">
         {/* Hero */}

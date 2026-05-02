@@ -71,7 +71,7 @@ export default function Game() {
 
   if (loading) return (
     <div className="min-h-screen flex flex-col">
-      <TopNav center={<DifficultyBadge d={d} />} backTo={{ to: "/modes", label: t.nav.modes }} />
+      <TopNav center={<DifficultyBadge d={d} />} />
       <main className="container flex-1 flex items-center justify-center py-20">
         <div className="flex flex-col items-center gap-4 text-muted-foreground">
           <Loader2 className="w-10 h-10 animate-spin text-primary-glow" />
@@ -83,7 +83,7 @@ export default function Game() {
 
   if (loadError || !anyPuzzle) return (
     <div className="min-h-screen flex flex-col">
-      <TopNav center={<DifficultyBadge d={d} />} backTo={{ to: "/modes", label: t.nav.modes }} />
+      <TopNav center={<DifficultyBadge d={d} />} />
       <main className="container flex-1 flex items-center justify-center py-20">
         <div className="card-surface rounded-2xl p-8 max-w-md w-full text-center space-y-4">
           <XCircle className="w-10 h-10 text-destructive mx-auto" />
@@ -103,7 +103,6 @@ export default function Game() {
             <DifficultyBadge d={d} />
           </>
         }
-        backTo={{ to: "/modes", label: t.nav.modes }}
       />
 
       <main className="container py-6 md:py-8 flex-1">

@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ProgressProvider } from "@/contexts/ProgressContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 import Landing from "./pages/Landing";
 import Modes from "./pages/Modes";
 import Game from "./pages/Game";
@@ -16,6 +17,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
+      <AuthProvider>
       <ProgressProvider>
       <TooltipProvider>
         <Toaster />
@@ -31,6 +33,7 @@ const App = () => (
         </BrowserRouter>
       </TooltipProvider>
       </ProgressProvider>
+      </AuthProvider>
     </LanguageProvider>
   </QueryClientProvider>
 );

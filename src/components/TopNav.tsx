@@ -1,13 +1,15 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, ArrowLeft, Home, Gamepad2, Workflow, Menu, X } from "lucide-react";
+import { Trophy, ArrowLeft, Home, Gamepad2, Workflow, Menu, X, LogOut, UserIcon } from "lucide-react";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import FeedbackDialog from "@/components/FeedbackDialog";
+import AuthModal from "@/components/AuthModal";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useProgress } from "@/contexts/ProgressContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TopNavProps {
   /** Optional extra slot rendered between logo block and right-side actions. */
@@ -35,7 +37,9 @@ export default function TopNav({ center, backTo }: TopNavProps) {
   const { pathname, hash } = useLocation();
   const { t, language, setLanguage } = useLanguage();
   const { progress } = useProgress();
+  const { user, logout } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [authOpen, setAuthOpen] = useState(false);
 
   // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false); }, [pathname, hash]);
@@ -45,7 +49,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
     label:
       item.to === "/" ? t.nav.home :
       item.to === "/#how" ? t.nav.howItWorks :
-      item.to === "/modes" ? t.nav.modes :
+      item.to === "/modes" ? t.nav.play :
       item.to === "/trophies" ? t.nav.trophies :
       item.to,
   }));
@@ -143,6 +147,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
 
           {/* Feedback */}
           <FeedbackDialog />
+          <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
 
           {backTo && (
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
@@ -150,9 +155,25 @@ export default function TopNav({ center, backTo }: TopNavProps) {
             </Button>
           )}
 
-          {pathname === "/" && (
-            <Button asChild variant="hero" size="sm" className="hidden sm:inline-flex">
-              <Link to="/modes"><Gamepad2 className="w-4 h-4 mr-1" /> {t.nav.play}</Link>
+          {/* Auth — rightmost on desktop */}
+          {user ? (
+            <div className="hidden sm:flex items-center gap-1.5">
+              <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground px-2 py-1.5 rounded-md border border-border bg-background">
+                <UserIcon className="w-3.5 h-3.5" />
+                {user.username}
+              </span>
+              <button
+                type="button"
+                onClick={logout}
+                className="inline-flex items-center justify-center w-8 h-8 rounded-md border border-border bg-background hover:bg-secondary/60 transition-colors"
+                aria-label="Sign out"
+              >
+                <LogOut className="w-3.5 h-3.5 text-muted-foreground" />
+              </button>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setAuthOpen(true)}>
+              Sign in
             </Button>
           )}
 
