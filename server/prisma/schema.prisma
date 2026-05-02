@@ -1,0 +1,45 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─── Core models ─────────────────────────────────────────────────────────────
+
+model User {
+  id        String    @id @default(uuid())
+  email     String    @unique
+  createdAt DateTime  @default(now())
+  attempts  Attempt[]
+}
+
+model Attempt {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+
+  // Puzzle identity
+  challengeId String
+  bugType     String
+  difficulty  String   // "easy" | "medium" | "hard"
+  language    String?  // programming language: python | javascript | cpp | java
+
+  // Outcome
+  correct     Boolean
+  score       Int
+  time        Float    // seconds
+  hintsUsed   Int
+  retriesCount Int     @default(0)   // wrong attempts before solving (first try = 0)
+
+  // Adaptive signal — 0.10 (floor) to 1.0 (perfect). Primary input for the adaptive engine.
+  performance Float?
+
+  createdAt   DateTime @default(now())
+
+  @@index([userId])
+  @@index([challengeId])
+  @@index([bugType])
+}
