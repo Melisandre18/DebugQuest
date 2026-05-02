@@ -19,7 +19,7 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ACHIEVEMENTS } from "@/lib/progress";
+import { ACHIEVEMENTS, computePerformance } from "@/lib/progress";
 import { useProgress } from "@/contexts/ProgressContext";
 import { usePuzzleCounts } from "@/lib/puzzle-service";
 import { LANGUAGES, type Language } from "@/lib/puzzle-engine";
@@ -50,9 +50,15 @@ export default function Trophies() {
 
   const stats = useMemo(() => {
     const correct = filtered.filter(x => x.correct);
-    // Accuracy: quality of answers — deducted for wrong attempts and hints used
-    const quality = (x: typeof filtered[0]) => Math.max(0, 100 - (x.attempts - 1) * 30 - x.hintsUsed * 15);
-    const accuracy = filtered.length ? Math.round(filtered.reduce((s, x) => s + quality(x), 0) / filtered.length) : 0;
+    // Accuracy: average performance ratio across all attempts, using the formal scoring model
+    const accuracy = filtered.length
+      ? Math.round(
+          filtered.reduce((s, x) => {
+            const diff = (x.difficulty ?? "easy") as Exclude<import("@/lib/puzzle-engine").Difficulty, "adaptive">;
+            return s + computePerformance({ difficulty: diff, timeMs: x.timeMs, hintsUsed: x.hintsUsed, attempts: x.attempts }).performance;
+          }, 0) / filtered.length * 100
+        )
+      : 0;
     const avgTime = correct.length
       ? Math.round(correct.reduce((s, x) => s + x.timeMs, 0) / correct.length / 100) / 10
       : 0;

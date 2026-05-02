@@ -49,12 +49,87 @@ export const ACHIEVEMENTS: Record<string, { title: string; desc: string }> = {
   "streak-3":      { title: "On a Roll",        desc: "Solve 3 puzzles in a row first try." },
 };
 
-export function computeScore(opts: { difficulty: Exclude<Difficulty,"adaptive">; timeMs: number; hintsUsed: number; attempts: number; }): number {
-  const base = { easy: 100, medium: 200, hard: 350 }[opts.difficulty];
-  const timeBonus = Math.max(0, 60_000 - opts.timeMs) / 600; // up to +100
-  const hintPenalty = opts.hintsUsed * 25;
-  const attemptPenalty = (opts.attempts - 1) * 30;
-  return Math.max(10, Math.round(base + timeBonus - hintPenalty - attemptPenalty));
+// ─── Formal Scoring Model ────────────────────────────────────────────────────
+//
+//   score = base × performance
+//   performance = 1 − time_deduction − hint_deduction − retry_deduction
+//
+// All deductions are fractional so every weight is comparable across difficulties.
+// `performance` (0–1) is also the signal consumed by the adaptive puzzle selector.
+
+export const SCORING_CONFIG = {
+  // Base points for a correct solve — all penalties deduct from this
+  base: { easy: 100, medium: 200, hard: 350 } as const,
+
+  time: {
+    // Seconds at which penalty starts (solving within par = no time cost)
+    par:  { easy: 60,  medium: 90,  hard: 120 } as const,
+    // Seconds at which the full time weight is applied (linear ramp par → cap)
+    cap:  { easy: 150, medium: 210, hard: 300 } as const,
+    // Maximum fraction of base that can be lost to slow solving
+    weight: 0.40,
+  },
+
+  hints: {
+    // Fraction of base lost per hint used
+    penalty: 0.15,
+    // Hints beyond this have no additional cost (difficulty already limits hints shown)
+    maxPenalized: 3,
+  },
+
+  retries: {
+    // Fraction of base lost per wrong attempt (first attempt is always free)
+    penalty: 0.10,
+    // Retries beyond this have no additional cost
+    maxPenalized: 5,
+  },
+
+  // Minimum performance ratio — guarantees at least floor × base points for any correct solve
+  floor: 0.10,
+} as const;
+
+export interface PerformanceBreakdown {
+  /** Overall performance ratio in [floor, 1]. Adaptive system primary signal. */
+  performance: number;
+  /** Fraction lost to slow solving (0–time.weight) */
+  timePenalty: number;
+  /** Fraction lost to hints (0–hints.maxPenalized × hints.penalty) */
+  hintPenalty: number;
+  /** Fraction lost to retries (0–retries.maxPenalized × retries.penalty) */
+  retryPenalty: number;
+}
+
+export function computePerformance(opts: {
+  difficulty: Exclude<Difficulty, "adaptive">;
+  timeMs: number;
+  hintsUsed: number;
+  attempts: number;
+}): PerformanceBreakdown {
+  const cfg = SCORING_CONFIG;
+  const { difficulty, timeMs, hintsUsed, attempts } = opts;
+
+  const timeSec  = timeMs / 1000;
+  const par      = cfg.time.par[difficulty];
+  const cap      = cfg.time.cap[difficulty];
+  const overtime = Math.max(0, timeSec - par);
+  const timePenalty  = Math.min(overtime / (cap - par), 1) * cfg.time.weight;
+
+  const hintPenalty  = Math.min(hintsUsed, cfg.hints.maxPenalized) * cfg.hints.penalty;
+  const retryPenalty = Math.min(Math.max(0, attempts - 1), cfg.retries.maxPenalized) * cfg.retries.penalty;
+
+  const performance = Math.max(cfg.floor, 1 - timePenalty - hintPenalty - retryPenalty);
+  return { performance, timePenalty, hintPenalty, retryPenalty };
+}
+
+export function computeScore(opts: {
+  difficulty: Exclude<Difficulty, "adaptive">;
+  timeMs: number;
+  hintsUsed: number;
+  attempts: number;
+}): number {
+  const base = SCORING_CONFIG.base[opts.difficulty];
+  const { performance } = computePerformance(opts);
+  return Math.round(base * performance);
 }
 
 export function recordAttempt(rec: AttemptRecord, puzzle: Puzzle): { progress: Progress; newAchievements: string[] } {
