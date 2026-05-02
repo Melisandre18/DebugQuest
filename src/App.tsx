@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { ProgressProvider } from "@/contexts/ProgressContext";
 import Landing from "./pages/Landing";
 import Modes from "./pages/Modes";
 import Game from "./pages/Game";
@@ -15,6 +16,7 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <LanguageProvider>
+      <ProgressProvider>
       <TooltipProvider>
         <Toaster />
         <Sonner />
@@ -28,6 +30,7 @@ const App = () => (
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
+      </ProgressProvider>
     </LanguageProvider>
   </QueryClientProvider>
 );

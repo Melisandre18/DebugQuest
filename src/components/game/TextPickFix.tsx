@@ -11,7 +11,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 
 interface Props {
   puzzle: TextPickFixPuzzle;
-  onSolved: (score: number, attempts: number) => void;
+  onSolved: (attempts: number) => void;
   onNext: () => void;
 }
 
@@ -26,7 +26,7 @@ export default function TextPickFix({ puzzle, onSolved, onNext }: Props) {
     if (solved) return;
     setPicked(fix);
     setAttempts(a => a + 1);
-    if (fix.correct) onSolved(Math.max(50, 200 - attempts * 40), attempts + 1);
+    if (fix.correct) onSolved(attempts + 1);
   }
 
   function handleRetry() {

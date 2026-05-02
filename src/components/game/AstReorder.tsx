@@ -14,7 +14,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface Props {
   puzzle: AstReorderPuzzle;
   progLang: import("@/lib/puzzle-engine").Language;
-  onSolved: (score: number, attempts: number) => void;
+  onSolved: (attempts: number) => void;
   onNext: () => void;
 }
 
@@ -29,7 +29,7 @@ export default function AstReorder({ puzzle, progLang, onSolved, onNext }: Props
     const correct = puzzle.correctOrder.every((id, i) => id === userOrder[i]);
     setAttempts(a => a + 1);
     setResult(correct ? "correct" : "wrong");
-    if (correct) onSolved(Math.max(50, 300 - attempts * 60), attempts + 1);
+    if (correct) onSolved(attempts + 1);
   }
 
   function handleRetry() {

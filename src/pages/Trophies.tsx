@@ -19,14 +19,15 @@ import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { ACHIEVEMENTS, loadProgress, resetProgress } from "@/lib/progress";
+import { ACHIEVEMENTS } from "@/lib/progress";
+import { useProgress } from "@/contexts/ProgressContext";
 import { usePuzzleCounts } from "@/lib/puzzle-service";
 import { LANGUAGES, type Language } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Trophies() {
-  const progress = loadProgress();
+  const { progress, resetProgress } = useProgress();
   const { t } = useLanguage();
   const a = progress.attempts;
   const { data: puzzleCounts } = usePuzzleCounts();
@@ -169,7 +170,7 @@ export default function Trophies() {
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
-                          onClick={() => { resetProgress(); location.reload(); }}
+                          onClick={resetProgress}
                         >
                           <Trash2 className="w-4 h-4" /> Reset everything
                         </AlertDialogAction>

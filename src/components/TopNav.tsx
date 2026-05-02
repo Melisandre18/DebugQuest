@@ -5,9 +5,9 @@ import { Trophy, ArrowLeft, Home, Gamepad2, Workflow, Menu, X } from "lucide-rea
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import FeedbackDialog from "@/components/FeedbackDialog";
-import { loadProgress } from "@/lib/progress";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { useProgress } from "@/contexts/ProgressContext";
 
 interface TopNavProps {
   /** Optional extra slot rendered between logo block and right-side actions. */
@@ -15,8 +15,6 @@ interface TopNavProps {
   /** Show "back to modes" button (used on Game). */
   backTo?: { to: string; label: string };
 }
-
-const STORAGE_KEY = "debugquest.progress.v1";
 
 interface NavItem {
   label: string;
@@ -36,30 +34,8 @@ const STATIC_NAV_ITEMS: Omit<NavItem, "label">[] = [
 export default function TopNav({ center, backTo }: TopNavProps) {
   const { pathname, hash } = useLocation();
   const { t, language, setLanguage } = useLanguage();
-  const [score, setScore] = useState<number>(() => loadProgress().totalScore);
-  const [solved, setSolved] = useState<number>(() => loadProgress().solved.length);
-  const [bump, setBump] = useState(0);
+  const { progress } = useProgress();
   const [mobileOpen, setMobileOpen] = useState(false);
-
-  useEffect(() => {
-    const refresh = () => {
-      const p = loadProgress();
-      setScore(prev => {
-        if (p.totalScore !== prev) setBump(b => b + 1);
-        return p.totalScore;
-      });
-      setSolved(p.solved.length);
-    };
-    const onStorage = (e: StorageEvent) => { if (e.key === STORAGE_KEY) refresh(); };
-    window.addEventListener("storage", onStorage);
-    window.addEventListener("debugquest:progress", refresh);
-    const t = window.setInterval(refresh, 1500);
-    return () => {
-      window.removeEventListener("storage", onStorage);
-      window.removeEventListener("debugquest:progress", refresh);
-      window.clearInterval(t);
-    };
-  }, []);
 
   // Close mobile menu on route change
   useEffect(() => { setMobileOpen(false); }, [pathname, hash]);
@@ -150,18 +126,18 @@ export default function TopNav({ center, backTo }: TopNavProps) {
             </span>
             <AnimatePresence mode="popLayout">
               <motion.span
-                key={`${score}-${bump}`}
+                key={progress.totalScore}
                 initial={{ y: -8, opacity: 0, scale: 0.9 }}
                 animate={{ y: 0, opacity: 1, scale: 1 }}
                 exit={{ y: 8, opacity: 0, scale: 0.9 }}
                 transition={{ type: "spring", stiffness: 380, damping: 22 }}
                 className="font-display font-bold text-sm tabular-nums text-gradient-accent"
               >
-                {score.toLocaleString()}
+                {progress.totalScore.toLocaleString()}
               </motion.span>
             </AnimatePresence>
             <span className="text-[10px] uppercase tracking-wider text-muted-foreground hidden lg:inline">
-              {solved} {t.common.solved}
+              {progress.solved.length} {t.common.solved}
             </span>
           </Link>
 
@@ -234,7 +210,3 @@ export default function TopNav({ center, backTo }: TopNavProps) {
   );
 }
 
-/** Helper to fire when score updates so the nav refreshes instantly. */
-export function notifyProgressChanged() {
-  window.dispatchEvent(new CustomEvent("debugquest:progress"));
-}

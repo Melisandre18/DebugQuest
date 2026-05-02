@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Play, StepForward, RotateCcw, Lightbulb, CheckCircle2, XCircle,
   Code2, Blocks, ChevronRight, Sparkles, Target, BookOpen, GraduationCap,
   MessageSquare, Globe, Loader2, Shuffle, PencilLine,
 } from "lucide-react";
-import TopNav, { notifyProgressChanged } from "@/components/TopNav";
+import TopNav from "@/components/TopNav";
 import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -22,23 +21,14 @@ import TextPickFix from "@/components/game/TextPickFix";
 import TextFillBlank from "@/components/game/TextFillBlank";
 import AstReorder from "@/components/game/AstReorder";
 import {
-  Difficulty, FixOption, LANGUAGES, Language, Program, Puzzle, RunResult,
-  matchesExpected, run,
+  type Difficulty, type FixOption, LANGUAGES, type Language, type Program,
+  type Puzzle, type RunResult, type Step,
 } from "@/lib/puzzle-engine";
 import { getLesson } from "@/lib/lessons";
-import { ACHIEVEMENTS, computeScore, loadProgress, recordAttempt } from "@/lib/progress";
-import {
-  getNextPuzzle, toRuntimePuzzle,
-  type AnyPuzzle, type AstPickFixPuzzle, type AstReorderPuzzle,
-  type TextPickFixPuzzle, type TextFillBlankPuzzle,
-} from "@/lib/puzzle-service";
-import { toast } from "sonner";
+import { type AnyPuzzle, type AstReorderPuzzle, type TextPickFixPuzzle, type TextFillBlankPuzzle } from "@/lib/puzzle-service";
 import { cn } from "@/lib/utils";
-import { useLanguage } from "@/contexts/LanguageContext";
-import type { Translations } from "@/lib/translations";
-
-type View = "blocks" | "code";
-type Tab  = "learn" | "play";
+import { type Translations } from "@/lib/translations";
+import { useGameSession, maxHints, type View, type Tab } from "@/hooks/useGameSession";
 
 const PROG_LANG_LABELS: Record<Language, string> = {
   python: "Python", javascript: "JavaScript", cpp: "C++", java: "Java",
@@ -63,139 +53,22 @@ function InteractionBadge({ interaction }: { interaction: string }) {
 
 export default function Game() {
   const { difficulty, language: urlLanguage } = useParams<{ difficulty: Difficulty; language?: Language }>();
-  const navigate = useNavigate();
-  const { t, language: uiLang } = useLanguage();
 
   const d = (["easy","medium","hard","adaptive"].includes(difficulty ?? "") ? difficulty : "easy") as Difficulty;
   const initialProgLang = (["python","javascript","cpp","java"].includes(urlLanguage ?? "") ? urlLanguage : "python") as Language;
 
-  // ── state ─────────────────────────────────────────────────────────────────
-  const [anyPuzzle, setAnyPuzzle]   = useState<AnyPuzzle | null>(null);
-  const [loading, setLoading]       = useState(true);
-  const [loadError, setLoadError]   = useState<string | null>(null);
-  const [tab, setTab]               = useState<Tab>("learn");
-  const [progLang, setProgLang]     = useState<Language>(initialProgLang);
-  const [sessionSolved, setSessionSolved] = useState(0);
+  const session = useGameSession(d, initialProgLang);
+  const {
+    loading, loadError, anyPuzzle, astPuzzle, runResult, currentStep, lesson, hints, maxHintsCount,
+    isAstPickFix, isAstReorder, isTextPickFix, isTextFillBlank,
+    sessionSolved, progLang, tab, setTab,
+    view, setView, program, setProgram,
+    hintsRevealed, attempts, solved, revealedBug, feedback, setFeedback,
+    stepIdx, autoRunning, meta, showCodeToggle,
+    loadNewPuzzle, tryFix, handleSolve, revealHint, handleProgLangChange,
+    step, startAuto, resetExecution, t,
+  } = session;
 
-  // AST pick-fix specific state
-  const [view, setView]             = useState<View>(initialProgLang !== "python" && d !== "easy" ? "code" : "blocks");
-  const [program, setProgram]       = useState<Program>([]);
-  const [hintsRevealed, setHintsRevealed] = useState(0);
-  const [attempts, setAttempts]     = useState(0);
-  const [solved, setSolved]         = useState(false);
-  const [revealedBug, setRevealedBug] = useState(false);
-  const [feedback, setFeedback]     = useState<{ option: FixOption; correct: boolean; result: RunResult } | null>(null);
-  const startedAt = useRef(performance.now());
-
-  // Execution
-  const astPuzzle: Puzzle | null = useMemo(() => {
-    if (!anyPuzzle || anyPuzzle.format !== "ast" || anyPuzzle.interaction !== "pick-fix") return null;
-    return toRuntimePuzzle(anyPuzzle as AstPickFixPuzzle);
-  }, [anyPuzzle]);
-
-  const runResult = useMemo(() => (program.length ? run(program) : null), [program]);
-  const [stepIdx, setStepIdx]       = useState(0);
-  const [autoRunning, setAutoRunning] = useState(false);
-  const autoTimer = useRef<number | null>(null);
-
-  useEffect(() => { setStepIdx(0); stopAuto(); }, [program]);
-  useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [d, initialProgLang]);
-
-  useEffect(() => { loadNewPuzzle(); }, [d, uiLang, progLang]);
-
-  const loadNewPuzzle = useCallback(async () => {
-    setLoading(true); setLoadError(null);
-    try {
-      const progress = loadProgress();
-      const next = await getNextPuzzle({
-        difficulty: d, lang: uiLang, progLang,
-        solved: progress.solved,
-        recent: progress.attempts.slice(-5).map(a => ({ puzzleId: a.puzzleId, correct: a.correct, hintsUsed: a.hintsUsed, attempts: a.attempts })),
-      });
-      setAnyPuzzle(next);
-      if (next.format === "ast" && next.interaction === "pick-fix") {
-        const rp = toRuntimePuzzle(next as AstPickFixPuzzle);
-        setProgram(rp.program);
-      }
-      setHintsRevealed(0); setAttempts(0); setSolved(false); setRevealedBug(false);
-      setFeedback(null); setStepIdx(0); setTab("learn");
-      startedAt.current = performance.now();
-    } catch {
-      setLoadError(t.game.loadError);
-    } finally { setLoading(false); }
-  }, [d, uiLang, progLang]);
-
-  function stopAuto() {
-    if (autoTimer.current) { window.clearInterval(autoTimer.current); autoTimer.current = null; }
-    setAutoRunning(false);
-  }
-  function step() { if (!runResult) return; setStepIdx(i => Math.min(i + 1, runResult.steps.length - 1)); }
-  function startAuto() {
-    if (!runResult) return;
-    if (autoRunning) { stopAuto(); return; }
-    setAutoRunning(true);
-    autoTimer.current = window.setInterval(() => {
-      setStepIdx(i => {
-        const next = i + 1;
-        if (!runResult || next >= runResult.steps.length) { stopAuto(); return runResult ? runResult.steps.length - 1 : 0; }
-        return next;
-      });
-    }, 450);
-  }
-  function resetExecution() { setStepIdx(0); stopAuto(); }
-
-  function tryFix(option: FixOption) {
-    if (!astPuzzle) return;
-    const next = option.apply(program);
-    const result = run(next);
-    const correct = option.correct && matchesExpected(result, astPuzzle.expected);
-    const newAttempts = attempts + 1;
-    setAttempts(newAttempts); setProgram(next); setFeedback({ option, correct, result }); setStepIdx(0);
-    if (correct && !solved) {
-      setSolved(true); setRevealedBug(true);
-      const elapsed = performance.now() - startedAt.current;
-      const diffForScore = (d === "adaptive" ? astPuzzle.difficulty : d) as Exclude<Difficulty,"adaptive">;
-      const score = computeScore({ difficulty: diffForScore, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: newAttempts });
-      handleSolve(astPuzzle, score, newAttempts);
-    } else if (!correct) { toast.error(t.messages.incorrect); }
-  }
-
-  function handleSolve(puzzle: { id: string; difficulty: string; title?: string }, score: number, att?: number) {
-    const elapsed = performance.now() - startedAt.current;
-    setSolved(true);
-    const { newAchievements } = recordAttempt(
-      { puzzleId: puzzle.id, correct: true, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att ?? 1, score, at: Date.now(), language: progLang, difficulty: puzzle.difficulty, puzzleTitle: puzzle.title },
-      puzzle as any
-    );
-    toast.success(`+${score} ${t.messages.points}`, { description: t.messages.correct });
-    notifyProgressChanged();
-    setSessionSolved(s => s + 1);
-    newAchievements.forEach(code => {
-      const a = ACHIEVEMENTS[code];
-      toast(`🏆 ${a.title}`, { description: a.desc });
-    });
-  }
-
-  function revealHint() {
-    if (!anyPuzzle) return;
-    const max = maxHints(anyPuzzle.hints.length, d);
-    if (hintsRevealed >= max) return;
-    setHintsRevealed(h => h + 1);
-  }
-
-  function handleProgLangChange(lang: Language) {
-    setProgLang(lang); navigate(`/play/${d}/${lang}`, { replace: true });
-  }
-
-  // ── derived ───────────────────────────────────────────────────────────────
-  const meta = DIFFICULTY_META[d];
-  const showCodeToggle = d !== "easy";
-  const currentStep = runResult?.steps[stepIdx];
-  const lesson = anyPuzzle ? getLesson(anyPuzzle.bugType as any) : null;
-  const hints = anyPuzzle?.hints ?? [];
-  const maxHintsCount = maxHints(hints.length, d);
-
-  // ── loading ───────────────────────────────────────────────────────────────
   if (loading) return (
     <div className="min-h-screen flex flex-col">
       <TopNav center={<DifficultyBadge d={d} />} backTo={{ to: "/modes", label: t.nav.modes }} />
@@ -221,14 +94,6 @@ export default function Game() {
     </div>
   );
 
-  const isAstPickFix  = anyPuzzle.format === "ast" && anyPuzzle.interaction === "pick-fix";
-  const isAstReorder  = anyPuzzle.format === "ast" && anyPuzzle.interaction === "reorder";
-  const isTextPickFix = anyPuzzle.format === "text" && anyPuzzle.interaction === "pick-fix";
-  const isTextFillBlank = anyPuzzle.format === "text" && anyPuzzle.interaction === "fill-blank";
-
-  // Every puzzle shows both tabs; text puzzles use a simple concept card instead of LessonPanel
-  const showLearnTab = true;
-
   return (
     <div className="min-h-screen flex flex-col">
       <TopNav
@@ -243,7 +108,6 @@ export default function Game() {
 
       <main className="container py-6 md:py-8 flex-1">
 
-        {/* Session progress bar */}
         {sessionSolved > 0 && (
           <motion.div
             initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
@@ -321,179 +185,157 @@ export default function Game() {
           </div>
         </motion.div>
 
-        {/* Main content: Learn + Play tabs (or just Play for text puzzles without a lesson) */}
-        {showLearnTab ? (
-          <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="space-y-5">
-            <TabsList className="grid grid-cols-2 max-w-md">
-              <TabsTrigger value="learn" className="gap-2">
-                <GraduationCap className="w-4 h-4" /> {t.game.conceptTab}
-              </TabsTrigger>
-              <TabsTrigger value="play" className="gap-2">
-                {anyPuzzle.interaction === "reorder"    ? <Shuffle className="w-4 h-4" />
-                : anyPuzzle.interaction === "fill-blank" ? <PencilLine className="w-4 h-4" />
-                : <Code2 className="w-4 h-4" />}
-                {t.game.debugTab}
-              </TabsTrigger>
-            </TabsList>
+        <Tabs value={tab} onValueChange={(v) => setTab(v as Tab)} className="space-y-5">
+          <TabsList className="grid grid-cols-2 max-w-md">
+            <TabsTrigger value="learn" className="gap-2">
+              <GraduationCap className="w-4 h-4" /> {t.game.conceptTab}
+            </TabsTrigger>
+            <TabsTrigger value="play" className="gap-2">
+              {anyPuzzle.interaction === "reorder"    ? <Shuffle className="w-4 h-4" />
+              : anyPuzzle.interaction === "fill-blank" ? <PencilLine className="w-4 h-4" />
+              : <Code2 className="w-4 h-4" />}
+              {t.game.debugTab}
+            </TabsTrigger>
+          </TabsList>
 
-            <div hidden={tab !== "learn"}>
-              {lesson ? (
-                <div className="grid lg:grid-cols-[1fr_300px] gap-5">
-                  <LessonPanel lesson={lesson} language={progLang} onContinue={() => setTab("play")} />
-                  <aside className="space-y-4">
-                    <div className="card-surface rounded-xl p-4 flex items-center gap-3">
-                      <Globe className="w-5 h-5 text-primary-glow shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">{t.game.activeProgrammingLang}</div>
-                        <div className="font-mono font-semibold text-sm">{PROG_LANG_LABELS[progLang]}</div>
-                      </div>
-                      <Select value={progLang} onValueChange={(v) => handleProgLangChange(v as Language)}>
-                        <SelectTrigger className="h-7 w-[110px] text-xs font-mono">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LANGUAGES.map((l) => <SelectItem key={l.id} value={l.id} className="font-mono text-xs">{l.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+          <div hidden={tab !== "learn"}>
+            {lesson ? (
+              <div className="grid lg:grid-cols-[1fr_300px] gap-5">
+                <LessonPanel lesson={lesson} language={progLang} onContinue={() => setTab("play")} />
+                <aside className="space-y-4">
+                  <div className="card-surface rounded-xl p-4 flex items-center gap-3">
+                    <Globe className="w-5 h-5 text-primary-glow shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">{t.game.activeProgrammingLang}</div>
+                      <div className="font-mono font-semibold text-sm">{PROG_LANG_LABELS[progLang]}</div>
                     </div>
-                    <div className="card-surface rounded-xl p-5">
-                      <div className="font-display font-semibold inline-flex items-center gap-2 mb-2">
-                        <BookOpen className="w-4 h-4 text-primary-glow" /> {t.game.whyLearnFirst}
-                      </div>
-                      <p className="text-sm text-muted-foreground">{t.game.whyLearnFirstDesc}</p>
+                    <Select value={progLang} onValueChange={(v) => handleProgLangChange(v as Language)}>
+                      <SelectTrigger className="h-7 w-[110px] text-xs font-mono">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((l) => <SelectItem key={l.id} value={l.id} className="font-mono text-xs">{l.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="card-surface rounded-xl p-5">
+                    <div className="font-display font-semibold inline-flex items-center gap-2 mb-2">
+                      <BookOpen className="w-4 h-4 text-primary-glow" /> {t.game.whyLearnFirst}
                     </div>
-                    <div className="card-surface rounded-xl p-5 text-sm space-y-2">
-                      <div className="font-display font-semibold inline-flex items-center gap-2">
-                        <Target className="w-4 h-4 text-accent" /> {t.gameUI.whenReady}
-                      </div>
-                      <p className="text-muted-foreground text-[13px]">{t.gameUI.debugInstructions}</p>
-                      <Button variant="hero" size="sm" className="w-full mt-2" onClick={() => setTab("play")}>
-                        {t.gameUI.goToDebug} <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
+                    <p className="text-sm text-muted-foreground">{t.game.whyLearnFirstDesc}</p>
+                  </div>
+                  <div className="card-surface rounded-xl p-5 text-sm space-y-2">
+                    <div className="font-display font-semibold inline-flex items-center gap-2">
+                      <Target className="w-4 h-4 text-accent" /> {t.gameUI.whenReady}
                     </div>
-                  </aside>
-                </div>
-              ) : (
-                /* Concept card for puzzles without a full lesson */
-                <div className="grid lg:grid-cols-[1fr_300px] gap-5">
-                  <div className="space-y-4">
-                    <div className="card-surface rounded-2xl p-6 space-y-4">
-                      <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-primary-glow font-semibold">
-                        <BookOpen className="w-4 h-4" /> {t.game.concept}
-                      </div>
-                      <h2 className="font-display text-xl font-bold">{anyPuzzle.concept}</h2>
-                      <p className="text-muted-foreground text-sm leading-relaxed">{anyPuzzle.story}</p>
-                      <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
-                        <div className="text-xs uppercase tracking-wider text-primary-glow font-semibold mb-2">{t.game.goal}</div>
-                        <p className="text-sm">{anyPuzzle.task}</p>
-                      </div>
-                    </div>
-                    {hints.length > 0 && (
-                      <div className="card-surface rounded-xl p-5 space-y-3">
-                        <div className="font-display font-semibold inline-flex items-center gap-2">
-                          <Lightbulb className="w-4 h-4 text-accent" /> {t.game.keyIdeas}
-                        </div>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
-                          {hints.slice(0, 2).map((h, i) => (
-                            <li key={i} className="flex items-start gap-2">
-                              <span className="w-5 h-5 rounded-md bg-accent/20 text-accent text-xs font-bold inline-flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
-                              <span>{h}</span>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    <Button variant="hero" className="w-full" onClick={() => setTab("play")}>
+                    <p className="text-muted-foreground text-[13px]">{t.gameUI.debugInstructions}</p>
+                    <Button variant="hero" size="sm" className="w-full mt-2" onClick={() => setTab("play")}>
                       {t.gameUI.goToDebug} <ChevronRight className="w-4 h-4 ml-1" />
                     </Button>
                   </div>
-                  <aside className="space-y-4">
-                    <div className="card-surface rounded-xl p-4 flex items-center gap-3">
-                      <Globe className="w-5 h-5 text-primary-glow shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">{t.game.activeProgrammingLang}</div>
-                        <div className="font-mono font-semibold text-sm">{PROG_LANG_LABELS[progLang]}</div>
-                      </div>
-                      <Select value={progLang} onValueChange={(v) => handleProgLangChange(v as Language)}>
-                        <SelectTrigger className="h-7 w-[110px] text-xs font-mono">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {LANGUAGES.map((l) => <SelectItem key={l.id} value={l.id} className="font-mono text-xs">{l.label}</SelectItem>)}
-                        </SelectContent>
-                      </Select>
+                </aside>
+              </div>
+            ) : (
+              <div className="grid lg:grid-cols-[1fr_300px] gap-5">
+                <div className="space-y-4">
+                  <div className="card-surface rounded-2xl p-6 space-y-4">
+                    <div className="inline-flex items-center gap-2 text-xs uppercase tracking-wider text-primary-glow font-semibold">
+                      <BookOpen className="w-4 h-4" /> {t.game.concept}
                     </div>
-                    <div className="card-surface rounded-xl p-5 text-sm space-y-2">
+                    <h2 className="font-display text-xl font-bold">{anyPuzzle.concept}</h2>
+                    <p className="text-muted-foreground text-sm leading-relaxed">{anyPuzzle.story}</p>
+                    <div className="rounded-lg bg-primary/5 border border-primary/20 p-4">
+                      <div className="text-xs uppercase tracking-wider text-primary-glow font-semibold mb-2">{t.game.goal}</div>
+                      <p className="text-sm">{anyPuzzle.task}</p>
+                    </div>
+                  </div>
+                  {hints.length > 0 && (
+                    <div className="card-surface rounded-xl p-5 space-y-3">
                       <div className="font-display font-semibold inline-flex items-center gap-2">
-                        <Target className="w-4 h-4 text-accent" /> {t.gameUI.whenReady}
+                        <Lightbulb className="w-4 h-4 text-accent" /> {t.game.keyIdeas}
                       </div>
-                      <p className="text-muted-foreground text-[13px]">{t.gameUI.debugInstructions}</p>
+                      <ul className="space-y-2 text-sm text-muted-foreground">
+                        {hints.slice(0, 2).map((h, i) => (
+                          <li key={i} className="flex items-start gap-2">
+                            <span className="w-5 h-5 rounded-md bg-accent/20 text-accent text-xs font-bold inline-flex items-center justify-center shrink-0 mt-0.5">{i + 1}</span>
+                            <span>{h}</span>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                  </aside>
+                  )}
+                  <Button variant="hero" className="w-full" onClick={() => setTab("play")}>
+                    {t.gameUI.goToDebug} <ChevronRight className="w-4 h-4 ml-1" />
+                  </Button>
                 </div>
-              )}
-            </div>
+                <aside className="space-y-4">
+                  <div className="card-surface rounded-xl p-4 flex items-center gap-3">
+                    <Globe className="w-5 h-5 text-primary-glow shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs uppercase tracking-wider text-muted-foreground mb-0.5">{t.game.activeProgrammingLang}</div>
+                      <div className="font-mono font-semibold text-sm">{PROG_LANG_LABELS[progLang]}</div>
+                    </div>
+                    <Select value={progLang} onValueChange={(v) => handleProgLangChange(v as Language)}>
+                      <SelectTrigger className="h-7 w-[110px] text-xs font-mono">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {LANGUAGES.map((l) => <SelectItem key={l.id} value={l.id} className="font-mono text-xs">{l.label}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="card-surface rounded-xl p-5 text-sm space-y-2">
+                    <div className="font-display font-semibold inline-flex items-center gap-2">
+                      <Target className="w-4 h-4 text-accent" /> {t.gameUI.whenReady}
+                    </div>
+                    <p className="text-muted-foreground text-[13px]">{t.gameUI.debugInstructions}</p>
+                  </div>
+                </aside>
+              </div>
+            )}
+          </div>
 
-            <div hidden={tab !== "play"}>
-              <PlayArea
-                anyPuzzle={anyPuzzle} astPuzzle={astPuzzle} progLang={progLang}
-                isAstPickFix={isAstPickFix} isAstReorder={isAstReorder}
-                isTextPickFix={isTextPickFix} isTextFillBlank={isTextFillBlank}
-                program={program} setProgram={setProgram} runResult={runResult}
-                stepIdx={stepIdx} autoRunning={autoRunning} revealedBug={revealedBug}
-                solved={solved} feedback={feedback} attempts={attempts}
-                hintsRevealed={hintsRevealed} hints={hints} maxHintsCount={maxHintsCount}
-                view={view} setView={setView} showCodeToggle={showCodeToggle}
-                currentStep={currentStep}
-                tryFix={tryFix} step={step} startAuto={startAuto}
-                resetExecution={resetExecution} revealHint={revealHint}
-                loadNewPuzzle={loadNewPuzzle}
-                handleSolve={handleSolve} setFeedback={setFeedback} setTab={setTab}
-                d={d} t={t}
-              />
-            </div>
-          </Tabs>
-        ) : (
-          // No Learn tab for puzzles without a mapped lesson
-          <PlayArea
-            anyPuzzle={anyPuzzle} astPuzzle={astPuzzle} progLang={progLang}
-            isAstPickFix={isAstPickFix} isAstReorder={isAstReorder}
-            isTextPickFix={isTextPickFix} isTextFillBlank={isTextFillBlank}
-            program={program} setProgram={setProgram} runResult={runResult}
-            stepIdx={stepIdx} autoRunning={autoRunning} revealedBug={revealedBug}
-            solved={solved} feedback={feedback} attempts={attempts}
-            hintsRevealed={hintsRevealed} hints={hints} maxHintsCount={maxHintsCount}
-            view={view} setView={setView} showCodeToggle={showCodeToggle}
-            currentStep={currentStep}
-            tryFix={tryFix} step={step} startAuto={startAuto}
-            resetExecution={resetExecution} revealHint={revealHint}
-            loadNewPuzzle={loadNewPuzzle}
-            handleSolve={handleSolve} setFeedback={setFeedback} setTab={setTab}
-            d={d} t={t}
-          />
-        )}
+          <div hidden={tab !== "play"}>
+            <PlayArea
+              anyPuzzle={anyPuzzle} astPuzzle={astPuzzle} progLang={progLang}
+              isAstPickFix={isAstPickFix} isAstReorder={isAstReorder}
+              isTextPickFix={isTextPickFix} isTextFillBlank={isTextFillBlank}
+              program={program} setProgram={setProgram} runResult={runResult}
+              stepIdx={stepIdx} autoRunning={autoRunning} revealedBug={revealedBug}
+              solved={solved} feedback={feedback} attempts={attempts}
+              hintsRevealed={hintsRevealed} hints={hints} maxHintsCount={maxHintsCount}
+              view={view} setView={setView} showCodeToggle={showCodeToggle}
+              currentStep={currentStep}
+              tryFix={tryFix} step={step} startAuto={startAuto}
+              resetExecution={resetExecution} revealHint={revealHint}
+              loadNewPuzzle={loadNewPuzzle}
+              handleSolve={handleSolve} setFeedback={setFeedback} setTab={setTab}
+              d={d} t={t}
+            />
+          </div>
+        </Tabs>
       </main>
     </div>
   );
 }
 
-// ─── PlayArea: routes to the right interaction component ───────────────────
+// ─── PlayArea ─────────────────────────────────────────────────────────────────
 
 interface PlayAreaProps {
   anyPuzzle: AnyPuzzle;
-  astPuzzle: import("@/lib/puzzle-engine").Puzzle | null;
+  astPuzzle: Puzzle | null;
   progLang: Language;
   isAstPickFix: boolean; isAstReorder: boolean; isTextPickFix: boolean; isTextFillBlank: boolean;
-  program: Program; setProgram: (p: Program) => void; runResult: RunResult | null;
+  program: Program; setProgram: (p: Program) => void; runResult: ReturnType<typeof import("@/lib/puzzle-engine").run> | null;
   stepIdx: number; autoRunning: boolean; revealedBug: boolean;
   solved: boolean; feedback: { option: FixOption; correct: boolean; result: RunResult } | null;
   attempts: number; hintsRevealed: number; hints: string[]; maxHintsCount: number;
-  view: "blocks"|"code"; setView: (v: "blocks"|"code") => void; showCodeToggle: boolean;
-  currentStep: import("@/lib/puzzle-engine").Step | undefined;
+  view: View; setView: (v: View) => void; showCodeToggle: boolean;
+  currentStep: Step | undefined;
   tryFix: (o: FixOption) => void;
   step: () => void; startAuto: () => void; resetExecution: () => void; revealHint: () => void;
   loadNewPuzzle: () => void;
-  handleSolve: (p: { id: string; difficulty: string; title?: string }, score: number, att?: number) => void;
+  handleSolve: (p: { id: string; difficulty: string; title?: string }, att: number) => void;
   setFeedback: (v: null) => void;
   setTab: (t: Tab) => void;
   d: Difficulty;
@@ -515,7 +357,7 @@ function PlayArea({
       <TextPickFix
         key={anyPuzzle.id}
         puzzle={anyPuzzle as TextPickFixPuzzle}
-        onSolved={(score, att) => handleSolve(anyPuzzle, score, att)}
+        onSolved={(att) => handleSolve(anyPuzzle, att)}
         onNext={loadNewPuzzle}
       />
       <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
@@ -527,7 +369,7 @@ function PlayArea({
       <TextFillBlank
         key={anyPuzzle.id}
         puzzle={anyPuzzle as TextFillBlankPuzzle}
-        onSolved={(score, att) => handleSolve(anyPuzzle, score, att)}
+        onSolved={(att) => handleSolve(anyPuzzle, att)}
         onNext={loadNewPuzzle}
       />
       <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
@@ -540,7 +382,7 @@ function PlayArea({
         key={anyPuzzle.id}
         puzzle={anyPuzzle as AstReorderPuzzle}
         progLang={progLang}
-        onSolved={(score, att) => handleSolve(anyPuzzle, score, att)}
+        onSolved={(att) => handleSolve(anyPuzzle, att)}
         onNext={loadNewPuzzle}
       />
       <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
@@ -576,7 +418,6 @@ function PlayArea({
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-5">
         <div className="space-y-4">
-          {/* Code/blocks viewer */}
           <div className="card-surface rounded-xl p-1.5">
             <div className="flex items-center justify-between gap-3 px-2.5 py-1.5 flex-wrap">
               <div className="inline-flex rounded-lg bg-secondary/60 p-0.5">
@@ -719,7 +560,7 @@ function PlayArea({
   );
 }
 
-// ─── HintsPanel ───────────────────────────────────────────────────────────
+// ─── HintsPanel ───────────────────────────────────────────────────────────────
 
 function HintsPanel({ hints, maxHintsCount, hintsRevealed, revealHint, setTab, t, solved }:
   { hints: string[]; maxHintsCount: number; hintsRevealed: number; revealHint: () => void; setTab: (s: Tab) => void; t: Translations; solved: boolean }) {
@@ -760,11 +601,4 @@ function HintsPanel({ hints, maxHintsCount, hintsRevealed, revealHint, setTab, t
       {!solved && <p className="text-[11px] text-muted-foreground mt-2">{t.game.hintCostNote}</p>}
     </div>
   );
-}
-
-function maxHints(total: number, d: Difficulty): number {
-  if (d === "easy") return total;
-  if (d === "medium") return Math.min(total, 2);
-  if (d === "hard") return Math.min(total, 1);
-  return total;
 }

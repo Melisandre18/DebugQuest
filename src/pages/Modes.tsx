@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import TopNav from "@/components/TopNav";
 import { DIFFICULTY_META } from "@/components/DifficultyMeta";
 import { Difficulty } from "@/lib/puzzle-engine";
-import { loadProgress, ACHIEVEMENTS } from "@/lib/progress";
+import { ACHIEVEMENTS } from "@/lib/progress";
+import { useProgress } from "@/contexts/ProgressContext";
 import { ArrowRight, Trophy, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -12,7 +13,7 @@ import LanguageSelectModal from "@/components/LanguageSelectModal";
 const modes: Difficulty[] = ["easy", "medium", "hard", "adaptive"];
 
 export default function Modes() {
-  const progress = loadProgress();
+  const { progress } = useProgress();
   const { t } = useLanguage();
   const [selectedMode, setSelectedMode] = useState<Difficulty | null>(null);
 

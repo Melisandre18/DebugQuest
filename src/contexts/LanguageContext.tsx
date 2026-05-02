@@ -13,7 +13,10 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 const LANGUAGE_STORAGE_KEY = "debugquest.language";
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>("en");
+  const [language, setLanguageState] = useState<Language>(() => {
+    const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    return stored === "en" || stored === "ka" ? stored : "en";
+  });
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
