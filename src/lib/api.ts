@@ -28,6 +28,25 @@ export async function logAttempt(payload: AttemptPayload): Promise<void> {
   }
 }
 
+// ─── Code execution ───────────────────────────────────────────────────────────
+
+export interface CodeRunResult {
+  output: string;
+  error: string | null;
+  executionTimeMs: number;
+}
+
+export async function runCode(language: string, code: string, stdin = ""): Promise<CodeRunResult> {
+  const res = await fetch(`${SERVER_URL}/api/run`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ language, code, stdin }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error ?? `HTTP ${res.status}`);
+  return data;
+}
+
 // ─── Progress (DB-backed for logged-in users) ─────────────────────────────────
 
 export interface DbAttempt {

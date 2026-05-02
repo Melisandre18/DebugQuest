@@ -32,11 +32,21 @@ DebugQuest/
 │   │   ├── user.ts                   getUserId() — real id when logged in, UUID otherwise
 │   │   └── puzzle-service.ts         Fetch helpers for the Vercel puzzle API
 │   │
+│   ├── components/game/
+│   │   ├── SolvedEditor.tsx         Monaco editor + run panel revealed after every puzzle solve
+│   │   ├── TextPickFix.tsx
+│   │   ├── TextFillBlank.tsx
+│   │   └── AstReorder.tsx
+│   ├── components/
+│   │   ├── CodeEditor.tsx           Reusable Monaco wrapper (vs-dark, lazy-loaded)
+│   │   ├── TopNav.tsx
+│   │   └── AuthModal.tsx
 │   └── pages/
 │       ├── Landing.tsx
 │       ├── Modes.tsx                 Difficulty selector (route /modes → labelled "Play")
 │       ├── Game.tsx                  Main puzzle page (/play/:difficulty/:language?)
-│       └── Trophies.tsx             Stats, charts, achievements
+│       ├── Trophies.tsx             Stats, charts, achievements
+│       └── Sandbox.tsx              Standalone code editor (/editor)
 │
 ├── api/                              Vercel serverless functions
 │   ├── next-puzzle.ts                Adaptive puzzle selection (POST)
@@ -402,6 +412,44 @@ DATABASE_URL="<neon-url>" npm run db:migrate
 ```
 
 > **Free-tier note** — Render spins down after 15 min of inactivity (~30 s cold start). Upgrade to the $7/month Starter plan or use Railway for always-on hosting.
+
+---
+
+## Code editor
+
+### Standalone editor (`/editor`)
+
+Accessible from the nav bar (Terminal icon). Supports all four languages.
+
+| Language | Execution | Requires |
+|---|---|---|
+| JavaScript | Node.js `vm` module (built-in) | Nothing |
+| Python | `child_process` → `python` / `python3` | Python on PATH |
+| C++ | `g++ -std=c++17` → compiled binary | `g++` on PATH |
+| Java | `javac` + `java` | JDK on PATH |
+
+- `prompt()` (JS) and `input()` (Python) read from the **stdin panel** line by line
+- C++ and Java use `cin` / `Scanner` reading from the same stdin
+- 5 s execution timeout, temp files cleaned up after each run
+
+### In-game editor (post-solve)
+
+After solving any puzzle, a **"Run it yourself"** panel slides in at the bottom of the play area with:
+- Monaco editor pre-loaded with the corrected code
+  - AST pick-fix → the fixed program converted to the selected language
+  - AST reorder → the correct-order program
+  - Text pick-fix / fill-blank → the puzzle's source code as a starting point
+- Run button → calls `POST /api/run` (same backend endpoint as the standalone editor)
+- Stdin input (expandable) + output panel side by side
+- Player can edit the code freely before running
+
+### Backend endpoint
+
+```
+POST /api/run
+Body: { language: "javascript"|"python"|"cpp"|"java", code: string, stdin?: string }
+Response: { output: string, error: string|null, executionTimeMs: number }
+```
 
 ---
 

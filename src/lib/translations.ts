@@ -7,6 +7,7 @@ export interface Translations {
     modes: string;
     trophies: string;
     play: string;
+    sandbox: string;
     back: string;
     feedback: string;
   };
@@ -188,6 +189,7 @@ export const translations: Record<Language, Translations> = {
       modes: "Modes",
       trophies: "Trophies",
       play: "Play",
+      sandbox: "Editor",
       back: "Back",
       feedback: "Feedback",
     },
@@ -400,6 +402,7 @@ export const translations: Record<Language, Translations> = {
       modes: "რეჟიმები",
       trophies: "ტროფეები",
       play: "თამაში",
+      sandbox: "რედაქტორი",
       back: "უკან",
       feedback: "უკუკავშირი",
     },

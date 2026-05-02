@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -11,6 +12,9 @@ import Modes from "./pages/Modes";
 import Game from "./pages/Game";
 import Trophies from "./pages/Trophies";
 import NotFound from "./pages/NotFound.tsx";
+
+// Monaco is large (~4 MB) — load only when the Sandbox route is visited
+const Sandbox = lazy(() => import("./pages/Sandbox"));
 
 const queryClient = new QueryClient();
 
@@ -28,6 +32,11 @@ const App = () => (
             <Route path="/modes" element={<Modes />} />
             <Route path="/play/:difficulty/:language?" element={<Game />} />
             <Route path="/trophies" element={<Trophies />} />
+            <Route path="/editor" element={
+              <Suspense fallback={null}>
+                <Sandbox />
+              </Suspense>
+            } />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

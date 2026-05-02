@@ -26,9 +26,11 @@ import {
 } from "@/lib/puzzle-engine";
 import { getLesson } from "@/lib/lessons";
 import { type AnyPuzzle, type AstReorderPuzzle, type TextPickFixPuzzle, type TextFillBlankPuzzle } from "@/lib/puzzle-service";
+import { programToSource } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
 import { type Translations } from "@/lib/translations";
 import { useGameSession, maxHints, type View, type Tab } from "@/hooks/useGameSession";
+import SolvedEditor from "@/components/game/SolvedEditor";
 
 const PROG_LANG_LABELS: Record<Language, string> = {
   python: "Python", javascript: "JavaScript", cpp: "C++", java: "Java",
@@ -341,6 +343,41 @@ interface PlayAreaProps {
   t: Translations;
 }
 
+// Derive the runnable source code and Monaco/execution language for each puzzle type.
+function getSolvedCode(
+  anyPuzzle: AnyPuzzle,
+  program: Program,
+  progLang: Language,
+  isAstPickFix: boolean,
+): { code: string; language: string } {
+  const lang = anyPuzzle.programmingLanguage === "any" ? progLang : anyPuzzle.programmingLanguage;
+
+  if (isAstPickFix && program.length) {
+    // program is already the fixed AST after tryFix succeeds
+    return {
+      code: programToSource(program, progLang).map(l => l.text).join("\n"),
+      language: progLang,
+    };
+  }
+  if (anyPuzzle.format === "text" && anyPuzzle.interaction === "pick-fix") {
+    return { code: (anyPuzzle as TextPickFixPuzzle).code, language: lang };
+  }
+  if (anyPuzzle.format === "text" && anyPuzzle.interaction === "fill-blank") {
+    const p = anyPuzzle as TextFillBlankPuzzle;
+    return { code: p.codeBefore + "/* fill in the blank */" + p.codeAfter, language: lang };
+  }
+  if (anyPuzzle.format === "ast" && anyPuzzle.interaction === "reorder") {
+    const p = anyPuzzle as AstReorderPuzzle;
+    // Show the correctly-ordered program so the player can run the solution
+    const ordered = p.correctOrder.map(id => p.scrambledProgram.find(s => s.id === id)!).filter(Boolean);
+    return {
+      code: programToSource(ordered, progLang).map(l => l.text).join("\n"),
+      language: progLang,
+    };
+  }
+  return { code: "", language: progLang };
+}
+
 function PlayArea({
   anyPuzzle, astPuzzle, progLang,
   isAstPickFix, isAstReorder, isTextPickFix, isTextFillBlank,
@@ -351,40 +388,53 @@ function PlayArea({
   handleSolve, setFeedback, setTab, d, t,
 }: PlayAreaProps) {
 
+  const solvedEditorProps = solved
+    ? getSolvedCode(anyPuzzle, program, progLang, isAstPickFix)
+    : null;
+
   if (isTextPickFix) return (
-    <div className="grid lg:grid-cols-[1fr_280px] gap-5">
-      <TextPickFix
-        key={anyPuzzle.id}
-        puzzle={anyPuzzle as TextPickFixPuzzle}
-        onSolved={(att) => handleSolve(anyPuzzle, att)}
-        onNext={loadNewPuzzle}
-      />
-      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
+    <div className="space-y-0">
+      <div className="grid lg:grid-cols-[1fr_280px] gap-5">
+        <TextPickFix
+          key={anyPuzzle.id}
+          puzzle={anyPuzzle as TextPickFixPuzzle}
+          onSolved={(att) => handleSolve(anyPuzzle, att)}
+          onNext={loadNewPuzzle}
+        />
+        <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
+      </div>
+      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
     </div>
   );
 
   if (isTextFillBlank) return (
-    <div className="grid lg:grid-cols-[1fr_280px] gap-5">
-      <TextFillBlank
-        key={anyPuzzle.id}
-        puzzle={anyPuzzle as TextFillBlankPuzzle}
-        onSolved={(att) => handleSolve(anyPuzzle, att)}
-        onNext={loadNewPuzzle}
-      />
-      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
+    <div className="space-y-0">
+      <div className="grid lg:grid-cols-[1fr_280px] gap-5">
+        <TextFillBlank
+          key={anyPuzzle.id}
+          puzzle={anyPuzzle as TextFillBlankPuzzle}
+          onSolved={(att) => handleSolve(anyPuzzle, att)}
+          onNext={loadNewPuzzle}
+        />
+        <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
+      </div>
+      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
     </div>
   );
 
   if (isAstReorder) return (
-    <div className="grid lg:grid-cols-[1fr_280px] gap-5">
-      <AstReorder
-        key={anyPuzzle.id}
-        puzzle={anyPuzzle as AstReorderPuzzle}
-        progLang={progLang}
-        onSolved={(att) => handleSolve(anyPuzzle, att)}
-        onNext={loadNewPuzzle}
-      />
-      <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
+    <div className="space-y-0">
+      <div className="grid lg:grid-cols-[1fr_280px] gap-5">
+        <AstReorder
+          key={anyPuzzle.id}
+          puzzle={anyPuzzle as AstReorderPuzzle}
+          progLang={progLang}
+          onSolved={(att) => handleSolve(anyPuzzle, att)}
+          onNext={loadNewPuzzle}
+        />
+        <HintsPanel hints={hints} maxHintsCount={maxHintsCount} hintsRevealed={hintsRevealed} revealHint={revealHint} setTab={setTab} t={t} solved={solved} />
+      </div>
+      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
     </div>
   );
 
@@ -555,6 +605,7 @@ function PlayArea({
           </div>
         </aside>
       </div>
+      {solvedEditorProps && <SolvedEditor {...solvedEditorProps} />}
     </div>
   );
 }

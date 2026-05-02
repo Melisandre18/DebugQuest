@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, ArrowLeft, Home, Gamepad2, Workflow, Menu, X, LogOut, UserIcon } from "lucide-react";
+import { Trophy, ArrowLeft, Home, Gamepad2, Workflow, Menu, X, LogOut, UserIcon, Terminal } from "lucide-react";
 import Logo from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import FeedbackDialog from "@/components/FeedbackDialog";
@@ -26,10 +26,11 @@ interface NavItem {
   external?: boolean;
 }
 const STATIC_NAV_ITEMS: Omit<NavItem, "label">[] = [
-  { to: "/",             icon: Home },
-  { to: "/#how",         icon: Workflow, external: true },
-  { to: "/modes",        icon: Gamepad2 },
-  { to: "/trophies",     icon: Trophy },
+  { to: "/",          icon: Home },
+  { to: "/#how",      icon: Workflow, external: true },
+  { to: "/modes",     icon: Gamepad2 },
+  { to: "/trophies",  icon: Trophy },
+  { to: "/editor",    icon: Terminal },
 ];
 
 /** Persistent app nav: logo + section links + live score chip + feedback. */
@@ -49,8 +50,9 @@ export default function TopNav({ center, backTo }: TopNavProps) {
     label:
       item.to === "/" ? t.nav.home :
       item.to === "/#how" ? t.nav.howItWorks :
-      item.to === "/modes" ? t.nav.play :
+      item.to === "/modes"    ? t.nav.play :
       item.to === "/trophies" ? t.nav.trophies :
+      item.to === "/editor"   ? t.nav.sandbox :
       item.to,
   }));
 
