@@ -5,7 +5,9 @@ import {
   matchesExpected, run,
 } from "@/lib/puzzle-engine";
 import { getLesson } from "@/lib/lessons";
-import { ACHIEVEMENTS, computeScore } from "@/lib/progress";
+import { ACHIEVEMENTS, computeScore, computePerformance } from "@/lib/progress";
+import { logAttempt as logAttemptToServer } from "@/lib/api";
+import { getUserId } from "@/lib/user";
 import { DIFFICULTY_META } from "@/components/DifficultyMeta";
 import { useProgress } from "@/contexts/ProgressContext";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -132,11 +134,12 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
 
   function resetExecution() { setStepIdx(0); stopAuto(); }
 
-  function handleSolve(puzzle: { id: string; difficulty: string; title?: string }, att: number) {
+  function handleSolve(puzzle: { id: string; difficulty: string; title?: string; bugType?: string }, att: number) {
     const elapsed = performance.now() - startedAt.current;
     setSolved(true);
     const diffForScore = (d === "adaptive" ? puzzle.difficulty : d) as Exclude<Difficulty, "adaptive">;
     const score = computeScore({ difficulty: diffForScore, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att });
+    const { performance: perf } = computePerformance({ difficulty: diffForScore, timeMs: elapsed, hintsUsed: hintsRevealed, attempts: att });
     const { newAchievements } = saveAttempt(
       {
         puzzleId: puzzle.id, correct: true, timeMs: elapsed,
@@ -150,6 +153,20 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
     newAchievements.forEach(code => {
       const a = ACHIEVEMENTS[code];
       toast(`🏆 ${a.title}`, { description: a.desc });
+    });
+    // Persist to backend (fire-and-forget — game works offline if server is down)
+    logAttemptToServer({
+      userId:       getUserId(),
+      challengeId:  puzzle.id,
+      score,
+      time:         elapsed / 1000,
+      hintsUsed:    hintsRevealed,
+      bugType:      puzzle.bugType ?? "unknown",
+      correct:      true,
+      difficulty:   puzzle.difficulty,
+      language:     progLang,
+      performance:  perf,
+      retriesCount: att - 1,
     });
   }
 
