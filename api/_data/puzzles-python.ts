@@ -10,6 +10,7 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  correctedCode?: string;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -97,6 +98,12 @@ const py2: TextPickFixDef = {
 greeting = greet("Alice")
 print(greeting)  # expected: Hello, Alice!`,
   bugLine: 3,
+  correctedCode: `def greet(name):
+    message = "Hello, " + name + "!"
+    return message
+
+greeting = greet("Alice")
+print(greeting)  # Hello, Alice!`,
   fixes: [
     {
       id: "return-msg", correct: true,
@@ -140,6 +147,11 @@ const py3: TextPickFixDef = {
 
 print(make_badge("Bob", 25))`,
   bugLine: 2,
+  correctedCode: `def make_badge(name, age):
+    badge = "Name: " + name + ", Age: " + str(age)
+    return badge
+
+print(make_badge("Bob", 25))`,
   fixes: [
     {
       id: "str-cast", correct: true,
@@ -264,6 +276,14 @@ const py6: TextPickFixDef = {
 print(append_item("a"))  # ['a']
 print(append_item("b"))  # expected ['b'], got ['a', 'b']`,
   bugLine: 1,
+  correctedCode: `def append_item(item, lst=None):
+    if lst is None:
+        lst = []
+    lst.append(item)
+    return lst
+
+print(append_item("a"))  # ['a']
+print(append_item("b"))  # ['b']`,
   fixes: [
     {
       id: "none-default", correct: true,
@@ -309,6 +329,13 @@ const py7: TextPickFixDef = {
 
 print(build_list([1, 2, 3]))  # expected: [1, 2, 3]`,
   bugLine: 4,
+  correctedCode: `def build_list(values):
+    result = []
+    for value in values:
+        result.append(value)
+    return result
+
+print(build_list([1, 2, 3]))  # [1, 2, 3]`,
   fixes: [
     {
       id: "no-assign", correct: true,
@@ -401,6 +428,15 @@ increment()
 increment()
 print(counter)  # expected: 2`,
   bugLine: 4,
+  correctedCode: `counter = 0
+
+def increment():
+    global counter
+    counter = counter + 1
+
+increment()
+increment()
+print(counter)  # 2`,
   fixes: [
     {
       id: "global-kw", correct: true,
@@ -532,6 +568,11 @@ const py12: TextPickFixDef = {
 
 label_items(["apple", "banana", "cherry"])`,
   bugLine: 2,
+  correctedCode: `def label_items(items):
+    for i, item in enumerate(items):
+        print(f"{i}: {item}")
+
+label_items(["apple", "banana", "cherry"])`,
   fixes: [
     {
       id: "enumerate", correct: true,
@@ -615,6 +656,18 @@ const py14: TextPickFixDef = {
         process(chunk)
         chunk = stream.read(1024)`,
   bugLine: 2,
+  correctedCode: `# Walrus operator demo with a simulated stream
+data = ["chunk1", "chunk2", "chunk3", ""]
+idx = 0
+
+def read():
+    global idx
+    val = data[idx] if idx < len(data) else ""
+    idx += 1
+    return val
+
+while chunk := read():
+    print("Processing:", chunk)`,
   fixes: [
     {
       id: "walrus", correct: true,
@@ -662,6 +715,16 @@ team_b = clone_roster(team_a)
 team_b["players"].append("Charlie")
 print(team_a["players"])  # expected ['Alice','Bob'], got ['Alice','Bob','Charlie']`,
   bugLine: 4,
+  correctedCode: `import copy
+
+def clone_roster(roster):
+    return copy.deepcopy(roster)
+
+team_a = {"players": ["Alice", "Bob"]}
+team_b = clone_roster(team_a)
+team_b["players"].append("Charlie")
+print(team_a["players"])  # ['Alice', 'Bob']
+print(team_b["players"])  # ['Alice', 'Bob', 'Charlie']`,
   fixes: [
     {
       id: "deepcopy", correct: true,

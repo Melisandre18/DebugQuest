@@ -63,10 +63,10 @@ export default function Game() {
   const {
     loading, loadError, anyPuzzle, astPuzzle, runResult, currentStep, lesson, hints, maxHintsCount,
     isAstPickFix, isAstReorder, isTextPickFix, isTextFillBlank,
-    sessionSolved, progLang, tab, setTab,
+    sessionSolved, progLang, tab, setTab, resetKey,
     view, setView, program, setProgram,
     hintsRevealed, attempts, solved, revealedBug, feedback, setFeedback,
-    stepIdx, autoRunning, meta, showCodeToggle,
+    stepIdx, autoRunning, meta,
     loadNewPuzzle, tryFix, handleSolve, revealHint, handleProgLangChange,
     step, startAuto, resetExecution, t,
   } = session;
@@ -135,7 +135,7 @@ export default function Game() {
 
         {/* Puzzle header */}
         <motion.div
-          key={anyPuzzle.id}
+          key={`${anyPuzzle.id}-${resetKey}`}
           initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
           className="card-surface rounded-2xl p-5 md:p-6 mb-5 relative overflow-hidden"
         >
@@ -314,12 +314,14 @@ export default function Game() {
               stepIdx={stepIdx} autoRunning={autoRunning} revealedBug={revealedBug}
               solved={solved} feedback={feedback} attempts={attempts}
               hintsRevealed={hintsRevealed} hints={hints} maxHintsCount={maxHintsCount}
-              view={view} setView={setView} showCodeToggle={showCodeToggle}
+              view={view} setView={setView}
               currentStep={currentStep}
               tryFix={tryFix} step={step} startAuto={startAuto}
               resetExecution={resetExecution} revealHint={revealHint}
               loadNewPuzzle={loadNewPuzzle}
+              handleProgLangChange={handleProgLangChange}
               handleSolve={handleSolve} setFeedback={setFeedback} setTab={setTab}
+              resetKey={resetKey}
               d={d} t={t}
             />
           </div>
@@ -345,14 +347,16 @@ interface PlayAreaProps {
   stepIdx: number; autoRunning: boolean; revealedBug: boolean;
   solved: boolean; feedback: { option: FixOption; correct: boolean; result: RunResult } | null;
   attempts: number; hintsRevealed: number; hints: string[]; maxHintsCount: number;
-  view: View; setView: (v: View) => void; showCodeToggle: boolean;
+  view: View; setView: (v: View) => void;
   currentStep: Step | undefined;
   tryFix: (o: FixOption) => void;
   step: () => void; startAuto: () => void; resetExecution: () => void; revealHint: () => void;
   loadNewPuzzle: () => void;
+  handleProgLangChange: (lang: Language) => void;
   handleSolve: (p: { id: string; difficulty: string; title?: string }, att: number) => void;
   setFeedback: (v: null) => void;
   setTab: (t: Tab) => void;
+  resetKey: number;
   d: Difficulty;
   t: Translations;
 }
@@ -375,12 +379,17 @@ function getSolvedCode(
   }
   if (anyPuzzle.format === "text" && anyPuzzle.interaction === "pick-fix") {
     const p = anyPuzzle as TextPickFixPuzzle;
+    // Use pre-authored corrected code if available; fall back to buggy code with annotation
+    if (p.correctedCode) {
+      return { code: p.correctedCode, language: lang };
+    }
     const fix = p.fixes.find(f => f.correct);
     const header = fix ? `// Fix applied: ${fix.label}\n\n` : "";
     return { code: header + p.code, language: lang };
   }
   if (anyPuzzle.format === "text" && anyPuzzle.interaction === "fill-blank") {
     const p = anyPuzzle as TextFillBlankPuzzle;
+    if (p.correctedCode) return { code: p.correctedCode, language: lang };
     const correct = p.options.find(o => o.correct)?.value ?? "???";
     return { code: p.codeBefore + correct + p.codeAfter, language: lang };
   }
@@ -401,15 +410,15 @@ function PlayArea({
   isAstPickFix, isAstReorder, isTextPickFix, isTextFillBlank,
   program, setProgram, runResult, stepIdx, autoRunning, revealedBug,
   solved, feedback, attempts, hintsRevealed, hints, maxHintsCount,
-  view, setView, showCodeToggle, currentStep,
+  view, setView, currentStep,
   tryFix, step, startAuto, resetExecution, revealHint, loadNewPuzzle,
-  handleSolve, setFeedback, setTab, d, t,
+  handleProgLangChange, handleSolve, setFeedback, setTab, resetKey, d, t,
 }: PlayAreaProps) {
 
   if (isTextPickFix) return (
     <div className="grid lg:grid-cols-[1fr_280px] gap-5">
       <TextPickFix
-        key={anyPuzzle.id}
+        key={`${anyPuzzle.id}-${resetKey}`}
         puzzle={anyPuzzle as TextPickFixPuzzle}
         onSolved={(att) => handleSolve(anyPuzzle, att)}
         onNext={loadNewPuzzle}
@@ -421,7 +430,7 @@ function PlayArea({
   if (isTextFillBlank) return (
     <div className="grid lg:grid-cols-[1fr_280px] gap-5">
       <TextFillBlank
-        key={anyPuzzle.id}
+        key={`${anyPuzzle.id}-${resetKey}`}
         puzzle={anyPuzzle as TextFillBlankPuzzle}
         onSolved={(att) => handleSolve(anyPuzzle, att)}
         onNext={loadNewPuzzle}
@@ -433,7 +442,7 @@ function PlayArea({
   if (isAstReorder) return (
     <div className="grid lg:grid-cols-[1fr_280px] gap-5">
       <AstReorder
-        key={anyPuzzle.id}
+        key={`${anyPuzzle.id}-${resetKey}`}
         puzzle={anyPuzzle as AstReorderPuzzle}
         progLang={progLang}
         onSolved={(att) => handleSolve(anyPuzzle, att)}
@@ -482,17 +491,15 @@ function PlayArea({
                 >
                   <Blocks className="w-3.5 h-3.5" /> {t.game.blocks}
                 </button>
-                {showCodeToggle && (
-                  <button
-                    onClick={() => setView("code")}
-                    className={cn("px-3 py-1.5 text-xs font-medium rounded-md inline-flex items-center gap-1.5 transition-colors",
-                      view === "code" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
-                  >
-                    <Code2 className="w-3.5 h-3.5" /> {t.game.code}
-                  </button>
-                )}
+                <button
+                  onClick={() => setView("code")}
+                  className={cn("px-3 py-1.5 text-xs font-medium rounded-md inline-flex items-center gap-1.5 transition-colors",
+                    view === "code" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground")}
+                >
+                  <Code2 className="w-3.5 h-3.5" /> {t.game.code}
+                </button>
               </div>
-              <Select value={progLang} onValueChange={() => {}}>
+              <Select value={progLang} onValueChange={(v) => handleProgLangChange(v as Language)}>
                 <SelectTrigger className="h-8 w-[150px] text-xs font-mono">
                   <SelectValue>{PROG_LANG_LABELS[progLang]}</SelectValue>
                 </SelectTrigger>

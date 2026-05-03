@@ -10,6 +10,7 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  correctedCode?: string;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -20,6 +21,7 @@ interface TextFillBlankDef {
   hints: LocalizedText[];
   format: "text"; interaction: "fill-blank";
   codeBefore: string; codeAfter: string;
+  correctedCode?: string;
   options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -50,6 +52,16 @@ const cpp1: TextFillBlankDef = {
 
 int main() {
     std::cout << average(7, 2) << std::endl; // expected: 3.5
+}`,
+  correctedCode: `#include <iostream>
+
+double average(int sum, int count) {
+    return (double)sum / count;
+}
+
+int main() {
+    std::cout << average(7, 2)  << std::endl;  // 3.5
+    std::cout << average(10, 4) << std::endl;  // 2.5
 }`,
   options: [
     {
@@ -93,6 +105,20 @@ const cpp2: TextPickFixDef = {
     return total;
 }`,
   bugLine: 3,
+  correctedCode: `#include <iostream>
+
+int sumArray(int arr[], int size) {
+    int total = 0;
+    for (int i = 0; i < size; i++) {
+        total += arr[i];
+    }
+    return total;
+}
+
+int main() {
+    int nums[] = {1, 2, 3, 4, 5};
+    std::cout << sumArray(nums, 5) << std::endl;  // 15
+}`,
   fixes: [
     {
       id: "lt", correct: true,
@@ -138,6 +164,20 @@ const cpp3: TextPickFixDef = {
     return count;
 }`,
   bugLine: 2,
+  correctedCode: `#include <iostream>
+
+int countAbove(int arr[], int size, int threshold) {
+    int count = 0;
+    for (int i = 0; i < size; i++) {
+        if (arr[i] > threshold) count++;
+    }
+    return count;
+}
+
+int main() {
+    int nums[] = {1, 5, 3, 8, 2};
+    std::cout << countAbove(nums, 5, 3) << std::endl;  // 2
+}`,
   fixes: [
     {
       id: "init-zero", correct: true,
@@ -183,6 +223,19 @@ const cpp4: TextFillBlankDef = {
 }
 
 // checkMode(0) should NOT activate`,
+  correctedCode: `#include <iostream>
+
+void checkMode(int mode) {
+    if (mode == 1) {
+        std::cout << "Safety system activated\\n";
+    }
+}
+
+int main() {
+    checkMode(1);  // Safety system activated
+    checkMode(0);  // (nothing)
+    checkMode(2);  // (nothing)
+}`,
   options: [
     {
       id: "a", value: "==", correct: true,
@@ -223,6 +276,20 @@ const cpp5: TextPickFixDef = {
     return arr;           // dangling pointer!
 }`,
   bugLine: 2,
+  correctedCode: `#include <iostream>
+
+int* makeArray(int size) {
+    int* arr = new int[size];  // heap allocation — lives beyond function
+    for (int i = 0; i < size; i++) arr[i] = i;
+    return arr;
+}
+
+int main() {
+    int* a = makeArray(5);
+    for (int i = 0; i < 5; i++) std::cout << a[i] << " ";
+    std::cout << std::endl;  // 0 1 2 3 4
+    delete[] a;
+}`,
   fixes: [
     {
       id: "new", correct: true,
@@ -268,6 +335,20 @@ public:
 };
 
 // first call should return 1, not 0`,
+  correctedCode: `#include <iostream>
+
+class TicketDispenser {
+    int next = 0;
+public:
+    int issueTicket() { return ++next; }
+};
+
+int main() {
+    TicketDispenser td;
+    std::cout << td.issueTicket() << "\\n";  // 1
+    std::cout << td.issueTicket() << "\\n";  // 2
+    std::cout << td.issueTicket() << "\\n";  // 3
+}`,
   options: [
     {
       id: "a", value: "++", correct: true,
@@ -308,6 +389,17 @@ const cpp7: TextPickFixDef = {
     return billions * perBillion; // overflows int!
 }`,
   bugLine: 2,
+  correctedCode: `#include <iostream>
+
+long long worldPopulation() {
+    long long billions = 8;
+    long long perBillion = 1000000000;
+    return billions * perBillion;
+}
+
+int main() {
+    std::cout << worldPopulation() << std::endl;  // 8000000000
+}`,
   fixes: [
     {
       id: "long-long", correct: true,
@@ -353,6 +445,21 @@ const cpp8: TextPickFixDef = {
     }
 }`,
   bugLine: 3,
+  correctedCode: `#include <iostream>
+
+void handleMenu(int choice) {
+    switch (choice) {
+        case 1: std::cout << "New game\\n";  break;
+        case 2: std::cout << "Load game\\n"; break;
+        case 3: std::cout << "Options\\n";   break;
+    }
+}
+
+int main() {
+    handleMenu(1);  // New game
+    handleMenu(2);  // Load game
+    handleMenu(3);  // Options
+}`,
   fixes: [
     {
       id: "break-each", correct: true,
@@ -402,6 +509,29 @@ public:
 Buffer a(4);
 Buffer b = a;  // b.data == a.data — both delete[] same memory!`,
   bugLine: 6,
+  correctedCode: `#include <iostream>
+#include <algorithm>
+
+class Buffer {
+    int* data;
+    int  size;
+public:
+    Buffer(int s) : size(s), data(new int[s]) {}
+    Buffer(const Buffer& o) : size(o.size), data(new int[o.size]) {
+        std::copy(o.data, o.data + size, data);
+    }
+    ~Buffer() { delete[] data; }
+    int& operator[](int i) { return data[i]; }
+};
+
+int main() {
+    Buffer a(4);
+    a[0] = 42;
+    Buffer b = a;   // deep copy — independent memory
+    b[0] = 99;
+    std::cout << a[0] << std::endl;  // 42 (unchanged)
+    std::cout << b[0] << std::endl;  // 99
+}`,
   fixes: [
     {
       id: "deep-copy", correct: true,
@@ -445,6 +575,20 @@ const cpp10: TextFillBlankDef = {
 }
 
 // inBounds(vec, -1) should return false`,
+  correctedCode: `#include <iostream>
+#include <vector>
+
+bool inBounds(const std::vector<int>& vec, int index) {
+    return index >= 0 && (size_t)index < vec.size();
+}
+
+int main() {
+    std::vector<int> v = {10, 20, 30};
+    std::cout << std::boolalpha;
+    std::cout << inBounds(v,  1) << "\\n";  // true
+    std::cout << inBounds(v, -1) << "\\n";  // false
+    std::cout << inBounds(v,  5) << "\\n";  // false
+}`,
   options: [
     {
       id: "a", value: "", correct: true,
@@ -486,6 +630,17 @@ void log_values(int n) {
         std::cout << i << `,
   codeAfter: `;
     }
+}`,
+  correctedCode: `#include <iostream>
+
+void log_values(int n) {
+    for (int i = 0; i < n; ++i) {
+        std::cout << i << '\\n';
+    }
+}
+
+int main() {
+    log_values(5);  // prints 0 1 2 3 4 on separate lines
 }`,
   options: [
     {
@@ -529,6 +684,24 @@ void validate(const std::string& name) {
   codeAfter: `)
         throw std::invalid_argument("Name cannot be empty");
 }`,
+  correctedCode: `#include <iostream>
+#include <string>
+#include <stdexcept>
+
+void validate(const std::string& name) {
+    if (name.empty())
+        throw std::invalid_argument("Name cannot be empty");
+    std::cout << "Valid: " << name << "\\n";
+}
+
+int main() {
+    try {
+        validate("Alice");  // Valid: Alice
+        validate("");       // throws
+    } catch (const std::invalid_argument& e) {
+        std::cout << "Error: " << e.what() << "\\n";
+    }
+}`,
   options: [
     {
       id: "a", value: "name.empty()", correct: true,
@@ -571,6 +744,19 @@ double average(std::vector<int> v) {
     return static_cast<double>(std::accumulate(v.begin(), v.end(), 0)) / v.size();
 }`,
   bugLine: 4,
+  correctedCode: `#include <vector>
+#include <numeric>
+#include <iostream>
+
+double average(const std::vector<int>& v) {
+    if (v.empty()) return 0.0;
+    return static_cast<double>(std::accumulate(v.begin(), v.end(), 0)) / v.size();
+}
+
+int main() {
+    std::vector<int> data = {10, 20, 30, 40};
+    std::cout << average(data) << std::endl;  // 25
+}`,
   fixes: [
     {
       id: "const-ref", correct: true,
@@ -661,6 +847,23 @@ public:
     }
 };`,
   bugLine: 7,
+  correctedCode: `#include <iostream>
+
+class Buffer {
+    int* data;
+    int  size;
+public:
+    Buffer(int n) : data(new int[n]), size(n) {}
+    ~Buffer() {
+        delete[] data;  // correct: matches new[]
+    }
+    int getSize() const { return size; }
+};
+
+int main() {
+    Buffer b(10);
+    std::cout << "Buffer size: " << b.getSize() << std::endl;  // 10
+}  // ~Buffer() correctly frees all 10 elements`,
   fixes: [
     {
       id: "delete-array", correct: true,

@@ -32,6 +32,7 @@ export interface TextPickFixPuzzle {
   id: string; difficulty: Exclude<Difficulty,"adaptive">; bugType: string;
   programmingLanguage: string; concept: string; title: string; story: string; task: string;
   code: string; bugLine?: number; fixes: TextFix[]; hints: string[];
+  correctedCode?: string;
 }
 
 export interface BlankOption { id: string; value: string; correct: boolean; explanation: string; }
@@ -41,6 +42,7 @@ export interface TextFillBlankPuzzle {
   id: string; difficulty: Exclude<Difficulty,"adaptive">; bugType: string;
   programmingLanguage: string; concept: string; title: string; story: string; task: string;
   codeBefore: string; codeAfter: string; options: BlankOption[]; hints: string[];
+  correctedCode?: string;
 }
 
 export type AnyPuzzle = AstPickFixPuzzle | AstReorderPuzzle | TextPickFixPuzzle | TextFillBlankPuzzle;

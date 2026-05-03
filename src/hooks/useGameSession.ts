@@ -38,7 +38,10 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
   const [loadError, setLoadError]         = useState<string | null>(null);
   const [tab, setTab]                     = useState<Tab>("learn");
   const [progLang, setProgLang]           = useState<Language>(initialProgLang);
+  const progLangRef                       = useRef<Language>(initialProgLang);
   const [sessionSolved, setSessionSolved] = useState(0);
+  // Incremented on language change to force-remount text/reorder components
+  const [resetKey, setResetKey]           = useState(0);
 
   // ── ast pick-fix state ────────────────────────────────────────────────────
   const [view, setView]                 = useState<View>(initialProgLang !== "python" && d !== "easy" ? "code" : "blocks");
@@ -80,7 +83,7 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
     setLoading(true); setLoadError(null);
     try {
       const next = await getNextPuzzle({
-        difficulty: d, lang: uiLang, progLang,
+        difficulty: d, lang: uiLang, progLang: progLangRef.current,
         solved: progress.solved,
         recent: progress.attempts.slice(-5).map(a => ({
           puzzleId: a.puzzleId, correct: a.correct, hintsUsed: a.hintsUsed, attempts: a.attempts,
@@ -99,8 +102,9 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
       setLoading(false);
     }
   // progress is intentionally excluded: we only want to reload on difficulty/lang changes
+  // progLang is accessed via ref so language changes don't trigger a puzzle reload
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [d, uiLang, progLang]);
+  }, [d, uiLang]);
 
   useEffect(() => { loadNewPuzzle(); }, [loadNewPuzzle]);
   useEffect(() => { setStepIdx(0); stopAuto(); }, [program]);
@@ -192,7 +196,30 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
 
   function handleProgLangChange(lang: Language) {
     setProgLang(lang);
+    progLangRef.current = lang;
     navigate(`/play/${d}/${lang}`, { replace: true });
+
+    // Switch to code view so the new language syntax is immediately visible
+    setView("code");
+
+    // Reset to fresh unsolved state so the player sees the same puzzle from scratch
+    // in the new language — no API reload needed.
+    setHintsRevealed(0);
+    setAttempts(0);
+    setSolved(false);
+    setRevealedBug(false);
+    setFeedback(null);
+    setStepIdx(0);
+    setTab("learn");
+    stopAuto();
+    startedAt.current = performance.now();
+    // Force-remount text/reorder components (they hold their own solved state)
+    setResetKey(k => k + 1);
+
+    // For AST pick-fix: restore the original buggy program so it renders fresh in the new syntax
+    if (anyPuzzle && anyPuzzle.format === "ast" && anyPuzzle.interaction === "pick-fix") {
+      setProgram(toRuntimePuzzle(anyPuzzle as AstPickFixPuzzle).program);
+    }
   }
 
   return {
@@ -202,7 +229,7 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
     anyPuzzle, astPuzzle, runResult, currentStep, lesson, hints, maxHintsCount,
     isAstPickFix, isAstReorder, isTextPickFix, isTextFillBlank,
     // session
-    sessionSolved, progLang, tab, setTab,
+    sessionSolved, progLang, tab, setTab, resetKey,
     // ast / execution
     view, setView, program, setProgram,
     hintsRevealed, attempts, solved, revealedBug, feedback, setFeedback,

@@ -65,6 +65,7 @@ function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
       interaction: "pick-fix",
       code: def.code,
       bugLine: def.bugLine,
+      ...(def.correctedCode ? { correctedCode: def.correctedCode } : {}),
       fixes: (def.fixes as any[]).map((f: any) => ({
         id: f.id, correct: f.correct,
         label: p(f.label), explanation: p(f.explanation),
@@ -77,6 +78,7 @@ function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
     interaction: "fill-blank",
     codeBefore: def.codeBefore,
     codeAfter: def.codeAfter,
+    ...(def.correctedCode ? { correctedCode: def.correctedCode } : {}),
     options: (def.options as any[]).map((o: any) => ({
       id: o.id, value: o.value, correct: o.correct,
       explanation: p(o.explanation),

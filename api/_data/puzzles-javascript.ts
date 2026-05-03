@@ -10,6 +10,7 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  correctedCode?: string;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -92,6 +93,13 @@ fns[0]();  // expected 0, prints 3
 fns[1]();  // expected 1, prints 3
 fns[2]();  // expected 2, prints 3`,
   bugLine: 2,
+  correctedCode: `const fns = [];
+for (let i = 0; i < 3; i++) {
+  fns.push(() => console.log(i));
+}
+fns[0]();  // 0
+fns[1]();  // 1
+fns[2]();  // 2`,
   fixes: [
     {
       id: "let", correct: true,
@@ -138,6 +146,15 @@ const js3: TextPickFixDef = {
 
 console.log(processObject(null));   // crashes: Cannot read properties of null`,
   bugLine: 2,
+  correctedCode: `function processObject(value) {
+  if (typeof value === "object" && value !== null) {
+    return value.name;
+  }
+  return "not an object";
+}
+
+console.log(processObject(null));          // not an object
+console.log(processObject({ name: "A" })); // A`,
   fixes: [
     {
       id: "null-check", correct: true,
@@ -233,6 +250,14 @@ const original = ["apple", "bread"];
 const updated = addItem(original, "milk");
 console.log(original);  // expected: ["apple","bread"], got: ["apple","bread","milk"]`,
   bugLine: 2,
+  correctedCode: `function addItem(cart, item) {
+  return [...cart, item];
+}
+
+const original = ["apple", "bread"];
+const updated = addItem(original, "milk");
+console.log(original);  // ["apple","bread"]
+console.log(updated);   // ["apple","bread","milk"]`,
   fixes: [
     {
       id: "spread", correct: true,
@@ -321,6 +346,19 @@ const js7: TextPickFixDef = {
   return found;
 }`,
   bugLine: 3,
+  correctedCode: `function findFirst(arr, target) {
+  let found = null;
+  for (const item of arr) {
+    if (item === target) {
+      found = item;
+      break;
+    }
+  }
+  return found;
+}
+
+console.log(findFirst([1, 2, 3, 4], 3));      // 3
+console.log(findFirst(["a", "b", "c"], "b")); // b`,
   fixes: [
     {
       id: "for-of", correct: true,
@@ -368,6 +406,17 @@ async function showUser(id) {
   console.log(user.name);      // logs undefined
 }`,
   bugLine: 6,
+  correctedCode: `async function fetchUser(id) {
+  // mock — replace with real fetch in production
+  return { id, name: "Alice", age: 30 };
+}
+
+async function showUser(id) {
+  const user = await fetchUser(id);
+  console.log(user.name);
+}
+
+showUser(1);`,
   fixes: [
     {
       id: "add-await", correct: true,
@@ -459,6 +508,14 @@ const items = [1, 2, 3, 4, 5, 6];
 console.log(getPage(items, 0, 3));  // [1, 2, 3]
 console.log(items);                 // expected [1,2,3,4,5,6], got [4,5,6]`,
   bugLine: 3,
+  correctedCode: `function getPage(data, page, size) {
+  const start = page * size;
+  return data.slice(start, start + size);
+}
+
+const items = [1, 2, 3, 4, 5, 6];
+console.log(getPage(items, 0, 3));  // [1, 2, 3]
+console.log(items);                 // [1, 2, 3, 4, 5, 6]`,
   fixes: [
     {
       id: "slice", correct: true,
@@ -670,6 +727,23 @@ const js15: TextPickFixDef = {
   return results;
 }`,
   bugLine: 2,
+  correctedCode: `function fetchUsers()   { return Promise.resolve(["Alice","Bob"]); }
+function fetchProducts(){ return Promise.reject("API down"); }
+function fetchOrders()  { return Promise.resolve([{id:1}]); }
+
+async function loadDashboard() {
+  const results = await Promise.allSettled([
+    fetchUsers(),
+    fetchProducts(),
+    fetchOrders(),
+  ]);
+  results.forEach((r, i) => {
+    const val = r.status === "fulfilled" ? JSON.stringify(r.value) : r.reason;
+    console.log(\`API \${i}: \${r.status} -\`, val);
+  });
+}
+
+loadDashboard();`,
   fixes: [
     {
       id: "all-settled", correct: true,

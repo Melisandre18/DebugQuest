@@ -84,6 +84,7 @@ export interface TextPickFixPuzzle extends BasePuzzle {
   code: string;
   bugLine?: number;         // 1-indexed line to highlight
   fixes: TextFix[];
+  correctedCode?: string;   // complete corrected program to show after solving
 }
 
 export interface TextFix {
@@ -100,6 +101,7 @@ export interface TextFillBlankPuzzle extends BasePuzzle {
   codeBefore: string;
   codeAfter: string;
   options: BlankOption[];
+  correctedCode?: string;
 }
 
 export interface BlankOption {

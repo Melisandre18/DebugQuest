@@ -10,6 +10,7 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  correctedCode?: string;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -20,6 +21,7 @@ interface TextFillBlankDef {
   hints: LocalizedText[];
   format: "text"; interaction: "fill-blank";
   codeBefore: string; codeAfter: string;
+  correctedCode?: string;
   options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -49,6 +51,18 @@ const java1: TextFillBlankDef = {
 }
 
 // checkPassword("secret", new String("secret")) should return true`,
+  correctedCode: `public class Main {
+    static boolean checkPassword(String input, String stored) {
+        return input.equals(stored);
+    }
+
+    public static void main(String[] args) {
+        String stored = new String("secret");
+        System.out.println(checkPassword("secret", stored));        // true
+        System.out.println(checkPassword("wrong",  stored));        // false
+        System.out.println(checkPassword(new String("secret"), stored)); // true
+    }
+}`,
   options: [
     {
       id: "a", value: "equals", correct: true,
@@ -87,6 +101,20 @@ const java2: TextPickFixDef = {
     return scores.get(player);  // NPE when player not in map
 }`,
   bugLine: 2,
+  correctedCode: `import java.util.*;
+
+public class Main {
+    static int getScore(Map<String, Integer> scores, String player) {
+        return scores.getOrDefault(player, 0);
+    }
+
+    public static void main(String[] args) {
+        Map<String, Integer> scores = new HashMap<>();
+        scores.put("Alice", 42);
+        System.out.println(getScore(scores, "Alice"));  // 42
+        System.out.println(getScore(scores, "Bob"));    // 0
+    }
+}`,
   fixes: [
     {
       id: "getOrDefault", correct: true,
@@ -130,6 +158,18 @@ const java3: TextFillBlankDef = {
         System.out.println(arr[i]);
     }
 }`,
+  correctedCode: `public class Main {
+    static void printAll(int[] arr) {
+        for (int i = 0; i < arr.length; i++) {
+            System.out.println(arr[i]);
+        }
+    }
+
+    public static void main(String[] args) {
+        int[] nums = {10, 20, 30, 40, 50};
+        printAll(nums);  // 10 20 30 40 50
+    }
+}`,
   options: [
     {
       id: "a", value: "<", correct: true,
@@ -170,6 +210,15 @@ const java4: TextPickFixDef = {
 
 System.out.println(dailyRevenue(50000, 100000)); // expected: 5000000000, got: -1794967296`,
   bugLine: 2,
+  correctedCode: `public class Main {
+    static long dailyRevenue(int units, int pricePerUnit) {
+        return (long)units * pricePerUnit;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(dailyRevenue(50000, 100000));  // 5000000000
+    }
+}`,
   fixes: [
     {
       id: "long-cast", correct: true,
@@ -215,6 +264,22 @@ const java5: TextPickFixDef = {
     return result;
 }`,
   bugLine: 4,
+  correctedCode: `import java.util.*;
+
+public class Main {
+    static String buildCsv(List<String> rows) {
+        StringBuilder sb = new StringBuilder();
+        for (String row : rows) {
+            sb.append(row).append("\\n");
+        }
+        return sb.toString();
+    }
+
+    public static void main(String[] args) {
+        List<String> rows = Arrays.asList("a,1", "b,2", "c,3");
+        System.out.print(buildCsv(rows));
+    }
+}`,
   fixes: [
     {
       id: "stringbuilder", correct: true,
@@ -261,6 +326,25 @@ const java6: TextPickFixDef = {
     int getScore() { return score; }
 }`,
   bugLine: 2,
+  correctedCode: `public class Main {
+    static class Player {
+        int score = 0;
+        String name;
+
+        Player(String n) { name = n; }
+        void addPoints(int p) { score += p; }
+        int getScore() { return score; }
+    }
+
+    public static void main(String[] args) {
+        Player alice = new Player("Alice");
+        Player bob   = new Player("Bob");
+        alice.addPoints(10);
+        bob.addPoints(5);
+        System.out.println(alice.getScore());  // 10
+        System.out.println(bob.getScore());    // 5
+    }
+}`,
   fixes: [
     {
       id: "remove-static", correct: true,
@@ -306,6 +390,25 @@ const java7: TextPickFixDef = {
     }
 }`,
   bugLine: 4,
+  correctedCode: `import java.io.*;
+import java.nio.file.*;
+
+public class Main {
+    static byte[] readFile(String path) {
+        try {
+            return Files.readAllBytes(Paths.get(path));
+        } catch (IOException e) {
+            System.err.println("IO error: " + e.getMessage());
+            return null;
+        }
+    }
+
+    public static void main(String[] args) {
+        byte[] data = readFile("example.txt");
+        if (data != null) System.out.println("Read " + data.length + " bytes");
+        else System.out.println("File not found or unreadable");
+    }
+}`,
   fixes: [
     {
       id: "ioexception", correct: true,
@@ -356,6 +459,30 @@ const java8: TextPickFixDef = {
     // hashCode() not overridden — HashMap lookups fail!
 }`,
   bugLine: 11,
+  correctedCode: `import java.util.*;
+
+public class Main {
+    static class Point {
+        int x, y;
+        Point(int x, int y) { this.x = x; this.y = y; }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof Point)) return false;
+            Point p = (Point) o;
+            return x == p.x && y == p.y;
+        }
+
+        @Override
+        public int hashCode() { return Objects.hash(x, y); }
+    }
+
+    public static void main(String[] args) {
+        Map<Point, String> map = new HashMap<>();
+        map.put(new Point(1, 2), "origin");
+        System.out.println(map.get(new Point(1, 2)));  // origin
+    }
+}`,
   fixes: [
     {
       id: "objects-hash", correct: true,
@@ -401,6 +528,19 @@ const java9: TextPickFixDef = {
     }
 }`,
   bugLine: 4,
+  correctedCode: `import java.util.*;
+
+public class Main {
+    static void removeNegatives(List<Integer> list) {
+        list.removeIf(n -> n < 0);
+    }
+
+    public static void main(String[] args) {
+        List<Integer> nums = new ArrayList<>(Arrays.asList(3, -1, 7, -4, 2));
+        removeNegatives(nums);
+        System.out.println(nums);  // [3, 7, 2]
+    }
+}`,
   fixes: [
     {
       id: "removeIf", correct: true,
@@ -447,6 +587,23 @@ class HitCounter {
     public void hit() { count.incrementAndGet(); }
     public int total() { return count.get(); }
 }`,
+  correctedCode: `import java.util.concurrent.atomic.AtomicInteger;
+
+class HitCounter {
+    private AtomicInteger count = new AtomicInteger(0);
+    public void hit() { count.incrementAndGet(); }
+    public int total() { return count.get(); }
+}
+
+public class Main {
+    public static void main(String[] args) {
+        HitCounter counter = new HitCounter();
+        counter.hit();
+        counter.hit();
+        counter.hit();
+        System.out.println(counter.total());  // 3
+    }
+}`,
   options: [
     {
       id: "a", value: "AtomicInteger", correct: true,
@@ -491,6 +648,19 @@ public class Seeder {
     }
 }`,
   bugLine: 5,
+  correctedCode: `import java.util.*;
+
+public class Seeder {
+    public List<String> seed() {
+        List<String> items = new ArrayList<>(List.of("alpha", "beta"));
+        items.add("gamma");
+        return items;
+    }
+
+    public static void main(String[] args) {
+        System.out.println(new Seeder().seed());  // [alpha, beta, gamma]
+    }
+}`,
   fixes: [
     {
       id: "arraylist", correct: true,
@@ -576,6 +746,22 @@ const java13: TextFillBlankDef = {
     return cached.`,
   codeAfter: `(() -> database.query(id));
 }`,
+  correctedCode: `import java.util.*;
+
+public class Main {
+    static Map<String, String> cache = new HashMap<>();
+
+    static String getUser(String id) {
+        Optional<String> cached = Optional.ofNullable(cache.get(id));
+        return cached.orElseGet(() -> "DB:" + id);
+    }
+
+    public static void main(String[] args) {
+        cache.put("u1", "Alice (cached)");
+        System.out.println(getUser("u1"));  // Alice (cached)
+        System.out.println(getUser("u2"));  // DB:u2  (lazy fallback)
+    }
+}`,
   options: [
     {
       id: "a", value: "orElseGet", correct: true,
@@ -620,6 +806,26 @@ public class UserService {
     }
 }`,
   bugLine: 7,
+  correctedCode: `import java.util.Objects;
+
+interface UserRepository {}
+
+public class UserService {
+    private final UserRepository repo;
+
+    public UserService(UserRepository repo) {
+        this.repo = Objects.requireNonNull(repo, "repo must not be null");
+    }
+
+    public static void main(String[] args) {
+        try {
+            new UserService(null);
+        } catch (NullPointerException e) {
+            System.out.println("Caught: " + e.getMessage());
+            // Caught: repo must not be null
+        }
+    }
+}`,
   fixes: [
     {
       id: "require-non-null", correct: true,
@@ -666,6 +872,26 @@ const java15: TextPickFixDef = {
     reader.close();  // skipped if exception thrown above
 }`,
   bugLine: 2,
+  correctedCode: `import java.io.*;
+
+public class Main {
+    static void processLine(String line) {
+        System.out.println("Line: " + line);
+    }
+
+    public static void readFile(String path) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new FileReader(path))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                processLine(line);
+            }
+        }  // reader.close() called automatically here, even if an exception is thrown
+    }
+
+    public static void main(String[] args) throws IOException {
+        readFile("example.txt");
+    }
+}`,
   fixes: [
     {
       id: "try-resources", correct: true,
