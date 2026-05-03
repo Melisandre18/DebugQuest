@@ -1,15 +1,5 @@
 import type { IncomingMessage, ServerResponse } from "http";
 import vm from "node:vm";
-import { spawn } from "node:child_process";
-import { exec } from "node:child_process";
-import { promisify } from "node:util";
-import { writeFile, mkdir, rm } from "node:fs/promises";
-import { join } from "node:path";
-import { tmpdir } from "node:os";
-import { randomUUID } from "node:crypto";
-
-const execAsync = promisify(exec);
-const PYTHON_CMD = "python3";
 
 interface RunResult {
   output: string;
@@ -37,63 +27,8 @@ function str(v: unknown): string {
   try { return JSON.stringify(v) ?? String(v); } catch { return String(v); }
 }
 
-function spawnRun(
-  cmd: string,
-  args: string[],
-  stdin: string,
-  start: number,
-  cwd?: string,
-): Promise<RunResult> {
-  return new Promise(resolve => {
-    let child: ReturnType<typeof spawn>;
-    try {
-      child = spawn(cmd, args, { stdio: "pipe", cwd });
-    } catch (err) {
-      return resolve({ output: "", error: String(err), executionTimeMs: Date.now() - start });
-    }
-
-    const out: Buffer[] = [];
-    const err: Buffer[] = [];
-
-    child.stdout?.on("data", (d: Buffer) => out.push(d));
-    child.stderr?.on("data", (d: Buffer) => err.push(d));
-
-    child.stdin?.write(stdin);
-    child.stdin?.end();
-
-    const timer = setTimeout(() => {
-      child.kill("SIGKILL");
-      resolve({
-        output: Buffer.concat(out).toString().trimEnd(),
-        error: "Timed out after 5 s",
-        executionTimeMs: Date.now() - start,
-      });
-    }, 5000);
-
-    child.on("close", code => {
-      clearTimeout(timer);
-      const outStr = Buffer.concat(out).toString().trimEnd();
-      const errStr = Buffer.concat(err).toString().trimEnd();
-      resolve({
-        output: outStr,
-        error: errStr || (code !== 0 ? `Exited with code ${code}` : null),
-        executionTimeMs: Date.now() - start,
-      });
-    });
-
-    child.on("error", e => {
-      clearTimeout(timer);
-      let error = e.message;
-      if (e.message.includes("ENOENT")) {
-        if (cmd === "g++")   error = `g++ not available in this environment.`;
-        else if (cmd === "javac") error = `javac not available in this environment.`;
-        else if (cmd === "python3") error = `Python not available in this environment.`;
-        else error = `"${cmd}" not found.`;
-      }
-      resolve({ output: "", error, executionTimeMs: Date.now() - start });
-    });
-  });
-}
+// ─── JavaScript: vm sandbox ───────────────────────────────────────────────────
+// prompt() reads successive lines from the stdin panel, matching browser behaviour.
 
 function runJavaScript(code: string, stdin: string): RunResult {
   const start = Date.now();
@@ -131,55 +66,79 @@ function runJavaScript(code: string, stdin: string): RunResult {
   }
 }
 
-function runPython(code: string, stdin: string): Promise<RunResult> {
-  return spawnRun(PYTHON_CMD, ["-c", code], stdin, Date.now());
+// ─── Python / C++ / Java: Wandbox (free, no API key) ─────────────────────────
+
+const WANDBOX_URL = "https://wandbox.org/api/compile.json";
+
+interface WandboxCfg {
+  compiler: string;
+  options?: string;
+  prepareCode?: (code: string) => string;
 }
 
-async function runCpp(code: string, stdin: string): Promise<RunResult> {
-  const id   = randomUUID();
-  const dir  = join(tmpdir(), `dq_${id}`);
-  const src  = join(dir, "main.cpp");
-  const bin  = join(dir, "main");
+const WANDBOX: Record<string, WandboxCfg> = {
+  python: { compiler: "cpython-3.10.15" },
+  cpp:    { compiler: "gcc-13.2.0", options: "c++17,warning" },
+  // Wandbox saves the main file as prog.java; strip `public` from the
+  // top-level class so javac doesn't enforce a matching filename.
+  java: {
+    compiler: "openjdk-jdk-21+35",
+    prepareCode: (code) => code.replace(/\bpublic(\s+class\s)/g, "$1"),
+  },
+};
+
+interface WandboxResponse {
+  status: string;
+  compiler_error?: string;
+  program_output?: string;
+  program_error?: string;
+}
+
+async function runViaWandbox(lang: string, code: string, stdin: string): Promise<RunResult> {
   const start = Date.now();
+  const cfg = WANDBOX[lang];
+  const finalCode = cfg.prepareCode ? cfg.prepareCode(code) : code;
 
   try {
-    await mkdir(dir, { recursive: true });
-    await writeFile(src, code);
-    try {
-      await execAsync(`g++ -o "${bin}" "${src}" -std=c++17`, { timeout: 15000 });
-    } catch (e: any) {
-      return { output: "", error: (e.stderr ?? e.message).trimEnd(), executionTimeMs: Date.now() - start };
+    const res = await fetch(WANDBOX_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        compiler: cfg.compiler,
+        code: finalCode,
+        stdin,
+        ...(cfg.options ? { options: cfg.options } : {}),
+        save: false,
+      }),
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!res.ok) {
+      return { output: "", error: `Execution service error (${res.status})`, executionTimeMs: Date.now() - start };
     }
-    return await spawnRun(bin, [], stdin, start, dir);
-  } finally {
-    await rm(dir, { recursive: true, force: true });
+
+    const data = await res.json() as WandboxResponse;
+
+    // Compilation error
+    if (data.status !== "0" && data.compiler_error) {
+      return { output: "", error: data.compiler_error.trim(), executionTimeMs: Date.now() - start };
+    }
+
+    const output = (data.program_output ?? "").trimEnd();
+    const error  = (data.program_error ?? "").trim() || (data.status !== "0" ? `Exited with code ${data.status}` : null);
+    return { output, error, executionTimeMs: Date.now() - start };
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    const isTimeout = msg.toLowerCase().includes("timeout") || msg.includes("abort");
+    return {
+      output: "",
+      error: isTimeout ? "Timed out waiting for execution service" : `Execution service unreachable: ${msg}`,
+      executionTimeMs: Date.now() - start,
+    };
   }
 }
 
-function extractClassName(code: string): string {
-  return code.match(/public\s+class\s+(\w+)/)?.[1] ?? "Main";
-}
-
-async function runJava(code: string, stdin: string): Promise<RunResult> {
-  const id        = randomUUID();
-  const dir       = join(tmpdir(), `dq_${id}`);
-  const className = extractClassName(code);
-  const src       = join(dir, `${className}.java`);
-  const start     = Date.now();
-
-  try {
-    await mkdir(dir, { recursive: true });
-    await writeFile(src, code);
-    try {
-      await execAsync(`javac "${src}"`, { timeout: 15000 });
-    } catch (e: any) {
-      return { output: "", error: (e.stderr ?? e.message).trimEnd(), executionTimeMs: Date.now() - start };
-    }
-    return await spawnRun("java", ["-cp", dir, className], stdin, start, dir);
-  } finally {
-    await rm(dir, { recursive: true, force: true });
-  }
-}
+// ─── Handler ──────────────────────────────────────────────────────────────────
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== "POST") return json(res, 405, { error: "Method not allowed" });
@@ -198,9 +157,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   switch (language) {
     case "javascript": return json(res, 200, runJavaScript(code, stdin as string));
-    case "python":     return json(res, 200, await runPython(code, stdin as string));
-    case "cpp":        return json(res, 200, await runCpp(code, stdin as string));
-    case "java":       return json(res, 200, await runJava(code, stdin as string));
+    case "python":
+    case "cpp":
+    case "java":       return json(res, 200, await runViaWandbox(language, code, stdin as string));
     default:           return json(res, 400, { error: `Unknown language: ${language}` });
   }
 }
