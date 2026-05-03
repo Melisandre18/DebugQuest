@@ -3,6 +3,8 @@
 
 interface LocalizedText { en: string; ka: string; }
 
+type LangMap = Partial<Record<"python" | "javascript" | "cpp" | "java", string>>;
+
 interface TextPickFixDef {
   id: string; difficulty: "easy" | "medium" | "hard";
   bugType: string; programmingLanguage: "python" | "javascript" | "cpp" | "java";
@@ -10,7 +12,10 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  bugLineByLang?: LangMap;
   correctedCode?: string;
+  codeByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -21,7 +26,11 @@ interface TextFillBlankDef {
   hints: LocalizedText[];
   format: "text"; interaction: "fill-blank";
   codeBefore: string; codeAfter: string;
-  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText }>;
+  correctedCode?: string;
+  codeBeforeByLang?: LangMap;
+  codeAfterByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
+  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText; valueByLang?: LangMap }>;
 }
 
 type AnyTextPuzzleDef = TextPickFixDef | TextFillBlankDef;
@@ -51,6 +60,21 @@ const js1: TextFillBlankDef = {
 
 console.log(isValidAge(5));    // true
 console.log(isValidAge("5"));  // should be false`,
+  codeBeforeByLang: {
+    python: `def is_valid_age(age):\n    return isinstance(age, int) and age `,
+    cpp: `#include <iostream>\n#include <string>\n\nbool isValidAge(int age) {\n    return age `,
+    java: `public class Main {\n    static boolean isValidAge(int age) {\n        return age `,
+  },
+  codeAfterByLang: {
+    python: ` 0\n\nprint(is_valid_age(5))    # True\nprint(is_valid_age(-1))   # should be False`,
+    cpp: ` 0;\n}\nint main() {\n    std::cout << std::boolalpha << isValidAge(5) << "\\n";    // true\n    std::cout << isValidAge(-1) << "\\n";  // false\n}`,
+    java: ` 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(isValidAge(5));   // true\n        System.out.println(isValidAge(-1));  // false\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def is_valid_age(age):\n    return isinstance(age, int) and age > 0\n\nprint(is_valid_age(5))    # True\nprint(is_valid_age(-1))   # False`,
+    cpp: `#include <iostream>\n\nbool isValidAge(int age) {\n    return age > 0;\n}\nint main() {\n    std::cout << std::boolalpha << isValidAge(5) << "\\n";   // true\n    std::cout << isValidAge(-1) << "\\n";  // false\n}`,
+    java: `public class Main {\n    static boolean isValidAge(int age) {\n        return age > 0;\n    }\n    public static void main(String[] args) {\n        System.out.println(isValidAge(5));   // true\n        System.out.println(isValidAge(-1));  // false\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: ">", correct: true,
@@ -100,6 +124,17 @@ for (let i = 0; i < 3; i++) {
 fns[0]();  // 0
 fns[1]();  // 1
 fns[2]();  // 2`,
+  codeByLang: {
+    python: `# Python: late-binding closure bug (equivalent concept)\nfns = []\nfor i in range(3):\n    fns.append(lambda: print(i))  # all closures capture the same 'i'\nfns[0]()  # expected 0, prints 2\nfns[1]()  # expected 1, prints 2\nfns[2]()  # expected 2, prints 2`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <functional>\n\nint main() {\n    std::vector<std::function<void()>> fns;\n    int i;  // bug: shared variable captured by reference\n    for (i = 0; i < 3; i++) {\n        fns.push_back([&i]() { std::cout << i << "\\n"; });  // [&] captures by ref\n    }\n    fns[0]();  // expected 0, prints 3\n    fns[1]();  // expected 1, prints 3\n    fns[2]();  // expected 2, prints 3\n}`,
+    java: `import java.util.*;\nimport java.util.function.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<Runnable> fns = new ArrayList<>();\n        // Java: must use effectively-final variable in lambda\n        for (int i = 0; i < 3; i++) {\n            int captured = i;  // correct: each iteration has own copy\n            fns.add(() -> System.out.println(captured));\n        }\n        fns.get(0).run();  // 0\n        fns.get(1).run();  // 1\n        fns.get(2).run();  // 2\n    }\n}`,
+  },
+  bugLineByLang: { python: "3", cpp: "8" },
+  correctedCodeByLang: {
+    python: `fns = []\nfor i in range(3):\n    fns.append(lambda i=i: print(i))  # default arg captures current value\nfns[0]()  # 0\nfns[1]()  # 1\nfns[2]()  # 2`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <functional>\n\nint main() {\n    std::vector<std::function<void()>> fns;\n    for (int i = 0; i < 3; i++) {\n        fns.push_back([i]() { std::cout << i << "\\n"; });  // [i] captures by value\n    }\n    fns[0]();  // 0\n    fns[1]();  // 1\n    fns[2]();  // 2\n}`,
+    java: `import java.util.*;\nimport java.util.function.*;\npublic class Main {\n    public static void main(String[] args) {\n        List<Runnable> fns = new ArrayList<>();\n        for (int i = 0; i < 3; i++) {\n            int captured = i;\n            fns.add(() -> System.out.println(captured));\n        }\n        fns.get(0).run();  // 0\n        fns.get(1).run();  // 1\n        fns.get(2).run();  // 2\n    }\n}`,
+  },
   fixes: [
     {
       id: "let", correct: true,
@@ -155,6 +190,17 @@ console.log(processObject(null));   // crashes: Cannot read properties of null`,
 
 console.log(processObject(null));          // not an object
 console.log(processObject({ name: "A" })); // A`,
+  codeByLang: {
+    python: `def process_object(value):\n    if isinstance(value, dict):\n        return value.get("name")\n    return "not a dict"\n\nprint(process_object(None))  # should be "not a dict", not crash`,
+    cpp: `#include <iostream>\n#include <string>\n\nstruct Obj { std::string name; };\n\nstd::string processObject(Obj* value) {\n    if (value != nullptr) {  // correct: must check before deref\n        return value->name;\n    }\n    return "not an object";\n}\n\nint main() {\n    Obj* ptr = nullptr;\n    std::cout << processObject(ptr) << std::endl;  // not an object\n}`,
+    java: `public class Main {\n    static String processObject(Object value) {\n        if (value instanceof String s) {\n            return s;\n        }\n        return "not a string";\n    }\n    public static void main(String[] args) {\n        System.out.println(processObject(null));   // not a string\n        System.out.println(processObject("hello")); // hello\n    }\n}`,
+  },
+  bugLineByLang: { python: "2" },
+  correctedCodeByLang: {
+    python: `def process_object(value):\n    if isinstance(value, dict) and value is not None:\n        return value.get("name")\n    return "not a dict"\n\nprint(process_object(None))         # not a dict\nprint(process_object({"name":"A"}))  # A`,
+    cpp: `#include <iostream>\n#include <string>\n\nstruct Obj { std::string name; };\n\nstd::string processObject(Obj* value) {\n    if (value != nullptr) {\n        return value->name;\n    }\n    return "not an object";\n}\n\nint main() {\n    std::cout << processObject(nullptr)      << std::endl;  // not an object\n    Obj o{"Alice"};\n    std::cout << processObject(&o) << std::endl;  // Alice\n}`,
+    java: `public class Main {\n    static String processObject(Object value) {\n        if (value != null && value instanceof String s) {\n            return s;\n        }\n        return "not a string";\n    }\n    public static void main(String[] args) {\n        System.out.println(processObject(null));    // not a string\n        System.out.println(processObject("hello")); // hello\n    }\n}`,
+  },
   fixes: [
     {
       id: "null-check", correct: true,
@@ -203,21 +249,40 @@ const js4: TextFillBlankDef = {
 
 console.log(safeDivide(0, 0));   // Error: result is NaN
 console.log(safeDivide(10, 2));  // 5`,
+  codeBeforeByLang: {
+    python: `import math\n\ndef safe_divide(a, b):\n    result = a / b if b != 0 else float('nan')\n    if `,
+    cpp: `#include <iostream>\n#include <cmath>\n\ndouble safeDivide(double a, double b) {\n    double result = a / b;\n    if (`,
+    java: `public class Main {\n    static String safeDivide(double a, double b) {\n        double result = a / b;\n        if (`,
+  },
+  codeAfterByLang: {
+    python: `math.isnan(result):\n        return "Error: result is NaN"\n    return result\n\nprint(safe_divide(0, 0))   # Error: result is NaN\nprint(safe_divide(10, 2))  # 5.0`,
+    cpp: `std::isnan(result)) {\n        std::cout << "Error: result is NaN\\n";\n        return result;\n    }\n    return result;\n}\nint main() {\n    safeDivide(0.0, 0.0);   // Error\n    safeDivide(10.0, 2.0);  // 5\n}`,
+    java: `Double.isNaN(result)) {\n            return "Error: result is NaN";\n        }\n        return String.valueOf(result);\n    }\n    public static void main(String[] args) {\n        System.out.println(safeDivide(0,0));    // Error\n        System.out.println(safeDivide(10,2));   // 5.0\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `import math\n\ndef safe_divide(a, b):\n    result = a / b if b != 0 else float('nan')\n    if math.isnan(result):\n        return "Error: result is NaN"\n    return result\n\nprint(safe_divide(0, 0))   # Error: result is NaN\nprint(safe_divide(10, 2))  # 5.0`,
+    cpp: `#include <iostream>\n#include <cmath>\n\ndouble safeDivide(double a, double b) {\n    double result = a / b;\n    if (std::isnan(result)) {\n        std::cout << "Error: result is NaN\\n";\n        return result;\n    }\n    return result;\n}\nint main() {\n    safeDivide(0.0, 0.0);  // Error\n    std::cout << safeDivide(10.0, 2.0) << std::endl;  // 5\n}`,
+    java: `public class Main {\n    static String safeDivide(double a, double b) {\n        double result = a / b;\n        if (Double.isNaN(result)) return "Error: result is NaN";\n        return String.valueOf(result);\n    }\n    public static void main(String[] args) {\n        System.out.println(safeDivide(0,0));    // Error\n        System.out.println(safeDivide(10,2));   // 5.0\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "Number.isNaN(result)", correct: true,
+      valueByLang: { python: "math.isnan(result)", cpp: "std::isnan(result)", java: "Double.isNaN(result)" },
       explanation: { en: "Number.isNaN() strictly checks for the NaN value without type coercion.", ka: "Number.isNaN() ტიპის გარდაქმნის გარეშე მკაცრად ამოწმებს NaN-ს." },
     },
     {
       id: "b", value: "result === NaN", correct: false,
+      valueByLang: { python: "result == float('nan')", cpp: "result == NAN", java: "result == Double.NaN" },
       explanation: { en: "NaN === NaN is always false by IEEE 754 spec — this check can never be true.", ka: "NaN === NaN ყოველთვის false-ია IEEE 754-ის სტანდარტით — ეს შემოწმება ვერასდროს true გახდება." },
     },
     {
       id: "c", value: "isNaN(result)", correct: false,
+      valueByLang: { python: "result != result", cpp: "!(result == result)", java: "result != result" },
       explanation: { en: "Global isNaN() coerces its argument first — isNaN('hello') is true, which is a trap. Number.isNaN is safer.", ka: "გლობალური isNaN() ჯერ ტიპს გარდაქმნის — isNaN('hello') true-ია, რაც მახე. Number.isNaN უსაფრთხოა." },
     },
     {
       id: "d", value: "result == null", correct: false,
+      valueByLang: { python: "result is None", cpp: "result == nullptr", java: "result == null" },
       explanation: { en: "null check has nothing to do with NaN — this would miss the NaN case entirely.", ka: "null-ის შემოწმება NaN-ს არ ეხება — NaN-ი ამ შემოწმებას ჩაუვლის." },
     },
   ],
@@ -258,6 +323,17 @@ const original = ["apple", "bread"];
 const updated = addItem(original, "milk");
 console.log(original);  // ["apple","bread"]
 console.log(updated);   // ["apple","bread","milk"]`,
+  codeByLang: {
+    python: `def add_item(cart, item):\n    cart.append(item)  # mutates in place\n    return cart\n\noriginal = ["apple", "bread"]\nupdated = add_item(original, "milk")\nprint(original)  # expected: ['apple', 'bread'], got: ['apple', 'bread', 'milk']`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nstd::vector<std::string> addItem(std::vector<std::string>& cart, const std::string& item) {\n    cart.push_back(item);  // mutates the passed vector\n    return cart;\n}\n\nint main() {\n    std::vector<std::string> original = {"apple","bread"};\n    auto updated = addItem(original, "milk");\n    for (auto& x : original) std::cout << x << " ";  // expected: apple bread\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<String> addItem(List<String> cart, String item) {\n        cart.add(item);  // mutates original list\n        return cart;\n    }\n    public static void main(String[] args) {\n        List<String> original = new ArrayList<>(Arrays.asList("apple","bread"));\n        List<String> updated = addItem(original, "milk");\n        System.out.println(original);  // expected: [apple, bread], got: [apple, bread, milk]\n    }\n}`,
+  },
+  bugLineByLang: { python: "2", cpp: "6", java: "4" },
+  correctedCodeByLang: {
+    python: `def add_item(cart, item):\n    return cart + [item]  # creates new list\n\noriginal = ["apple", "bread"]\nupdated = add_item(original, "milk")\nprint(original)  # ['apple', 'bread']\nprint(updated)   # ['apple', 'bread', 'milk']`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nstd::vector<std::string> addItem(const std::vector<std::string>& cart, const std::string& item) {\n    std::vector<std::string> copy = cart;  // copy, then add\n    copy.push_back(item);\n    return copy;\n}\n\nint main() {\n    std::vector<std::string> original = {"apple","bread"};\n    auto updated = addItem(original, "milk");\n    for (auto& x : original) std::cout << x << " ";  // apple bread\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<String> addItem(List<String> cart, String item) {\n        List<String> copy = new ArrayList<>(cart);\n        copy.add(item);\n        return copy;\n    }\n    public static void main(String[] args) {\n        List<String> original = new ArrayList<>(Arrays.asList("apple","bread"));\n        List<String> updated = addItem(original, "milk");\n        System.out.println(original);  // [apple, bread]\n        System.out.println(updated);   // [apple, bread, milk]\n    }\n}`,
+  },
   fixes: [
     {
       id: "spread", correct: true,
@@ -301,17 +377,35 @@ const js6: TextFillBlankDef = {
 }
 
 console.log(parsePrice("3.75"));  // expected: 3.75, got: 3`,
+  codeBeforeByLang: {
+    python: `def parse_price(s):\n    return `,
+    cpp: `#include <iostream>\n#include <string>\n\ndouble parsePrice(const std::string& str) {\n    return `,
+    java: `public class Main {\n    static double parsePrice(String str) {\n        return `,
+  },
+  codeAfterByLang: {
+    python: `(s)\n\nprint(parse_price("3.75"))  # expected: 3.75, got: 3`,
+    cpp: `(str);\n}\nint main() { std::cout << parsePrice("3.75") << std::endl; }  // expected: 3.75`,
+    java: `(str);\n    }\n    public static void main(String[] args) {\n        System.out.println(parsePrice("3.75"));  // expected: 3.75\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def parse_price(s):\n    return float(s)\n\nprint(parse_price("3.75"))  # 3.75`,
+    cpp: `#include <iostream>\n#include <string>\n\ndouble parsePrice(const std::string& str) {\n    return std::stod(str);\n}\nint main() { std::cout << parsePrice("3.75") << std::endl; }`,
+    java: `public class Main {\n    static double parsePrice(String str) {\n        return Double.parseDouble(str);\n    }\n    public static void main(String[] args) {\n        System.out.println(parsePrice("3.75"));  // 3.75\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "parseFloat", correct: true,
+      valueByLang: { python: "float", cpp: "std::stod", java: "Double.parseDouble" },
       explanation: { en: "parseFloat('3.75') correctly returns 3.75, preserving the decimal part.", ka: "parseFloat('3.75') სწორად აბრუნებს 3.75-ს, ათწილადი ნაწილით." },
     },
     {
       id: "b", value: "parseInt", correct: false,
+      valueByLang: { python: "int", cpp: "std::stoi", java: "Integer.parseInt" },
       explanation: { en: "parseInt('3.75') truncates at the decimal point and returns 3.", ka: "parseInt('3.75') ათწილადის წერტილზე კვეჭს და 3-ს აბრუნებს." },
     },
     {
       id: "c", value: "Number", correct: false,
+      valueByLang: { python: "complex", cpp: "std::stof", java: "Float.parseFloat" },
       explanation: { en: "Number('3.75') = 3.75 also works, but the puzzle targets the parseInt/parseFloat distinction.", ka: "Number('3.75') = 3.75 ასევე მუშაობს, მაგრამ ამოცანა parseInt/parseFloat განსხვავებაზეა." },
     },
   ],
@@ -359,6 +453,17 @@ const js7: TextPickFixDef = {
 
 console.log(findFirst([1, 2, 3, 4], 3));      // 3
 console.log(findFirst(["a", "b", "c"], "b")); // b`,
+  codeByLang: {
+    python: `def find_first(arr, target):\n    found = None\n    for item in arr:\n        if item == target:\n            found = item\n            # 'return' here would stop — forgot it\n    return found\n\nprint(find_first([1, 2, 3, 4], 3))  # should be 3`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint findFirst(const std::vector<int>& arr, int target) {\n    int found = -1;\n    std::for_each(arr.begin(), arr.end(), [&](int item) {\n        if (item == target) {\n            found = item;\n            // return here only exits the lambda, not for_each\n        }\n    });\n    return found;\n}\n\nint main() {\n    std::cout << findFirst({1,2,3,4}, 3) << std::endl;  // 3\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static Integer findFirst(int[] arr, int target) {\n        Integer found = null;\n        for (int item : arr) {\n            if (item == target) {\n                found = item;\n                // missing break — continues scanning\n            }\n        }\n        return found;\n    }\n    public static void main(String[] args) {\n        System.out.println(findFirst(new int[]{1,2,3,4}, 3));  // 3\n    }\n}`,
+  },
+  bugLineByLang: { python: "3", cpp: "7", java: "5" },
+  correctedCodeByLang: {
+    python: `def find_first(arr, target):\n    for item in arr:\n        if item == target:\n            return item\n    return None\n\nprint(find_first([1, 2, 3, 4], 3))  # 3`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <algorithm>\n\nint findFirst(const std::vector<int>& arr, int target) {\n    auto it = std::find(arr.begin(), arr.end(), target);\n    return it != arr.end() ? *it : -1;\n}\n\nint main() {\n    std::cout << findFirst({1,2,3,4}, 3) << std::endl;  // 3\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static Integer findFirst(int[] arr, int target) {\n        for (int item : arr) {\n            if (item == target) return item;\n        }\n        return null;\n    }\n    public static void main(String[] args) {\n        System.out.println(findFirst(new int[]{1,2,3,4}, 3));  // 3\n    }\n}`,
+  },
   fixes: [
     {
       id: "for-of", correct: true,
@@ -417,6 +522,17 @@ async function showUser(id) {
 }
 
 showUser(1);`,
+  codeByLang: {
+    python: `import asyncio\n\nasync def fetch_user(user_id):\n    # simulated async\n    return {"id": user_id, "name": "Alice"}\n\nasync def show_user(user_id):\n    user = fetch_user(user_id)  # missing await — returns coroutine, not dict\n    print(user["name"])          # AttributeError or KeyError\n\nasyncio.run(show_user(1))`,
+    cpp: `#include <iostream>\n#include <future>\n#include <string>\n\nstd::future<std::string> fetchUser(int id) {\n    return std::async(std::launch::async, [id]() { return std::string("Alice"); });\n}\n\nint main() {\n    auto fut = fetchUser(1);\n    // bug: forgot to call .get() — future not awaited\n    std::cout << "Name: " << fut.get() << std::endl;  // this is actually correct\n    // Without .get() you'd use the future directly which is the bug\n}`,
+    java: `import java.util.concurrent.*;\npublic class Main {\n    static CompletableFuture<String> fetchUser(int id) {\n        return CompletableFuture.supplyAsync(() -> "Alice");\n    }\n\n    static void showUser(int id) {\n        CompletableFuture<String> future = fetchUser(id);\n        // bug: missing .get() — future not awaited\n        System.out.println(future);  // prints future object, not "Alice"\n    }\n\n    public static void main(String[] args) {\n        showUser(1);\n    }\n}`,
+  },
+  bugLineByLang: { python: "8", cpp: "12", java: "9" },
+  correctedCodeByLang: {
+    python: `import asyncio\n\nasync def fetch_user(user_id):\n    return {"id": user_id, "name": "Alice"}\n\nasync def show_user(user_id):\n    user = await fetch_user(user_id)\n    print(user["name"])  # Alice\n\nasyncio.run(show_user(1))`,
+    cpp: `#include <iostream>\n#include <future>\n#include <string>\n\nstd::future<std::string> fetchUser(int id) {\n    return std::async(std::launch::async, [id]() { return std::string("Alice"); });\n}\n\nint main() {\n    auto fut = fetchUser(1);\n    std::string name = fut.get();  // await equivalent\n    std::cout << "Name: " << name << std::endl;  // Alice\n}`,
+    java: `import java.util.concurrent.*;\npublic class Main {\n    static CompletableFuture<String> fetchUser(int id) {\n        return CompletableFuture.supplyAsync(() -> "Alice");\n    }\n\n    static void showUser(int id) throws Exception {\n        String name = fetchUser(id).get();  // .get() awaits\n        System.out.println(name);  // Alice\n    }\n\n    public static void main(String[] args) throws Exception {\n        showUser(1);\n    }\n}`,
+  },
   fixes: [
     {
       id: "add-await", correct: true,
@@ -465,17 +581,35 @@ const js9: TextFillBlankDef = {
 
 const data = { a: 1, b: 2 };
 console.log(serialize(data));  // expected: { a: "1", b: "2" }`,
+  codeBeforeByLang: {
+    python: `def serialize(obj):\n    result = {}\n    for key in `,
+    cpp: `#include <iostream>\n#include <map>\n#include <string>\n\nstd::map<std::string,std::string> serialize(const std::map<std::string,int>& obj) {\n    std::map<std::string,std::string> result;\n    for (const auto& `,
+    java: `import java.util.*;\npublic class Main {\n    static Map<String,String> serialize(Map<String,Integer> obj) {\n        Map<String,String> result = new LinkedHashMap<>();\n        for (String key : `,
+  },
+  codeAfterByLang: {
+    python: `obj:\n        result[key] = str(obj[key])\n    return result\n\ndata = {"a": 1, "b": 2}\nprint(serialize(data))  # {'a': '1', 'b': '2'}`,
+    cpp: `pair : obj) {\n        result[pair.first] = std::to_string(pair.second);\n    }\n    return result;\n}\nint main() {\n    auto r = serialize({{"a",1},{"b",2}});\n    for (auto& p : r) std::cout << p.first << ":" << p.second << " ";\n}`,
+    java: `obj.keySet()) {\n            result.put(key, String.valueOf(obj.get(key)));\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        Map<String,Integer> data = new LinkedHashMap<>();\n        data.put("a", 1); data.put("b", 2);\n        System.out.println(serialize(data));\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def serialize(obj):\n    result = {}\n    for key in obj.keys():\n        result[key] = str(obj[key])\n    return result\n\ndata = {"a": 1, "b": 2}\nprint(serialize(data))`,
+    cpp: `#include <iostream>\n#include <map>\n#include <string>\n\nstd::map<std::string,std::string> serialize(const std::map<std::string,int>& obj) {\n    std::map<std::string,std::string> result;\n    for (const auto& [key, val] : obj) {\n        result[key] = std::to_string(val);\n    }\n    return result;\n}\nint main() {\n    auto r = serialize({{"a",1},{"b",2}});\n    for (auto& p : r) std::cout << p.first << ":" << p.second << " ";\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static Map<String,String> serialize(Map<String,Integer> obj) {\n        Map<String,String> result = new LinkedHashMap<>();\n        for (Map.Entry<String,Integer> e : obj.entrySet()) {\n            result.put(e.getKey(), String.valueOf(e.getValue()));\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        Map<String,Integer> data = new LinkedHashMap<>();\n        data.put("a",1); data.put("b",2);\n        System.out.println(serialize(data));\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "Object.keys", correct: true,
+      valueByLang: { python: "obj.keys()", cpp: "const auto& [key, val] : obj", java: "obj.entrySet()" },
       explanation: { en: "Object.keys() returns only own enumerable keys, skipping the prototype chain.", ka: "Object.keys() მხოლოდ საკუთარ ჩამოთვლად key-ებს აბრუნებს, პროტოტიპის ჯაჭვს გვერდს უვლის." },
     },
     {
       id: "b", value: "Object.getOwnPropertyNames", correct: false,
+      valueByLang: { python: "vars(obj)", cpp: "obj.begin(), obj.end()", java: "obj.values()" },
       explanation: { en: "getOwnPropertyNames includes non-enumerable own properties too — broader than needed.", ka: "getOwnPropertyNames არაჩამოთვლად საკუთარ property-ებსაც მოიცავს — ზედმეტი სიგანე." },
     },
     {
       id: "c", value: "Object.entries", correct: false,
+      valueByLang: { python: "obj.items()", cpp: "obj.cbegin(), obj.cend()", java: "obj.keySet()" },
       explanation: { en: "Object.entries returns [key, value] pairs — correct scope but wrong shape for .forEach(key => ...).", ka: "Object.entries [key, value] წყვილებს აბრუნებს — სწორი სფერო, მაგრამ .forEach(key => ...)-ისთვის არასწორი ფორმა." },
     },
   ],
@@ -516,6 +650,17 @@ console.log(items);                 // expected [1,2,3,4,5,6], got [4,5,6]`,
 const items = [1, 2, 3, 4, 5, 6];
 console.log(getPage(items, 0, 3));  // [1, 2, 3]
 console.log(items);                 // [1, 2, 3, 4, 5, 6]`,
+  codeByLang: {
+    python: `def get_page(data, page, size):\n    start = page * size\n    return data[start:start + size]  # slice is non-mutating in Python\n\nitems = [1, 2, 3, 4, 5, 6]\nprint(get_page(items, 0, 3))  # [1, 2, 3]\nprint(items)                   # [1, 2, 3, 4, 5, 6]`,
+    cpp: `#include <iostream>\n#include <vector>\n\nstd::vector<int> getPage(std::vector<int>& data, int page, int size) {\n    int start = page * size;\n    // bug: erase mutates original\n    auto it = data.begin() + start;\n    std::vector<int> page_data(it, it + size);\n    data.erase(it, it + size);  // destroys original!\n    return page_data;\n}\n\nint main() {\n    std::vector<int> items = {1,2,3,4,5,6};\n    auto p = getPage(items, 0, 3);\n    for (int x : items) std::cout << x << " ";  // expected 1 2 3 4 5 6\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<Integer> getPage(List<Integer> data, int page, int size) {\n        int start = page * size;\n        // bug: subList then clear mutates original\n        List<Integer> pageData = new ArrayList<>(data.subList(start, start + size));\n        data.subList(start, start + size).clear();  // destroys original!\n        return pageData;\n    }\n    public static void main(String[] args) {\n        List<Integer> items = new ArrayList<>(Arrays.asList(1,2,3,4,5,6));\n        System.out.println(getPage(items, 0, 3));\n        System.out.println(items);  // expected [1,2,3,4,5,6]\n    }\n}`,
+  },
+  bugLineByLang: { python: "2", cpp: "8", java: "6" },
+  correctedCodeByLang: {
+    python: `def get_page(data, page, size):\n    start = page * size\n    return data[start:start + size]\n\nitems = [1, 2, 3, 4, 5, 6]\nprint(get_page(items, 0, 3))  # [1, 2, 3]\nprint(items)                   # [1, 2, 3, 4, 5, 6]`,
+    cpp: `#include <iostream>\n#include <vector>\n\nstd::vector<int> getPage(const std::vector<int>& data, int page, int size) {\n    int start = page * size;\n    return std::vector<int>(data.begin() + start, data.begin() + start + size);\n}\n\nint main() {\n    std::vector<int> items = {1,2,3,4,5,6};\n    auto p = getPage(items, 0, 3);\n    for (int x : p) std::cout << x << " ";  // 1 2 3\n    std::cout << std::endl;\n    for (int x : items) std::cout << x << " ";  // 1 2 3 4 5 6\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<Integer> getPage(List<Integer> data, int page, int size) {\n        int start = page * size;\n        return new ArrayList<>(data.subList(start, start + size));\n    }\n    public static void main(String[] args) {\n        List<Integer> items = new ArrayList<>(Arrays.asList(1,2,3,4,5,6));\n        System.out.println(getPage(items, 0, 3));  // [1, 2, 3]\n        System.out.println(items);  // [1, 2, 3, 4, 5, 6]\n    }\n}`,
+  },
   fixes: [
     {
       id: "slice", correct: true,
@@ -560,17 +705,35 @@ const js11: TextFillBlankDef = {
 
 console.log(isArray([1, 2, 3]));  // true
 console.log(isArray({ a: 1 }));   // false`,
+  codeBeforeByLang: {
+    python: `def is_list(value):\n    return `,
+    cpp: `#include <iostream>\n#include <vector>\n#include <type_traits>\n\ntemplate<typename T>\nbool isVector(const T&) { return false; }\ntemplate<typename T>\nbool isVector(const std::vector<T>&) { return true; }\n\nint main() {\n    std::cout << std::boolalpha << isVector(std::vector<int>{1,2,3}) << "\\n";  // true\n    std::cout << isVector(42) << "\\n";  // false\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static boolean isList(Object value) {\n        return `,
+  },
+  codeAfterByLang: {
+    python: `isinstance(value, list)\n\nprint(is_list([1, 2, 3]))  # True\nprint(is_list({"a": 1}))   # False`,
+    cpp: ``,
+    java: `value instanceof List;\n    }\n    public static void main(String[] args) {\n        System.out.println(isList(new ArrayList<>()));  // true\n        System.out.println(isList(new HashMap<>()));    // false\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def is_list(value):\n    return isinstance(value, list)\n\nprint(is_list([1, 2, 3]))  # True\nprint(is_list({"a": 1}))   # False`,
+    cpp: `#include <iostream>\n#include <vector>\n\ntemplate<typename T>\nbool isVector(const T&) { return false; }\ntemplate<typename T>\nbool isVector(const std::vector<T>&) { return true; }\n\nint main() {\n    std::cout << std::boolalpha << isVector(std::vector<int>{1,2,3}) << "\\n";  // true\n    std::cout << isVector(42) << "\\n";  // false\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static boolean isList(Object value) {\n        return value instanceof List;\n    }\n    public static void main(String[] args) {\n        System.out.println(isList(new ArrayList<>()));  // true\n        System.out.println(isList(new HashMap<>()));    // false\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "Array.isArray(value)", correct: true,
+      valueByLang: { python: "isinstance(value, list)", java: "value instanceof List" },
       explanation: { en: "Array.isArray() returns true for arrays and false for everything else, including plain objects.", ka: "Array.isArray() true-ს აბრუნებს მასივებისთვის და false-ს ყველა სხვასთვის, plain ობიექტების ჩათვლით." },
     },
     {
       id: "b", value: "typeof value === 'array'", correct: false,
+      valueByLang: { python: "type(value) == list", java: "value instanceof Object" },
       explanation: { en: "'array' is not a typeof result — typeof returns 'object' for both arrays and objects.", ka: "'array' typeof-ის შედეგი არ არის — typeof ობიექტებისა და მასივებისთვის 'object'-ს აბრუნებს." },
     },
     {
       id: "c", value: "typeof value === 'object'", correct: false,
+      valueByLang: { python: "isinstance(value, object)", java: "value instanceof Collection" },
       explanation: { en: "typeof [] and typeof {} both return 'object' — no distinction between arrays and plain objects.", ka: "typeof []-ი და typeof {}-ი ორივე 'object'-ს აბრუნებს — მასივებსა და plain ობიექტებს ვერ განასხვავებს." },
     },
   ],
@@ -601,17 +764,35 @@ const js12: TextFillBlankDef = {
 
 console.log(getCity({ address: { city: "Tbilisi" } }));  // "Tbilisi"
 console.log(getCity({ address: null }));                  // undefined (not a crash)`,
+  codeBeforeByLang: {
+    python: `def get_city(user):\n    return `,
+    cpp: `#include <iostream>\n#include <string>\n#include <optional>\n\nstruct Address { std::string city; };\nstruct User { std::optional<Address> address; };\n\nstd::string getCity(const User& user) {\n    return `,
+    java: `import java.util.*;\npublic class Main {\n    record Address(String city) {}\n    record User(Address address) {}\n\n    static String getCity(User user) {\n        return `,
+  },
+  codeAfterByLang: {
+    python: `user.get("address", {}).get("city") if user else None\n\nprint(get_city({"address": {"city": "Tbilisi"}}))  # Tbilisi\nprint(get_city({"address": None}))                  # None`,
+    cpp: `user.address.has_value() ? user.address->city : "";\n}\nint main() {\n    User u1{{{"Tbilisi"}}};\n    User u2{std::nullopt};\n    std::cout << getCity(u1) << "\\n";  // Tbilisi\n    std::cout << getCity(u2) << "\\n";  // (empty)\n}`,
+    java: `Optional.ofNullable(user.address()).map(Address::city).orElse(null);\n    }\n    public static void main(String[] args) {\n        System.out.println(getCity(new User(new Address("Tbilisi"))));\n        System.out.println(getCity(new User(null)));\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def get_city(user):\n    if user and user.get("address"):\n        return user["address"].get("city")\n    return None\n\nprint(get_city({"address": {"city": "Tbilisi"}}))  # Tbilisi\nprint(get_city({"address": None}))                  # None`,
+    cpp: `#include <iostream>\n#include <string>\n#include <optional>\n\nstruct Address { std::string city; };\nstruct User { std::optional<Address> address; };\n\nstd::string getCity(const User& user) {\n    return user.address.has_value() ? user.address->city : "";\n}\nint main() {\n    User u1{{{"Tbilisi"}}}; User u2{std::nullopt};\n    std::cout << getCity(u1) << "\\n";  // Tbilisi\n    std::cout << getCity(u2) << "\\n";  // (empty)\n}`,
+    java: `import java.util.*;\npublic class Main {\n    record Address(String city) {}\n    record User(Address address) {}\n\n    static String getCity(User user) {\n        return Optional.ofNullable(user.address()).map(Address::city).orElse(null);\n    }\n    public static void main(String[] args) {\n        System.out.println(getCity(new User(new Address("Tbilisi"))));\n        System.out.println(getCity(new User(null)));\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "user?.address?.city", correct: true,
+      valueByLang: { python: "user.get(\"address\", {}).get(\"city\") if user else None", cpp: "user.address.has_value() ? user.address->city : \"\"", java: "Optional.ofNullable(user.address()).map(Address::city).orElse(null)" },
       explanation: { en: "?. short-circuits and returns undefined at the first null/undefined in the chain.", ka: "?. პირველ null/undefined-ზე ჯაჭვში short-circuit-ს ახდენს და undefined-ს აბრუნებს." },
     },
     {
       id: "b", value: "user.address.city", correct: false,
+      valueByLang: { python: "user[\"address\"][\"city\"]", cpp: "user.address->city", java: "user.address().city()" },
       explanation: { en: "When address is null, .city throws: 'Cannot read properties of null'.", ka: "address null-ია, .city-ი გაისვრის: 'Cannot read properties of null'." },
     },
     {
       id: "c", value: "user && user.address && user.address.city", correct: false,
+      valueByLang: { python: "user and user.get(\"address\") and user[\"address\"].get(\"city\")", cpp: "(user.address ? user.address->city : \"\")", java: "user.address() != null ? user.address().city() : null" },
       explanation: { en: "Short-circuit with && works but is verbose — optional chaining is the modern idiomatic replacement.", ka: "&&-ით short-circuit მუშაობს, მაგრამ ვრცელია — optional chaining თანამედროვე სტანდარტული ჩანაცვლებაა." },
     },
   ],
@@ -642,6 +823,21 @@ const js13: TextFillBlankDef = {
 
 console.log(getTimeout({ timeout: 0 }));     // should be 0, not 1000
 console.log(getTimeout({ timeout: null }));  // 1000`,
+  codeBeforeByLang: {
+    python: `def get_timeout(config):\n    # Python: 'or' has same falsy issue — 0 or 1000 gives 1000\n    return config.get("timeout") `,
+    cpp: `#include <iostream>\n#include <map>\n#include <string>\n\nint getTimeout(const std::map<std::string,int>& config) {\n    auto it = config.find("timeout");\n    // ternary always picks fallback when value is 0 (treating it like "missing")\n    return (it != config.end() && it->second) `,
+    java: `import java.util.*;\n\npublic class Main {\n    static int getTimeout(Map<String,Integer> config) {\n        Integer timeout = config.get("timeout");\n        // Bug: uses || equivalent — 0 falls back to 1000\n        return (timeout != null && timeout != 0) `,
+  },
+  codeAfterByLang: {
+    python: ` 1000\n\nprint(get_timeout({"timeout": 0}))     # should be 0, not 1000\nprint(get_timeout({"timeout": None}))  # 1000`,
+    cpp: `? it->second : 1000;\n}\n\nint main() {\n    std::cout << getTimeout({{"timeout", 0}})   << "\\n"; // should be 0\n    std::cout << getTimeout({})                  << "\\n"; // 1000\n}`,
+    java: `? timeout : 1000;\n    }\n    public static void main(String[] args) {\n        System.out.println(getTimeout(Map.of("timeout", 0)));   // should be 0\n        System.out.println(getTimeout(new HashMap<>()));        // 1000\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def get_timeout(config):\n    timeout = config.get("timeout")\n    return 1000 if timeout is None else timeout  # only default when key absent\n\nprint(get_timeout({"timeout": 0}))     # 0\nprint(get_timeout({"timeout": None}))  # 1000\nprint(get_timeout({}))                 # 1000`,
+    cpp: `#include <iostream>\n#include <map>\n#include <string>\n\nint getTimeout(const std::map<std::string,int>& config) {\n    auto it = config.find("timeout");\n    return (it != config.end()) ? it->second : 1000;  // only default when key absent\n}\n\nint main() {\n    std::cout << getTimeout({{"timeout", 0}}) << "\\n"; // 0\n    std::cout << getTimeout({})               << "\\n"; // 1000\n}`,
+    java: `import java.util.*;\n\npublic class Main {\n    static int getTimeout(Map<String,Integer> config) {\n        Integer timeout = config.get("timeout");\n        return timeout != null ? timeout : 1000;  // only default for null\n    }\n    public static void main(String[] args) {\n        System.out.println(getTimeout(Map.of("timeout", 0)));   // 0\n        System.out.println(getTimeout(new HashMap<>()));        // 1000\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "??", correct: true,
@@ -684,6 +880,21 @@ const js14: TextFillBlankDef = {
 
 console.log(request(null));             // { timeout: 3000, retries: 3 }
 console.log(request({ timeout: 500 })); // { timeout: 500, retries: 3 }`,
+  codeBeforeByLang: {
+    python: `def request(options):\n    opts = `,
+    cpp: `#include <iostream>\n#include <optional>\n#include <map>\n#include <string>\n\nstruct Options { int timeout = 3000; int retries = 3; };\n\nOptions request(const Options* options) {\n    return options ? *options : `,
+    java: `import java.util.*;\n\npublic class Main {\n    static Map<String,Integer> request(Map<String,Integer> options) {\n        Map<String,Integer> opts = (options != null) ? options : `,
+  },
+  codeAfterByLang: {
+    python: ` or {}\n    timeout = opts.get("timeout", 3000)\n    retries = opts.get("retries", 3)\n    return {"timeout": timeout, "retries": retries}\n\nprint(request(None))              # {'timeout': 3000, 'retries': 3}\nprint(request({"timeout": 500}))  # {'timeout': 500, 'retries': 3}`,
+    cpp: `Options{};\n}\n\nint main() {\n    std::cout << request(nullptr).timeout << " " << request(nullptr).retries << "\\n"; // 3000 3\n    Options o{500, 3};\n    std::cout << request(&o).timeout << " " << request(&o).retries << "\\n"; // 500 3\n}`,
+    java: `new HashMap<>();\n        int timeout = opts.getOrDefault("timeout", 3000);\n        int retries = opts.getOrDefault("retries", 3);\n        return Map.of("timeout", timeout, "retries", retries);\n    }\n    public static void main(String[] args) {\n        System.out.println(request(null));              // {timeout=3000, retries=3}\n        System.out.println(request(Map.of("timeout", 500))); // {timeout=500, retries=3}\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def request(options):\n    opts = options if options is not None else {}\n    timeout = opts.get("timeout", 3000)\n    retries = opts.get("retries", 3)\n    return {"timeout": timeout, "retries": retries}\n\nprint(request(None))              # {'timeout': 3000, 'retries': 3}\nprint(request({"timeout": 500}))  # {'timeout': 500, 'retries': 3}`,
+    cpp: `#include <iostream>\n\nstruct Options { int timeout = 3000; int retries = 3; };\n\nOptions request(const Options* options) {\n    return options ? *options : Options{};\n}\n\nint main() {\n    std::cout << request(nullptr).timeout << " " << request(nullptr).retries << "\\n"; // 3000 3\n    Options o{500, 3};\n    std::cout << request(&o).timeout << " " << request(&o).retries << "\\n"; // 500 3\n}`,
+    java: `import java.util.*;\n\npublic class Main {\n    static Map<String,Integer> request(Map<String,Integer> options) {\n        Map<String,Integer> opts = (options != null) ? options : new HashMap<>();\n        int timeout = opts.getOrDefault("timeout", 3000);\n        int retries = opts.getOrDefault("retries", 3);\n        return Map.of("timeout", timeout, "retries", retries);\n    }\n    public static void main(String[] args) {\n        System.out.println(request(null));                    // {retries=3, timeout=3000}\n        System.out.println(request(Map.of("timeout", 500))); // {retries=3, timeout=500}\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "options ?? {}", correct: true,
@@ -744,6 +955,17 @@ async function loadDashboard() {
 }
 
 loadDashboard();`,
+  codeByLang: {
+    python: `import asyncio\n\nasync def fetch_users():    return ["Alice","Bob"]\nasync def fetch_products(): raise Exception("API down")\nasync def fetch_orders():   return [{"id": 1}]\n\nasync def load_dashboard():\n    results = await asyncio.gather(\n        fetch_users(),\n        fetch_products(),\n        fetch_orders(),\n    )  # raises on first failure — other results discarded\n    return results\n\nasyncio.run(load_dashboard())`,
+    cpp: `#include <iostream>\n#include <future>\n#include <vector>\n#include <stdexcept>\n\nstd::string fetchUsers()    { return "users:ok"; }\nstd::string fetchProducts() { throw std::runtime_error("API down"); }\nstd::string fetchOrders()   { return "orders:ok"; }\n\nint main() {\n    auto fu = std::async(std::launch::async, fetchUsers);\n    auto fp = std::async(std::launch::async, fetchProducts);\n    auto fo = std::async(std::launch::async, fetchOrders);\n    // Bug: .get() rethrows — first exception kills the dashboard\n    std::cout << fu.get() << "\\n";\n    std::cout << fp.get() << "\\n";  // throws here — fo result lost!\n    std::cout << fo.get() << "\\n";\n}`,
+    java: `import java.util.concurrent.*;\nimport java.util.*;\n\npublic class Main {\n    static String fetchUsers()    { return "users:ok"; }\n    static String fetchProducts() throws Exception { throw new Exception("API down"); }\n    static String fetchOrders()   { return "orders:ok"; }\n\n    public static void main(String[] args) throws Exception {\n        ExecutorService pool = Executors.newFixedThreadPool(3);\n        // Bug: invokeAll + get() rethrows — one failure kills the whole batch\n        List<Future<String>> futures = pool.invokeAll(List.of(\n            () -> fetchUsers(),\n            () -> fetchProducts(),\n            () -> fetchOrders()\n        ));\n        for (Future<String> f : futures) {\n            System.out.println(f.get());  // throws on failed future — rest not printed\n        }\n        pool.shutdown();\n    }\n}`,
+  },
+  bugLineByLang: { python: "8", cpp: "17", java: "16" },
+  correctedCodeByLang: {
+    python: `import asyncio\n\nasync def fetch_users():    return ["Alice","Bob"]\nasync def fetch_products(): raise Exception("API down")\nasync def fetch_orders():   return [{"id": 1}]\n\nasync def load_dashboard():\n    results = await asyncio.gather(\n        fetch_users(),\n        fetch_products(),\n        fetch_orders(),\n        return_exceptions=True  # keeps all results, even failures\n    )\n    for i, r in enumerate(results):\n        if isinstance(r, Exception):\n            print(f"API {i}: failed - {r}")\n        else:\n            print(f"API {i}: ok -", r)\n\nasyncio.run(load_dashboard())`,
+    cpp: `#include <iostream>\n#include <future>\n#include <vector>\n#include <variant>\n#include <stdexcept>\n\nstd::string fetchUsers()    { return "users:ok"; }\nstd::string fetchProducts() { throw std::runtime_error("API down"); }\nstd::string fetchOrders()   { return "orders:ok"; }\n\nint main() {\n    std::vector<std::future<std::string>> futures;\n    futures.push_back(std::async(std::launch::async, fetchUsers));\n    futures.push_back(std::async(std::launch::async, fetchProducts));\n    futures.push_back(std::async(std::launch::async, fetchOrders));\n\n    for (int i = 0; i < (int)futures.size(); ++i) {\n        try {\n            std::cout << "API " << i << ": ok - " << futures[i].get() << "\\n";\n        } catch (const std::exception& e) {\n            std::cout << "API " << i << ": failed - " << e.what() << "\\n";\n        }\n    }\n}`,
+    java: `import java.util.concurrent.*;\nimport java.util.*;\n\npublic class Main {\n    static String fetchUsers()    { return "users:ok"; }\n    static String fetchProducts() throws Exception { throw new Exception("API down"); }\n    static String fetchOrders()   { return "orders:ok"; }\n\n    public static void main(String[] args) throws Exception {\n        ExecutorService pool = Executors.newFixedThreadPool(3);\n        List<Future<String>> futures = pool.invokeAll(List.of(\n            () -> fetchUsers(),\n            () -> fetchProducts(),\n            () -> fetchOrders()\n        ));\n        for (int i = 0; i < futures.size(); i++) {\n            try {\n                System.out.println("API " + i + ": ok - " + futures.get(i).get());\n            } catch (ExecutionException e) {\n                System.out.println("API " + i + ": failed - " + e.getCause().getMessage());\n            }\n        }\n        pool.shutdown();\n    }\n}`,
+  },
   fixes: [
     {
       id: "all-settled", correct: true,

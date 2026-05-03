@@ -3,6 +3,8 @@
 
 interface LocalizedText { en: string; ka: string; }
 
+type LangMap = Partial<Record<"python" | "javascript" | "cpp" | "java", string>>;
+
 interface TextPickFixDef {
   id: string; difficulty: "easy" | "medium" | "hard";
   bugType: string; programmingLanguage: "python" | "javascript" | "cpp" | "java";
@@ -10,7 +12,10 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  bugLineByLang?: LangMap;
   correctedCode?: string;
+  codeByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -22,7 +27,10 @@ interface TextFillBlankDef {
   format: "text"; interaction: "fill-blank";
   codeBefore: string; codeAfter: string;
   correctedCode?: string;
-  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText }>;
+  codeBeforeByLang?: LangMap;
+  codeAfterByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
+  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText; valueByLang?: LangMap }>;
 }
 
 type AnyTextPuzzleDef = TextPickFixDef | TextFillBlankDef;
@@ -63,6 +71,21 @@ const java1: TextFillBlankDef = {
         System.out.println(checkPassword(new String("secret"), stored)); // true
     }
 }`,
+  codeBeforeByLang: {
+    python: `def check_password(input_pw, stored):\n    return input_pw `,
+    javascript: `function checkPassword(input, stored) {\n  return input `,
+    cpp: `#include <iostream>\n#include <string>\n\nbool checkPassword(const std::string& input, const std::string& stored) {\n    return input `,
+  },
+  codeAfterByLang: {
+    python: ` stored\n\nstored = "secret"\nprint(check_password("secret", stored))         # should be True\nprint(check_password("wrong",  stored))          # should be False`,
+    javascript: ` stored;\n}\n\nconst stored = "secret";\nconsole.log(checkPassword("secret", stored));  // should be true\nconsole.log(checkPassword("wrong",  stored));  // false`,
+    cpp: ` stored;\n}\n\nint main() {\n    std::string stored = "secret";\n    std::cout << std::boolalpha << checkPassword("secret", stored) << "\\n"; // true\n    std::cout << checkPassword("wrong",  stored) << "\\n"; // false\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def check_password(input_pw, stored):\n    return input_pw == stored\n\nstored = "secret"\nprint(check_password("secret", stored))          # True\nprint(check_password("wrong",  stored))           # False\nprint(check_password("secret", str(stored)))      # True`,
+    javascript: `function checkPassword(input, stored) {\n  return input === stored;\n}\n\nconst stored = "secret";\nconsole.log(checkPassword("secret", stored));  // true\nconsole.log(checkPassword("wrong",  stored));  // false`,
+    cpp: `#include <iostream>\n#include <string>\n\nbool checkPassword(const std::string& input, const std::string& stored) {\n    return input == stored;\n}\n\nint main() {\n    std::string stored = "secret";\n    std::cout << std::boolalpha << checkPassword("secret", stored) << "\\n"; // true\n    std::cout << checkPassword("wrong",  stored) << "\\n"; // false\n}`,
+  },
   options: [
     {
       id: "a", value: "equals", correct: true,
@@ -115,6 +138,17 @@ public class Main {
         System.out.println(getScore(scores, "Bob"));    // 0
     }
 }`,
+  codeByLang: {
+    python: `def get_score(scores, player):\n    return scores[player]  # KeyError / None crash when player not in dict\n\nscores = {"Alice": 42}\nprint(get_score(scores, "Alice"))  # 42\nprint(get_score(scores, "Bob"))    # KeyError!`,
+    javascript: `function getScore(scores, player) {\n  return scores[player].total;  // TypeError: Cannot read properties of undefined\n}\n\nconst scores = { Alice: { total: 42 } };\nconsole.log(getScore(scores, "Alice"));  // 42\nconsole.log(getScore(scores, "Bob"));    // crash!`,
+    cpp: `#include <iostream>\n#include <map>\n#include <string>\n\nint getScore(std::map<std::string,int>& scores, const std::string& player) {\n    return scores.at(player);  // std::out_of_range when player not in map\n}\n\nint main() {\n    std::map<std::string,int> scores;\n    scores["Alice"] = 42;\n    std::cout << getScore(scores, "Alice") << "\\n";  // 42\n    std::cout << getScore(scores, "Bob")   << "\\n";  // exception!\n}`,
+  },
+  bugLineByLang: { python: "2", javascript: "2", cpp: "6" },
+  correctedCodeByLang: {
+    python: `def get_score(scores, player):\n    return scores.get(player, 0)\n\nscores = {"Alice": 42}\nprint(get_score(scores, "Alice"))  # 42\nprint(get_score(scores, "Bob"))    # 0`,
+    javascript: `function getScore(scores, player) {\n  return (scores[player] ?? {total: 0}).total;\n}\n\nconst scores = { Alice: { total: 42 } };\nconsole.log(getScore(scores, "Alice"));  // 42\nconsole.log(getScore(scores, "Bob"));    // 0`,
+    cpp: `#include <iostream>\n#include <map>\n#include <string>\n\nint getScore(std::map<std::string,int>& scores, const std::string& player) {\n    auto it = scores.find(player);\n    return it != scores.end() ? it->second : 0;\n}\n\nint main() {\n    std::map<std::string,int> scores;\n    scores["Alice"] = 42;\n    std::cout << getScore(scores, "Alice") << "\\n";  // 42\n    std::cout << getScore(scores, "Bob")   << "\\n";  // 0\n}`,
+  },
   fixes: [
     {
       id: "getOrDefault", correct: true,
@@ -170,6 +204,21 @@ const java3: TextFillBlankDef = {
         printAll(nums);  // 10 20 30 40 50
     }
 }`,
+  codeBeforeByLang: {
+    python: `def print_all(arr):\n    for i in range(0, len(arr)`,
+    javascript: `function printAll(arr) {\n  for (let i = 0; i `,
+    cpp: `#include <iostream>\n#include <vector>\n\nvoid printAll(const std::vector<int>& arr) {\n    for (int i = 0; i `,
+  },
+  codeAfterByLang: {
+    python: ` + 1):\n        print(arr[i])\n\nprint_all([10, 20, 30, 40, 50])  # IndexError on last step`,
+    javascript: ` arr.length; i++) {\n    console.log(arr[i]);\n  }\n}\n\nprintAll([10,20,30,40,50]);`,
+    cpp: ` arr.size(); i++) {\n        std::cout << arr[i] << "\\n";\n    }\n}\n\nint main() {\n    printAll({10,20,30,40,50});\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def print_all(arr):\n    for i in range(len(arr)):\n        print(arr[i])\n\nprint_all([10, 20, 30, 40, 50])  # 10 20 30 40 50`,
+    javascript: `function printAll(arr) {\n  for (let i = 0; i < arr.length; i++) {\n    console.log(arr[i]);\n  }\n}\n\nprintAll([10,20,30,40,50]);`,
+    cpp: `#include <iostream>\n#include <vector>\n\nvoid printAll(const std::vector<int>& arr) {\n    for (int i = 0; i < (int)arr.size(); i++) {\n        std::cout << arr[i] << "\\n";\n    }\n}\n\nint main() {\n    printAll({10,20,30,40,50});\n}`,
+  },
   options: [
     {
       id: "a", value: "<", correct: true,
@@ -219,6 +268,17 @@ System.out.println(dailyRevenue(50000, 100000)); // expected: 5000000000, got: -
         System.out.println(dailyRevenue(50000, 100000));  // 5000000000
     }
 }`,
+  codeByLang: {
+    python: `def daily_revenue(units, price_per_unit):\n    # Python ints don't overflow — show integer division truncation bug instead\n    return units * price_per_unit // 1  # force int — but what if divided too early?\n\n# Equivalent truncation bug: dividing before multiplying\ndef daily_revenue_bug(units, price_per_unit):\n    return (units // 100) * price_per_unit * 100  # loses remainder\n\nprint(daily_revenue_bug(50001, 100000))  # 5000000000, not 5000100000`,
+    javascript: `function dailyRevenue(units, pricePerUnit) {\n    // JavaScript: Number.MAX_SAFE_INTEGER = 2^53-1; large ints lose precision\n    return units * pricePerUnit;  // loses precision past 2^53\n}\n\n// Safe approach needed for very large numbers\nconsole.log(dailyRevenue(50000, 100000));          // 5000000000 (ok here)\nconsole.log(dailyRevenue(100000000, 100000000));   // imprecise!`,
+    cpp: `#include <iostream>\n\nlong dailyRevenue(int units, int pricePerUnit) {\n    return units * pricePerUnit;  // int * int overflows before widening to long\n}\n\nint main() {\n    std::cout << dailyRevenue(50000, 100000) << "\\n"; // expected 5000000000, got overflow\n}`,
+  },
+  bugLineByLang: { javascript: "3", cpp: "4" },
+  correctedCodeByLang: {
+    python: `def daily_revenue(units, price_per_unit):\n    return units * price_per_unit  # Python ints are arbitrary precision, no overflow\n\nprint(daily_revenue(50000, 100000))  # 5000000000`,
+    javascript: `function dailyRevenue(units, pricePerUnit) {\n    return BigInt(units) * BigInt(pricePerUnit);\n}\n\nconsole.log(dailyRevenue(50000, 100000).toString());  // "5000000000"`,
+    cpp: `#include <iostream>\n\nlong long dailyRevenue(int units, int pricePerUnit) {\n    return (long long)units * pricePerUnit;\n}\n\nint main() {\n    std::cout << dailyRevenue(50000, 100000) << "\\n"; // 5000000000\n}`,
+  },
   fixes: [
     {
       id: "long-cast", correct: true,
@@ -280,6 +340,17 @@ public class Main {
         System.out.print(buildCsv(rows));
     }
 }`,
+  codeByLang: {
+    python: `def build_csv(rows):\n    result = ""\n    for row in rows:\n        result += row + "\\n"  # O(n²) string copies\n    return result\n\nrows = ["a,1", "b,2", "c,3"]\nprint(build_csv(rows))`,
+    javascript: `function buildCsv(rows) {\n    let result = "";\n    for (const row of rows) {\n        result += row + "\\n";  // O(n²) string copies\n    }\n    return result;\n}\n\nconsole.log(buildCsv(["a,1", "b,2", "c,3"]));`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nstd::string buildCsv(const std::vector<std::string>& rows) {\n    std::string result;\n    for (const auto& row : rows) {\n        result += row + "\\n";  // repeated reallocation — O(n²)\n    }\n    return result;\n}\n\nint main() {\n    std::cout << buildCsv({"a,1","b,2","c,3"});\n}`,
+  },
+  bugLineByLang: { python: "3", javascript: "4", cpp: "8" },
+  correctedCodeByLang: {
+    python: `def build_csv(rows):\n    return "\\n".join(rows) + "\\n"\n\nprint(build_csv(["a,1", "b,2", "c,3"]))`,
+    javascript: `function buildCsv(rows) {\n    return rows.join("\\n") + "\\n";\n}\n\nconsole.log(buildCsv(["a,1", "b,2", "c,3"]));`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n#include <sstream>\n\nstd::string buildCsv(const std::vector<std::string>& rows) {\n    std::ostringstream oss;\n    for (const auto& row : rows) {\n        oss << row << "\\n";\n    }\n    return oss.str();\n}\n\nint main() {\n    std::cout << buildCsv({"a,1","b,2","c,3"});\n}`,
+  },
   fixes: [
     {
       id: "stringbuilder", correct: true,
@@ -345,6 +416,17 @@ const java6: TextPickFixDef = {
         System.out.println(bob.getScore());    // 5
     }
 }`,
+  codeByLang: {
+    python: `class Player:\n    score = 0  # class variable — shared across ALL instances!\n    def __init__(self, name):\n        self.name = name\n    def add_points(self, p):\n        Player.score += p\n\nalice = Player("Alice")\nbob   = Player("Bob")\nalice.add_points(10)\nprint(alice.score)  # 10\nprint(bob.score)    # also 10 — bug!`,
+    javascript: `function Player(name) {\n    this.name = name;\n}\nPlayer.prototype.score = 0;  // shared on the prototype — all instances see the same!\n\nconst alice = new Player("Alice");\nconst bob   = new Player("Bob");\nalice.score += 10;\nconsole.log(alice.score);  // 10 (own property created)\nconsole.log(bob.score);    // 0  (reads prototype — looks ok, but it's shared until written)`,
+    cpp: `#include <iostream>\n#include <string>\n\nclass Player {\npublic:\n    static int score;  // shared across ALL Player objects!\n    std::string name;\n    Player(std::string n) : name(n) {}\n    void addPoints(int p) { score += p; }\n    int getScore() { return score; }\n};\nint Player::score = 0;\n\nint main() {\n    Player alice("Alice"), bob("Bob");\n    alice.addPoints(10);\n    std::cout << alice.getScore() << "\\n";  // 10\n    std::cout << bob.getScore()   << "\\n";  // also 10 — bug!\n}`,
+  },
+  bugLineByLang: { python: "2", javascript: "4", cpp: "6" },
+  correctedCodeByLang: {
+    python: `class Player:\n    def __init__(self, name):\n        self.name = name\n        self.score = 0  # instance variable — each player has its own\n    def add_points(self, p):\n        self.score += p\n\nalice = Player("Alice")\nbob   = Player("Bob")\nalice.add_points(10)\nbob.add_points(5)\nprint(alice.score)  # 10\nprint(bob.score)    # 5`,
+    javascript: `function Player(name) {\n    this.name  = name;\n    this.score = 0;  // instance property — each Player gets its own\n}\n\nconst alice = new Player("Alice");\nconst bob   = new Player("Bob");\nalice.score += 10;\nbob.score  += 5;\nconsole.log(alice.score);  // 10\nconsole.log(bob.score);    // 5`,
+    cpp: `#include <iostream>\n#include <string>\n\nclass Player {\npublic:\n    int score = 0;  // instance field\n    std::string name;\n    Player(std::string n) : name(n) {}\n    void addPoints(int p) { score += p; }\n    int getScore() { return score; }\n};\n\nint main() {\n    Player alice("Alice"), bob("Bob");\n    alice.addPoints(10);\n    bob.addPoints(5);\n    std::cout << alice.getScore() << "\\n";  // 10\n    std::cout << bob.getScore()   << "\\n";  // 5\n}`,
+  },
   fixes: [
     {
       id: "remove-static", correct: true,
@@ -409,6 +491,17 @@ public class Main {
         else System.out.println("File not found or unreadable");
     }
 }`,
+  codeByLang: {
+    python: `def read_file(path):\n    try:\n        with open(path, "rb") as f:\n            return f.read()\n    except Exception:  # too broad — hides bugs!\n        return None\n\ndata = read_file("example.txt")\nif data is None:\n    print("failed, but we don't know why")`,
+    javascript: `async function readFile(path) {\n    try {\n        const data = await fs.promises.readFile(path);\n        return data;\n    } catch (e) {  // catches everything — programming errors hidden too!\n        return null;\n    }\n}`,
+    cpp: `#include <iostream>\n#include <fstream>\n#include <vector>\n\nstd::vector<char> readFile(const std::string& path) {\n    try {\n        std::ifstream f(path, std::ios::binary);\n        return std::vector<char>((std::istreambuf_iterator<char>(f)),\n                                  std::istreambuf_iterator<char>());\n    } catch (...) {  // catches everything — too broad!\n        return {};\n    }\n}\n\nint main() {\n    auto data = readFile("example.txt");\n    std::cout << data.size() << " bytes\\n";\n}`,
+  },
+  bugLineByLang: { python: "5", javascript: "5", cpp: "11" },
+  correctedCodeByLang: {
+    python: `import os\n\ndef read_file(path):\n    try:\n        with open(path, "rb") as f:\n            return f.read()\n    except (FileNotFoundError, PermissionError, OSError) as e:\n        print(f"IO error: {e}")\n        return None\n\ndata = read_file("example.txt")\nif data is not None:\n    print(f"Read {len(data)} bytes")\nelse:\n    print("File not found or unreadable")`,
+    javascript: `const fs = require("fs");\n\nasync function readFile(path) {\n    try {\n        return await fs.promises.readFile(path);\n    } catch (e) {\n        if (e.code === "ENOENT" || e.code === "EACCES") {\n            console.error("IO error:", e.message);\n            return null;\n        }\n        throw e;  // re-throw unexpected errors\n    }\n}\n\nreadFile("example.txt").then(d => d ? console.log("Read", d.length, "bytes") : console.log("File not found"));`,
+    cpp: `#include <iostream>\n#include <fstream>\n#include <vector>\n#include <stdexcept>\n\nstd::vector<char> readFile(const std::string& path) {\n    std::ifstream f(path, std::ios::binary);\n    if (!f) {\n        std::cerr << "IO error: cannot open " << path << "\\n";\n        return {};\n    }\n    return std::vector<char>((std::istreambuf_iterator<char>(f)),\n                              std::istreambuf_iterator<char>());\n}\n\nint main() {\n    auto data = readFile("example.txt");\n    if (!data.empty()) std::cout << "Read " << data.size() << " bytes\\n";\n    else std::cout << "File not found or unreadable\\n";\n}`,
+  },
   fixes: [
     {
       id: "ioexception", correct: true,
@@ -483,6 +576,17 @@ public class Main {
         System.out.println(map.get(new Point(1, 2)));  // origin
     }
 }`,
+  codeByLang: {
+    python: `class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n    def __eq__(self, other):\n        return isinstance(other, Point) and self.x == other.x and self.y == other.y\n    # __hash__ not defined — Python sets it to None when __eq__ is defined!\n\nd = {}\nd[Point(1, 2)] = "origin"\nprint(d.get(Point(1, 2)))  # None — lookup fails!`,
+    javascript: `// JavaScript objects use reference equality for Map keys by default\n// Two different objects with same values are different keys\nconst map = new Map();\nconst key1 = { x: 1, y: 2 };\nmap.set(key1, "origin");\nconst key2 = { x: 1, y: 2 };  // same values, different reference\nconsole.log(map.get(key2));  // undefined — lookup fails!`,
+    cpp: `#include <iostream>\n#include <unordered_map>\n\nstruct Point {\n    int x, y;\n    bool operator==(const Point& o) const { return x == o.x && y == o.y; }\n    // hash not defined — unordered_map can't use Point as key!\n};\n\nint main() {\n    // std::unordered_map<Point, std::string> map;  // compile error: no hash!\n    std::cout << "Needs a hash specialization to compile\\n";\n}`,
+  },
+  bugLineByLang: { python: "7", javascript: "4", cpp: "7" },
+  correctedCodeByLang: {
+    python: `class Point:\n    def __init__(self, x, y):\n        self.x = x\n        self.y = y\n    def __eq__(self, other):\n        return isinstance(other, Point) and self.x == other.x and self.y == other.y\n    def __hash__(self):\n        return hash((self.x, self.y))  # consistent with __eq__\n\nd = {}\nd[Point(1, 2)] = "origin"\nprint(d.get(Point(1, 2)))  # origin`,
+    javascript: `// JavaScript: use a string key derived from the object's values\nconst map = new Map();\nconst toKey = ({x, y}) => \`\${x},\${y}\`;\n\nmap.set(toKey({ x: 1, y: 2 }), "origin");\nconsole.log(map.get(toKey({ x: 1, y: 2 })));  // origin`,
+    cpp: `#include <iostream>\n#include <unordered_map>\n\nstruct Point {\n    int x, y;\n    bool operator==(const Point& o) const { return x == o.x && y == o.y; }\n};\n\nstruct PointHash {\n    std::size_t operator()(const Point& p) const {\n        return std::hash<int>()(p.x) ^ (std::hash<int>()(p.y) << 16);\n    }\n};\n\nint main() {\n    std::unordered_map<Point, std::string, PointHash> map;\n    map[{1, 2}] = "origin";\n    std::cout << map[{1, 2}] << "\\n";  // origin\n}`,
+  },
   fixes: [
     {
       id: "objects-hash", correct: true,
@@ -541,6 +645,17 @@ public class Main {
         System.out.println(nums);  // [3, 7, 2]
     }
 }`,
+  codeByLang: {
+    python: `def remove_negatives(lst):\n    for n in lst:         # iterating the list directly\n        if n < 0:\n            lst.remove(n)  # RuntimeError: list changed size during iteration\n\nnums = [3, -1, 7, -4, 2]\nremove_negatives(nums)\nprint(nums)`,
+    javascript: `function removeNegatives(arr) {\n    arr.forEach((n, i) => {\n        if (n < 0) arr.splice(i, 1);  // mutating while iterating — skips elements!\n    });\n}\n\nconst nums = [3, -1, 7, -4, 2];\nremoveNegatives(nums);\nconsole.log(nums);  // [3, 7, -4, 2] — -4 was skipped!`,
+    cpp: `#include <iostream>\n#include <vector>\n\nvoid removeNegatives(std::vector<int>& v) {\n    for (auto it = v.begin(); it != v.end(); ++it) {\n        if (*it < 0) v.erase(it);  // iterator invalidated after erase!\n    }\n}\n\nint main() {\n    std::vector<int> nums = {3, -1, 7, -4, 2};\n    removeNegatives(nums);\n    for (int n : nums) std::cout << n << " ";\n}`,
+  },
+  bugLineByLang: { python: "3", javascript: "3", cpp: "6" },
+  correctedCodeByLang: {
+    python: `def remove_negatives(lst):\n    lst[:] = [n for n in lst if n >= 0]  # list comprehension — safe\n\nnums = [3, -1, 7, -4, 2]\nremove_negatives(nums)\nprint(nums)  # [3, 7, 2]`,
+    javascript: `function removeNegatives(arr) {\n    // filter returns a new array — no mutation during iteration\n    return arr.filter(n => n >= 0);\n}\n\nconst nums = [3, -1, 7, -4, 2];\nconsole.log(removeNegatives(nums));  // [3, 7, 2]`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <algorithm>\n\nvoid removeNegatives(std::vector<int>& v) {\n    v.erase(std::remove_if(v.begin(), v.end(), [](int n){ return n < 0; }), v.end());\n}\n\nint main() {\n    std::vector<int> nums = {3, -1, 7, -4, 2};\n    removeNegatives(nums);\n    for (int n : nums) std::cout << n << " ";\n    std::cout << "\\n";  // 3 7 2\n}`,
+  },
   fixes: [
     {
       id: "removeIf", correct: true,
@@ -604,6 +719,21 @@ public class Main {
         System.out.println(counter.total());  // 3
     }
 }`,
+  codeBeforeByLang: {
+    python: `import threading\n\nclass HitCounter:\n    def __init__(self):\n        self._lock = threading.Lock()\n        self._count = 0\n    def hit(self):\n        `,
+    javascript: `// JavaScript is single-threaded, but async ordering can still cause issues\n// Here we show the correct sequential pattern\nclass HitCounter {\n    constructor() { this.`,
+    cpp: `#include <iostream>\n#include <atomic>\n\nclass HitCounter {\n    `,
+  },
+  codeAfterByLang: {
+    python: `with self._lock:\n            self._count += 1\n    def total(self):\n        with self._lock:\n            return self._count\n\ncounter = HitCounter()\ncounter.hit()\ncounter.hit()\ncounter.hit()\nprint(counter.total())  # 3`,
+    javascript: `count = 0; }\n    hit() { this.count++; }\n    total() { return this.count; }\n}\n\nconst c = new HitCounter();\nc.hit(); c.hit(); c.hit();\nconsole.log(c.total());  // 3`,
+    cpp: `std::atomic<int> count{0};\npublic:\n    void hit() { count.fetch_add(1); }\n    int total() { return count.load(); }\n};\n\nint main() {\n    HitCounter c;\n    c.hit(); c.hit(); c.hit();\n    std::cout << c.total() << "\\n";  // 3\n}`,
+  },
+  correctedCodeByLang: {
+    python: `import threading\n\nclass HitCounter:\n    def __init__(self):\n        self._lock = threading.Lock()\n        self._count = 0\n    def hit(self):\n        with self._lock:\n            self._count += 1\n    def total(self):\n        with self._lock:\n            return self._count\n\ncounter = HitCounter()\ncounter.hit()\ncounter.hit()\ncounter.hit()\nprint(counter.total())  # 3`,
+    javascript: `class HitCounter {\n    constructor() { this.count = 0; }\n    hit() { this.count++; }\n    total() { return this.count; }\n}\n\nconst c = new HitCounter();\nc.hit(); c.hit(); c.hit();\nconsole.log(c.total());  // 3`,
+    cpp: `#include <iostream>\n#include <atomic>\n\nclass HitCounter {\n    std::atomic<int> count{0};\npublic:\n    void hit() { count.fetch_add(1); }\n    int total() { return count.load(); }\n};\n\nint main() {\n    HitCounter c;\n    c.hit(); c.hit(); c.hit();\n    std::cout << c.total() << "\\n";  // 3\n}`,
+  },
   options: [
     {
       id: "a", value: "AtomicInteger", correct: true,
@@ -661,6 +791,17 @@ public class Seeder {
         System.out.println(new Seeder().seed());  // [alpha, beta, gamma]
     }
 }`,
+  codeByLang: {
+    python: `def seed():\n    items = ("alpha", "beta")  # tuple — immutable!\n    items.append("gamma")      # AttributeError: 'tuple' object has no attribute 'append'\n    return items\n\nprint(seed())`,
+    javascript: `function seed() {\n    const items = Object.freeze(["alpha", "beta"]);  // frozen — immutable!\n    items.push("gamma");  // TypeError in strict mode; silently fails otherwise\n    return items;\n}\n\nconsole.log(seed());`,
+    cpp: `#include <iostream>\n#include <vector>\n\nstd::vector<std::string> seed() {\n    const std::vector<std::string> items = {"alpha", "beta"};  // const!\n    // items.push_back("gamma");  // compile error: can't modify const vector\n    return items;\n}\n\nint main() {\n    auto v = seed();\n    for (const auto& s : v) std::cout << s << " ";\n}`,
+  },
+  bugLineByLang: { python: "3", javascript: "3", cpp: "5" },
+  correctedCodeByLang: {
+    python: `def seed():\n    items = ["alpha", "beta"]  # list — mutable!\n    items.append("gamma")\n    return items\n\nprint(seed())  # ['alpha', 'beta', 'gamma']`,
+    javascript: `function seed() {\n    const items = ["alpha", "beta"];  // plain array — mutable\n    items.push("gamma");\n    return items;\n}\n\nconsole.log(seed());  // [ 'alpha', 'beta', 'gamma' ]`,
+    cpp: `#include <iostream>\n#include <vector>\n\nstd::vector<std::string> seed() {\n    std::vector<std::string> items = {"alpha", "beta"};  // non-const\n    items.push_back("gamma");\n    return items;\n}\n\nint main() {\n    for (const auto& s : seed()) std::cout << s << " ";\n    std::cout << "\\n";  // alpha beta gamma\n}`,
+  },
   fixes: [
     {
       id: "arraylist", correct: true,
@@ -707,6 +848,21 @@ const java12: TextFillBlankDef = {
         shiftPrint('A', 1);  // should print B, not 66
     }
 }`,
+  codeBeforeByLang: {
+    python: `def shift_print(c, shift):\n    print(`,
+    javascript: `function shiftPrint(c, shift) {\n  console.log(`,
+    cpp: `#include <iostream>\n\nvoid shiftPrint(char c, int shift) {\n    std::cout << `,
+  },
+  codeAfterByLang: {
+    python: `)\n\nshift_print('A', 1)  # should print B, not 66`,
+    javascript: `);\n}\n\nshiftPrint('A', 1);  // should print B, not 66`,
+    cpp: ` << "\\n";\n}\n\nint main() {\n    shiftPrint('A', 1);  // should print B, not 66\n}`,
+  },
+  correctedCodeByLang: {
+    python: `def shift_print(c, shift):\n    print(chr(ord(c) + shift))\n\nshift_print('A', 1)  # B`,
+    javascript: `function shiftPrint(c, shift) {\n  console.log(String.fromCharCode(c.charCodeAt(0) + shift));\n}\n\nshiftPrint('A', 1);  // B`,
+    cpp: `#include <iostream>\n\nvoid shiftPrint(char c, int shift) {\n    std::cout << (char)(c + shift) << "\\n";\n}\n\nint main() {\n    shiftPrint('A', 1);  // B\n}`,
+  },
   options: [
     {
       id: "a", value: "(char)(c + shift)", correct: true,
@@ -762,6 +918,21 @@ public class Main {
         System.out.println(getUser("u2"));  // DB:u2  (lazy fallback)
     }
 }`,
+  codeBeforeByLang: {
+    python: `# Python: ternary always evaluates both branches\ncache = {}\n\ndef expensive_query(id):\n    print(f"Running DB query for {id}")\n    return f"DB:{id}"\n\ndef get_user(id):\n    cached = cache.get(id)\n    # bug: expensive_query(id) always called even when cached!\n    return cached if cached is not None else `,
+    javascript: `// JavaScript: || evaluates right side when left is falsy (0, '', false too)\nconst cache = {};\n\nfunction expensiveQuery(id) {\n  console.log("Running DB query for", id);\n  return "DB:" + id;\n}\n\nfunction getUser(id) {\n  return cache[id] `,
+    cpp: `#include <iostream>\n#include <optional>\n#include <string>\n#include <map>\n\nstd::map<std::string,std::string> cache;\n\nstd::string expensiveQuery(const std::string& id) {\n    std::cout << "Running DB query for " << id << "\\n";\n    return "DB:" + id;\n}\n\nstd::string getUser(const std::string& id) {\n    std::optional<std::string> cached;\n    auto it = cache.find(id);\n    if (it != cache.end()) cached = it->second;\n    // orElse-equivalent: always calls expensiveQuery even when cached!\n    return cached.`,
+  },
+  codeAfterByLang: {
+    python: `expensive_query(id)\n\ncache["u1"] = "Alice (cached)"\nprint(get_user("u1"))  # should NOT run query\nprint(get_user("u2"))  # should run query`,
+    javascript: ` || expensiveQuery(id);  // always calls expensiveQuery when cache[id] is falsy\n}\n\ncache["u1"] = "Alice (cached)";\nconsole.log(getUser("u1"));  // should NOT run query\nconsole.log(getUser("u2"));  // should run query`,
+    cpp: `value_or(expensiveQuery(id));  // always evaluates expensiveQuery!\n}\n\nint main() {\n    cache["u1"] = "Alice (cached)";\n    std::cout << getUser("u1") << "\\n";\n    std::cout << getUser("u2") << "\\n";\n}`,
+  },
+  correctedCodeByLang: {
+    python: `cache = {}\n\ndef expensive_query(id):\n    print(f"Running DB query for {id}")\n    return f"DB:{id}"\n\ndef get_user(id):\n    if id in cache:\n        return cache[id]  # short-circuit: no query\n    return expensive_query(id)\n\ncache["u1"] = "Alice (cached)"\nprint(get_user("u1"))  # Alice (cached) — no query printed\nprint(get_user("u2"))  # Running DB query for u2 / DB:u2`,
+    javascript: `const cache = {};\n\nfunction expensiveQuery(id) {\n  console.log("Running DB query for", id);\n  return "DB:" + id;\n}\n\nfunction getUser(id) {\n  return cache[id] ?? expensiveQuery(id);  // ?? only falls back for null/undefined\n}\n\ncache["u1"] = "Alice (cached)";\nconsole.log(getUser("u1"));  // Alice (cached) — no query\nconsole.log(getUser("u2"));  // Running DB query / DB:u2`,
+    cpp: `#include <iostream>\n#include <optional>\n#include <string>\n#include <map>\n#include <functional>\n\nstd::map<std::string,std::string> cache;\n\nstd::string expensiveQuery(const std::string& id) {\n    std::cout << "Running DB query for " << id << "\\n";\n    return "DB:" + id;\n}\n\nstd::string getUser(const std::string& id) {\n    auto it = cache.find(id);\n    if (it != cache.end()) return it->second;  // lazy: only query on miss\n    return expensiveQuery(id);\n}\n\nint main() {\n    cache["u1"] = "Alice (cached)";\n    std::cout << getUser("u1") << "\\n";  // Alice (cached)\n    std::cout << getUser("u2") << "\\n";  // DB:u2\n}`,
+  },
   options: [
     {
       id: "a", value: "orElseGet", correct: true,
@@ -826,6 +997,17 @@ public class UserService {
         }
     }
 }`,
+  codeByLang: {
+    python: `class UserService:\n    def __init__(self, repo):\n        self.repo = repo  # None silently stored\n\n# Later, deep in call chain:\nservice = UserService(None)\nservice.repo.find_user("alice")  # AttributeError: 'NoneType' object has no attribute 'find_user'`,
+    javascript: `class UserService {\n    constructor(repo) {\n        this.repo = repo;  // null silently stored\n    }\n}\n\nconst service = new UserService(null);\nservice.repo.findUser("alice");  // TypeError: Cannot read properties of null`,
+    cpp: `#include <iostream>\n#include <stdexcept>\n\nclass UserRepository {};\n\nclass UserService {\n    UserRepository* repo;\npublic:\n    UserService(UserRepository* r) : repo(r) {}  // null silently stored\n\n    void findUser(const std::string& id) {\n        repo->findUser(id);  // undefined behavior / crash if repo is null\n    }\n};`,
+  },
+  bugLineByLang: { python: "3", javascript: "3", cpp: "9" },
+  correctedCodeByLang: {
+    python: `class UserService:\n    def __init__(self, repo):\n        if repo is None:\n            raise ValueError("repo must not be None")\n        self.repo = repo\n\ntry:\n    service = UserService(None)\nexcept ValueError as e:\n    print("Caught:", e)  # Caught: repo must not be None`,
+    javascript: `class UserService {\n    constructor(repo) {\n        if (repo == null) throw new Error("repo must not be null");\n        this.repo = repo;\n    }\n}\n\ntry {\n    new UserService(null);\n} catch (e) {\n    console.log("Caught:", e.message);  // Caught: repo must not be null\n}`,
+    cpp: `#include <iostream>\n#include <stdexcept>\n\nclass UserRepository {};\n\nclass UserService {\n    UserRepository* repo;\npublic:\n    UserService(UserRepository* r) {\n        if (!r) throw std::invalid_argument("repo must not be null");\n        repo = r;\n    }\n};\n\nint main() {\n    try {\n        UserService s(nullptr);\n    } catch (const std::invalid_argument& e) {\n        std::cout << "Caught: " << e.what() << "\\n";  // Caught: repo must not be null\n    }\n}`,
+  },
   fixes: [
     {
       id: "require-non-null", correct: true,
@@ -892,6 +1074,17 @@ public class Main {
         readFile("example.txt");
     }
 }`,
+  codeByLang: {
+    python: `def read_file(path):\n    f = open(path, "r")        # opened outside context manager\n    for line in f:\n        process_line(line)     # may raise\n    f.close()                  # skipped if exception raised above\n\ndef process_line(line):\n    print("Line:", line.strip())`,
+    javascript: `const fs = require("fs");\n\nfunction readFile(path) {\n    const fd = fs.openSync(path, "r");  // opened manually\n    const buf = Buffer.alloc(1024);\n    let bytesRead;\n    while ((bytesRead = fs.readSync(fd, buf)) > 0) {\n        processChunk(buf.slice(0, bytesRead));  // may throw\n    }\n    fs.closeSync(fd);  // skipped if exception thrown above\n}`,
+    cpp: `#include <iostream>\n#include <fstream>\n#include <string>\n\nvoid readFile(const std::string& path) {\n    std::ifstream* f = new std::ifstream(path);  // raw pointer — manual management\n    std::string line;\n    while (std::getline(*f, line)) {\n        processLine(line);  // may throw\n    }\n    delete f;  // skipped if exception thrown above — memory/resource leak!\n}`,
+  },
+  bugLineByLang: { python: "2", javascript: "3", cpp: "6" },
+  correctedCodeByLang: {
+    python: `def process_line(line):\n    print("Line:", line.strip())\n\ndef read_file(path):\n    with open(path, "r") as f:  # 'with' guarantees close() on exit\n        for line in f:\n            process_line(line)\n\nread_file("example.txt")`,
+    javascript: `const fs = require("fs");\n\nfunction readFile(path) {\n    const fd = fs.openSync(path, "r");\n    try {\n        const buf = Buffer.alloc(1024);\n        let bytesRead;\n        while ((bytesRead = fs.readSync(fd, buf)) > 0) {\n            console.log(buf.slice(0, bytesRead).toString());\n        }\n    } finally {\n        fs.closeSync(fd);  // always runs, even if exception thrown\n    }\n}`,
+    cpp: `#include <iostream>\n#include <fstream>\n#include <string>\n\nvoid processLine(const std::string& line) {\n    std::cout << "Line: " << line << "\\n";\n}\n\nvoid readFile(const std::string& path) {\n    std::ifstream f(path);  // stack object — RAII closes on scope exit automatically\n    std::string line;\n    while (std::getline(f, line)) {\n        processLine(line);\n    }\n}  // f.close() called automatically here, even if exception is thrown\n\nint main() {\n    readFile("example.txt");\n}`,
+  },
   fixes: [
     {
       id: "try-resources", correct: true,

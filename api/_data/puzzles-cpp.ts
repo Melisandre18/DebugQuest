@@ -3,6 +3,8 @@
 
 interface LocalizedText { en: string; ka: string; }
 
+type LangMap = Partial<Record<"python" | "javascript" | "cpp" | "java", string>>;
+
 interface TextPickFixDef {
   id: string; difficulty: "easy" | "medium" | "hard";
   bugType: string; programmingLanguage: "python" | "javascript" | "cpp" | "java";
@@ -10,7 +12,10 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  bugLineByLang?: LangMap;
   correctedCode?: string;
+  codeByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -22,7 +27,10 @@ interface TextFillBlankDef {
   format: "text"; interaction: "fill-blank";
   codeBefore: string; codeAfter: string;
   correctedCode?: string;
-  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText }>;
+  codeBeforeByLang?: LangMap;
+  codeAfterByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
+  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText; valueByLang?: LangMap }>;
 }
 
 type AnyTextPuzzleDef = TextPickFixDef | TextFillBlankDef;
@@ -63,6 +71,52 @@ int main() {
     std::cout << average(7, 2)  << std::endl;  // 3.5
     std::cout << average(10, 4) << std::endl;  // 2.5
 }`,
+  codeBeforeByLang: {
+    python: `def average(total, count):
+    return `,
+    javascript: `function average(sum, count) {
+    return `,
+    java: `public class Main {
+    static double average(int sum, int count) {
+        return `,
+  },
+  codeAfterByLang: {
+    python: `total // count  # bug: floor division loses decimal
+
+print(average(7, 2))   # expected: 3.5`,
+    javascript: `Math.trunc(sum / count);  // bug: truncates decimal
+}
+
+console.log(average(7, 2));   // expected: 3.5`,
+    java: `sum / count;  // bug: integer division truncates
+    }
+    public static void main(String[] args) {
+        System.out.println(average(7, 2));  // expected: 3.5
+    }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `def average(total, count):
+    return total / count  # / always gives float in Python 3
+
+print(average(7, 2))    # 3.5
+print(average(10, 4))   # 2.5`,
+    javascript: `function average(sum, count) {
+    return sum / count;  // JS division always returns float
+}
+
+console.log(average(7, 2));    // 3.5
+console.log(average(10, 4));   // 2.5`,
+    java: `public class Main {
+    static double average(int sum, int count) {
+        return (double) sum / count;  // cast forces floating-point division
+    }
+    public static void main(String[] args) {
+        System.out.println(average(7, 2));    // 3.5
+        System.out.println(average(10, 4));   // 2.5
+    }
+}`,
+  },
   options: [
     {
       id: "a", value: "(double)", correct: true,
@@ -119,6 +173,65 @@ int main() {
     int nums[] = {1, 2, 3, 4, 5};
     std::cout << sumArray(nums, 5) << std::endl;  // 15
 }`,
+  codeByLang: {
+    python: `def sum_array(arr):
+    total = 0
+    for i in range(len(arr) + 1):  # bug: reads arr[len(arr)]
+        total += arr[i]
+    return total`,
+    javascript: `function sumArray(arr) {
+    let total = 0;
+    for (let i = 0; i <= arr.length; i++) {  // bug: reads arr[arr.length]
+        total += arr[i];
+    }
+    return total;
+}`,
+    java: `public class Main {
+    static int sumArray(int[] arr) {
+        int total = 0;
+        for (int i = 0; i <= arr.length; i++) {  // bug: reads arr[arr.length]
+            total += arr[i];
+        }
+        return total;
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 3,
+    javascript: 3,
+    java: 4,
+  },
+  correctedCodeByLang: {
+    python: `def sum_array(arr):
+    total = 0
+    for i in range(len(arr)):  # range excludes upper bound
+        total += arr[i]
+    return total
+
+print(sum_array([1, 2, 3, 4, 5]))  # 15`,
+    javascript: `function sumArray(arr) {
+    let total = 0;
+    for (let i = 0; i < arr.length; i++) {  // < not <=
+        total += arr[i];
+    }
+    return total;
+}
+
+console.log(sumArray([1, 2, 3, 4, 5]));  // 15`,
+    java: `public class Main {
+    static int sumArray(int[] arr) {
+        int total = 0;
+        for (int i = 0; i < arr.length; i++) {  // < not <=
+            total += arr[i];
+        }
+        return total;
+    }
+    public static void main(String[] args) {
+        int[] nums = {1, 2, 3, 4, 5};
+        System.out.println(sumArray(nums));  // 15
+    }
+}`,
+  },
   fixes: [
     {
       id: "lt", correct: true,
@@ -178,6 +291,67 @@ int main() {
     int nums[] = {1, 5, 3, 8, 2};
     std::cout << countAbove(nums, 5, 3) << std::endl;  // 2
 }`,
+  codeByLang: {
+    python: `def count_above(arr, threshold):
+    count = 999  # wrong initial value — simulates uninitialized garbage
+    for x in arr:
+        if x > threshold:
+            count += 1
+    return count`,
+    javascript: `function countAbove(arr, threshold) {
+    let count;  // undefined — simulates uninitialized variable
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] > threshold) count++;  // NaN after first ++ on undefined
+    }
+    return count;
+}`,
+    java: `public class Main {
+    static int countAbove(int[] arr, int threshold) {
+        int count;  // uninitialized — Java compiler will error
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] > threshold) count++;
+        }
+        return count;
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 2,
+    javascript: 2,
+    java: 3,
+  },
+  correctedCodeByLang: {
+    python: `def count_above(arr, threshold):
+    count = 0  # correct initial value
+    for x in arr:
+        if x > threshold:
+            count += 1
+    return count
+
+print(count_above([1, 5, 3, 8, 2], 3))  # 2`,
+    javascript: `function countAbove(arr, threshold) {
+    let count = 0;  // initialized to 0
+    for (let i = 0; i < arr.length; i++) {
+        if (arr[i] > threshold) count++;
+    }
+    return count;
+}
+
+console.log(countAbove([1, 5, 3, 8, 2], 3));  // 2`,
+    java: `public class Main {
+    static int countAbove(int[] arr, int threshold) {
+        int count = 0;  // must initialize before use
+        for (int i = 0; i < arr.length; i++) {
+            if (arr[i] > threshold) count++;
+        }
+        return count;
+    }
+    public static void main(String[] args) {
+        int[] nums = {1, 5, 3, 8, 2};
+        System.out.println(countAbove(nums, 3));  // 2
+    }
+}`,
+  },
   fixes: [
     {
       id: "init-zero", correct: true,
@@ -236,6 +410,65 @@ int main() {
     checkMode(0);  // (nothing)
     checkMode(2);  // (nothing)
 }`,
+  codeBeforeByLang: {
+    python: `def check_mode(mode):
+    if mode `,
+    javascript: `function checkMode(mode) {
+    if (mode `,
+    java: `public class Main {
+    static void checkMode(int mode) {
+        if (mode `,
+  },
+  codeAfterByLang: {
+    python: ` 1:  # Python: 'is' checks identity, not equality
+        print("Safety system activated")
+
+# check_mode(0) should NOT activate`,
+    javascript: ` 1) {  // bug: = instead of ==
+        console.log("Safety system activated");
+    }
+}
+
+// checkMode(0) should NOT activate`,
+    java: ` 1) {  // bug: = instead of ==
+            System.out.println("Safety system activated");
+        }
+    }
+    public static void main(String[] args) {
+        checkMode(0);  // should NOT activate
+    }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `def check_mode(mode):
+    if mode == 1:  # == for value equality; 'is' checks identity
+        print("Safety system activated")
+
+check_mode(1)  # Safety system activated
+check_mode(0)  # (nothing)
+check_mode(2)  # (nothing)`,
+    javascript: `function checkMode(mode) {
+    if (mode === 1) {  // === checks value AND type
+        console.log("Safety system activated");
+    }
+}
+
+checkMode(1);  // Safety system activated
+checkMode(0);  // (nothing)
+checkMode(2);  // (nothing)`,
+    java: `public class Main {
+    static void checkMode(int mode) {
+        if (mode == 1) {  // == for primitive comparison
+            System.out.println("Safety system activated");
+        }
+    }
+    public static void main(String[] args) {
+        checkMode(1);  // Safety system activated
+        checkMode(0);  // (nothing)
+        checkMode(2);  // (nothing)
+    }
+}`,
+  },
   options: [
     {
       id: "a", value: "==", correct: true,
@@ -290,6 +523,68 @@ int main() {
     std::cout << std::endl;  // 0 1 2 3 4
     delete[] a;
 }`,
+  codeByLang: {
+    python: `def make_array(size):
+    arr = list(range(size))  # local list
+    return arr  # Python: this is fine — list survives via reference counting
+    # Closest analogy: returning a mutable default arg shared across calls
+
+def buggy_make_array(size, arr=[]):  # bug: mutable default argument — shared state!
+    arr.clear()
+    for i in range(size):
+        arr.append(i)
+    return arr  # same object returned every call — caller's ref may be stale`,
+    javascript: `function makeArray(size) {
+    // JS closures can accidentally capture a loop variable by reference
+    let callbacks = [];
+    for (var i = 0; i < size; i++) {  // bug: var is function-scoped, not block-scoped
+        callbacks.push(function() { return i; });  // all capture same 'i'
+    }
+    return callbacks;  // every callback returns 'size', not 0,1,2...
+}`,
+    java: `public class Main {
+    static int[] makeArray(int size) {
+        int[] arr = new int[size];  // local variable — but Java returns reference
+        for (int i = 0; i < size; i++) arr[i] = i;
+        return arr;  // safe in Java: GC keeps object alive while referenced
+        // Closest bug: returning a reference to a shared mutable field
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 6,
+    javascript: 3,
+    java: 3,
+  },
+  correctedCodeByLang: {
+    python: `def make_array(size):
+    return list(range(size))  # new list each call — no shared state
+
+result = make_array(5)
+print(result)  # [0, 1, 2, 3, 4]`,
+    javascript: `function makeArray(size) {
+    let callbacks = [];
+    for (let i = 0; i < size; i++) {  // let is block-scoped — each iteration captures own i
+        callbacks.push(function() { return i; });
+    }
+    return callbacks;
+}
+
+let fns = makeArray(5);
+console.log(fns.map(f => f()));  // [0, 1, 2, 3, 4]`,
+    java: `public class Main {
+    static int[] makeArray(int size) {
+        int[] arr = new int[size];
+        for (int i = 0; i < size; i++) arr[i] = i;
+        return arr;  // Java GC ensures array lives as long as references exist
+    }
+    public static void main(String[] args) {
+        int[] a = makeArray(5);
+        for (int x : a) System.out.print(x + " ");  // 0 1 2 3 4
+        System.out.println();
+    }
+}`,
+  },
   fixes: [
     {
       id: "new", correct: true,
@@ -349,6 +644,76 @@ int main() {
     std::cout << td.issueTicket() << "\\n";  // 2
     std::cout << td.issueTicket() << "\\n";  // 3
 }`,
+  codeBeforeByLang: {
+    python: `class TicketDispenser:
+    def __init__(self):
+        self.next = 0
+    def issue_ticket(self):
+        self.next `,
+    javascript: `class TicketDispenser {
+    constructor() { this.next = 0; }
+    issueTicket() {
+        return `,
+    java: `public class Main {
+    static class TicketDispenser {
+        int next = 0;
+        int issueTicket() { return `,
+  },
+  codeAfterByLang: {
+    python: `+= 1
+        return self.next - 1  # bug: returns old value (post-increment style)
+
+# first call should return 1, not 0`,
+    javascript: `this.next++;  // bug: returns old value before increment
+    }
+}
+
+// first call should return 1, not 0`,
+    java: `this.next++;  // bug: returns old value before increment
+        }
+    }
+    public static void main(String[] args) {
+        TicketDispenser td = new TicketDispenser();
+        System.out.println(td.issueTicket());  // should be 1, not 0
+    }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `class TicketDispenser:
+    def __init__(self):
+        self.next = 0
+    def issue_ticket(self):
+        self.next += 1
+        return self.next  # return after incrementing
+
+td = TicketDispenser()
+print(td.issue_ticket())  # 1
+print(td.issue_ticket())  # 2
+print(td.issue_ticket())  # 3`,
+    javascript: `class TicketDispenser {
+    constructor() { this.next = 0; }
+    issueTicket() {
+        return ++this.next;  // pre-increment: increment then return
+    }
+}
+
+const td = new TicketDispenser();
+console.log(td.issueTicket());  // 1
+console.log(td.issueTicket());  // 2
+console.log(td.issueTicket());  // 3`,
+    java: `public class Main {
+    static class TicketDispenser {
+        int next = 0;
+        int issueTicket() { return ++next; }  // pre-increment
+    }
+    public static void main(String[] args) {
+        TicketDispenser td = new TicketDispenser();
+        System.out.println(td.issueTicket());  // 1
+        System.out.println(td.issueTicket());  // 2
+        System.out.println(td.issueTicket());  // 3
+    }
+}`,
+  },
   options: [
     {
       id: "a", value: "++", correct: true,
@@ -400,6 +765,64 @@ long long worldPopulation() {
 int main() {
     std::cout << worldPopulation() << std::endl;  // 8000000000
 }`,
+  codeByLang: {
+    python: `# Python integers never overflow — show a related precision bug instead
+import sys
+
+def world_population():
+    # bug: using float loses precision for large integers
+    billions = 8.0
+    per_billion = 1000000000.0
+    result = billions * per_billion
+    return int(result + 0.9)  # bug: incorrect rounding adds phantom people`,
+    javascript: `function worldPopulation() {
+    // JS uses 64-bit floats — loses integer precision above Number.MAX_SAFE_INTEGER
+    let billions = 8;
+    let perBillion = 1000000000;
+    let result = billions * perBillion;
+    // bug: adding a large offset pushes past MAX_SAFE_INTEGER (9007199254740991)
+    return result + 999999999999999;  // precision lost — last digits become 0
+}`,
+    java: `public class Main {
+    static int worldPopulation() {
+        int billions = 8;
+        int perBillion = 1000000000;
+        return billions * perBillion;  // overflows int — same bug as C++!
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 8,
+    javascript: 7,
+    java: 4,
+  },
+  correctedCodeByLang: {
+    python: `def world_population():
+    # Python ints are arbitrary precision — no overflow
+    billions = 8
+    per_billion = 1_000_000_000
+    return billions * per_billion
+
+print(world_population())  # 8000000000`,
+    javascript: `function worldPopulation() {
+    // Use BigInt for integers beyond Number.MAX_SAFE_INTEGER
+    const billions = 8n;
+    const perBillion = 1_000_000_000n;
+    return billions * perBillion;
+}
+
+console.log(worldPopulation().toString());  // "8000000000"`,
+    java: `public class Main {
+    static long worldPopulation() {
+        long billions = 8L;
+        long perBillion = 1_000_000_000L;
+        return billions * perBillion;  // long holds up to ~9.2e18
+    }
+    public static void main(String[] args) {
+        System.out.println(worldPopulation());  // 8000000000
+    }
+}`,
+  },
   fixes: [
     {
       id: "long-long", correct: true,
@@ -460,6 +883,76 @@ int main() {
     handleMenu(2);  // Load game
     handleMenu(3);  // Options
 }`,
+  codeByLang: {
+    python: `def handle_menu(choice):
+    # Python has no switch (pre-3.10) — simulate with if/elif chain with missing condition
+    if choice == 1:
+        print("New game")
+        # bug: missing 'elif' — falls through to next print
+    if choice == 2:  # bug: should be elif — always checked separately
+        print("Load game")
+    if choice == 3:  # bug: should be elif
+        print("Options")`,
+    javascript: `function handleMenu(choice) {
+    switch (choice) {
+        case 1: console.log("New game");    // falls through!
+        case 2: console.log("Load game");   // falls through!
+        case 3: console.log("Options");
+    }
+}`,
+    java: `public class Main {
+    static void handleMenu(int choice) {
+        switch (choice) {
+            case 1: System.out.println("New game");    // falls through!
+            case 2: System.out.println("Load game");   // falls through!
+            case 3: System.out.println("Options");
+        }
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 4,
+    javascript: 3,
+    java: 4,
+  },
+  correctedCodeByLang: {
+    python: `def handle_menu(choice):
+    if choice == 1:
+        print("New game")
+    elif choice == 2:
+        print("Load game")
+    elif choice == 3:
+        print("Options")
+
+handle_menu(1)  # New game
+handle_menu(2)  # Load game
+handle_menu(3)  # Options`,
+    javascript: `function handleMenu(choice) {
+    switch (choice) {
+        case 1: console.log("New game");   break;
+        case 2: console.log("Load game");  break;
+        case 3: console.log("Options");    break;
+    }
+}
+
+handleMenu(1);  // New game
+handleMenu(2);  // Load game
+handleMenu(3);  // Options`,
+    java: `public class Main {
+    static void handleMenu(int choice) {
+        switch (choice) {
+            case 1: System.out.println("New game");   break;
+            case 2: System.out.println("Load game");  break;
+            case 3: System.out.println("Options");    break;
+        }
+    }
+    public static void main(String[] args) {
+        handleMenu(1);  // New game
+        handleMenu(2);  // Load game
+        handleMenu(3);  // Options
+    }
+}`,
+  },
   fixes: [
     {
       id: "break-each", correct: true,
@@ -532,6 +1025,93 @@ int main() {
     std::cout << a[0] << std::endl;  // 42 (unchanged)
     std::cout << b[0] << std::endl;  // 99
 }`,
+  codeByLang: {
+    python: `# Python: shallow copy of a list — inner lists are shared
+import copy
+
+class Buffer:
+    def __init__(self, data):
+        self.data = data  # stores reference
+
+a = Buffer([[1, 2], [3, 4]])
+b = Buffer(a.data)  # bug: shallow copy — b.data IS a.data
+b.data[0][0] = 99   # modifies a's data too!`,
+    javascript: `// JS: spread operator is shallow — nested objects are still shared
+class Buffer {
+    constructor(data) {
+        this.data = data;
+    }
+    shallowCopy() {
+        return new Buffer([...this.data]);  // bug: spread only copies top level
+    }
+}
+
+const a = new Buffer([[1, 2], [3, 4]]);
+const b = a.shallowCopy();
+b.data[0][0] = 99;  // also changes a.data[0][0]!`,
+    java: `public class Main {
+    static class Buffer implements Cloneable {
+        int[] data;
+        Buffer(int size) { this.data = new int[size]; }
+
+        // bug: clone() does shallow copy — data array is shared
+        public Buffer clone() throws CloneNotSupportedException {
+            return (Buffer) super.clone();  // shallow: data reference copied, not array
+        }
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 8,
+    javascript: 6,
+    java: 7,
+  },
+  correctedCodeByLang: {
+    python: `import copy
+
+class Buffer:
+    def __init__(self, data):
+        self.data = data
+
+a = Buffer([[1, 2], [3, 4]])
+b = Buffer(copy.deepcopy(a.data))  # deep copy — independent nested lists
+b.data[0][0] = 99
+print(a.data[0][0])  # 1 (unchanged)
+print(b.data[0][0])  # 99`,
+    javascript: `class Buffer {
+    constructor(data) {
+        this.data = data;
+    }
+    deepCopy() {
+        return new Buffer(JSON.parse(JSON.stringify(this.data)));  // deep copy
+    }
+}
+
+const a = new Buffer([[1, 2], [3, 4]]);
+const b = a.deepCopy();
+b.data[0][0] = 99;
+console.log(a.data[0][0]);  // 1 (unchanged)
+console.log(b.data[0][0]);  // 99`,
+    java: `public class Main {
+    static class Buffer {
+        int[] data;
+        Buffer(int size) { this.data = new int[size]; }
+
+        // deep copy constructor
+        Buffer(Buffer other) {
+            this.data = other.data.clone();  // Arrays.clone() makes a true copy
+        }
+    }
+    public static void main(String[] args) {
+        Buffer a = new Buffer(4);
+        a.data[0] = 42;
+        Buffer b = new Buffer(a);  // deep copy
+        b.data[0] = 99;
+        System.out.println(a.data[0]);  // 42 (unchanged)
+        System.out.println(b.data[0]);  // 99
+    }
+}`,
+  },
   fixes: [
     {
       id: "deep-copy", correct: true,
@@ -589,6 +1169,60 @@ int main() {
     std::cout << inBounds(v, -1) << "\\n";  // false
     std::cout << inBounds(v,  5) << "\\n";  // false
 }`,
+  codeBeforeByLang: {
+    python: `def in_bounds(lst, index):
+    # bug: comparing with NaN-like implicit cast
+    return `,
+    javascript: `function inBounds(arr, index) {
+    // bug: comparing number with NaN
+    return `,
+    java: `public class Main {
+    static boolean inBounds(int[] arr, int index) {
+        // bug: implicit signed/unsigned widening
+        return `,
+  },
+  codeAfterByLang: {
+    python: `index < len(lst)  # bug: negative index wraps in Python — always truthy for small negatives
+
+# in_bounds([10,20,30], -1) should return False`,
+    javascript: `index < arr.length;  // bug: -1 < 3 is true — negative index slips through
+}
+
+// inBounds([10,20,30], -1) should return false`,
+    java: `(long) index < arr.length;  // bug: cast to long but skips negative check
+    }
+    public static void main(String[] args) {
+        int[] v = {10, 20, 30};
+        System.out.println(inBounds(v, -1));  // should print false
+    }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `def in_bounds(lst, index):
+    return 0 <= index < len(lst)  # explicit lower bound check
+
+print(in_bounds([10, 20, 30],  1))  # True
+print(in_bounds([10, 20, 30], -1))  # False
+print(in_bounds([10, 20, 30],  5))  # False`,
+    javascript: `function inBounds(arr, index) {
+    return index >= 0 && index < arr.length;  // explicit negative guard
+}
+
+console.log(inBounds([10, 20, 30],  1));  // true
+console.log(inBounds([10, 20, 30], -1));  // false
+console.log(inBounds([10, 20, 30],  5));  // false`,
+    java: `public class Main {
+    static boolean inBounds(int[] arr, int index) {
+        return index >= 0 && index < arr.length;  // check negative first
+    }
+    public static void main(String[] args) {
+        int[] v = {10, 20, 30};
+        System.out.println(inBounds(v,  1));  // true
+        System.out.println(inBounds(v, -1));  // false
+        System.out.println(inBounds(v,  5));  // false
+    }
+}`,
+  },
   options: [
     {
       id: "a", value: "", correct: true,
@@ -642,6 +1276,63 @@ void log_values(int n) {
 int main() {
     log_values(5);  // prints 0 1 2 3 4 on separate lines
 }`,
+  codeBeforeByLang: {
+    python: `def log_values(n):
+    result = ""
+    for i in range(n):
+        result += str(i) + `,
+    javascript: `function logValues(n) {
+    let result = "";
+    for (let i = 0; i < n; i++) {
+        result += i + `,
+    java: `public class Main {
+    static void logValues(int n) {
+        String result = "";
+        for (int i = 0; i < n; i++) {
+            result += i + `,
+  },
+  codeAfterByLang: {
+    python: `"\\n"  # bug: string concatenation in loop is O(n²) — use list + join instead
+    print(result, end="")`,
+    javascript: `"\\n";  // bug: string concatenation in loop creates O(n²) string copies
+    }
+    console.log(result);
+}`,
+    java: `"\\n";  // bug: String += in loop is O(n²) — use StringBuilder instead
+        }
+        System.out.print(result);
+    }
+    public static void main(String[] args) { logValues(5); }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `def log_values(n):
+    lines = []
+    for i in range(n):
+        lines.append(str(i))
+    print("\\n".join(lines))  # O(n) — build list then join once
+
+log_values(5)  # 0\\n1\\n2\\n3\\n4`,
+    javascript: `function logValues(n) {
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+        parts.push(i);  // collect into array
+    }
+    console.log(parts.join("\\n"));  // join once — O(n)
+}
+
+logValues(5);`,
+    java: `public class Main {
+    static void logValues(int n) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < n; i++) {
+            sb.append(i).append('\\n');  // StringBuilder is O(n) amortized
+        }
+        System.out.print(sb);
+    }
+    public static void main(String[] args) { logValues(5); }
+}`,
+  },
   options: [
     {
       id: "a", value: "'\\n'", correct: true,
@@ -702,6 +1393,67 @@ int main() {
         std::cout << "Error: " << e.what() << "\\n";
     }
 }`,
+  codeBeforeByLang: {
+    python: `def validate(name):
+    if `,
+    javascript: `function validate(name) {
+    if (`,
+    java: `public class Main {
+    static void validate(String name) {
+        if (`,
+  },
+  codeAfterByLang: {
+    python: `len(name) == 0:  # works but not idiomatic — use 'not name' instead
+        raise ValueError("Name cannot be empty")`,
+    javascript: `name.length === 0) {  // works but not idiomatic — use !name instead
+        throw new Error("Name cannot be empty");
+    }
+}`,
+    java: `name.length() == 0)  // works but not idiomatic — use name.isEmpty() instead
+            throw new IllegalArgumentException("Name cannot be empty");
+    }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `def validate(name):
+    if not name:  # idiomatic: empty string is falsy in Python
+        raise ValueError("Name cannot be empty")
+    print(f"Valid: {name}")
+
+try:
+    validate("Alice")  # Valid: Alice
+    validate("")       # raises
+except ValueError as e:
+    print(f"Error: {e}")`,
+    javascript: `function validate(name) {
+    if (!name) {  // idiomatic: empty string is falsy in JS
+        throw new Error("Name cannot be empty");
+    }
+    console.log("Valid: " + name);
+}
+
+try {
+    validate("Alice");  // Valid: Alice
+    validate("");       // throws
+} catch (e) {
+    console.log("Error: " + e.message);
+}`,
+    java: `public class Main {
+    static void validate(String name) {
+        if (name.isEmpty())  // idiomatic Java empty-string check
+            throw new IllegalArgumentException("Name cannot be empty");
+        System.out.println("Valid: " + name);
+    }
+    public static void main(String[] args) {
+        try {
+            validate("Alice");  // Valid: Alice
+            validate("");       // throws
+        } catch (IllegalArgumentException e) {
+            System.out.println("Error: " + e.getMessage());
+        }
+    }
+}`,
+  },
   options: [
     {
       id: "a", value: "name.empty()", correct: true,
@@ -757,6 +1509,68 @@ int main() {
     std::vector<int> data = {10, 20, 30, 40};
     std::cout << average(data) << std::endl;  // 25
 }`,
+  codeByLang: {
+    python: `# Python: lists are always passed by reference — different bug: mutation of caller's list
+def average(data):
+    data.sort()      # bug: mutates the caller's original list!
+    total = sum(data)
+    return total / len(data) if data else 0.0`,
+    javascript: `// JS: arrays are passed by reference — same mutation bug as Python
+function average(data) {
+    data.sort((a, b) => a - b);  // bug: mutates caller's array in place!
+    const total = data.reduce((s, x) => s + x, 0);
+    return data.length ? total / data.length : 0;
+}`,
+    java: `import java.util.List;
+import java.util.ArrayList;
+
+public class Main {
+    // Java: ArrayList passed by reference — mutation bug
+    static double average(List<Integer> data) {
+        data.clear();  // bug: clears the caller's list!
+        return 0.0;
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 3,
+    javascript: 3,
+    java: 6,
+  },
+  correctedCodeByLang: {
+    python: `def average(data):
+    # do not mutate caller's list — work on a copy if sorting needed
+    if not data:
+        return 0.0
+    return sum(data) / len(data)
+
+nums = [10, 20, 30, 40]
+print(average(nums))  # 25.0
+print(nums)           # [10, 20, 30, 40] — unchanged`,
+    javascript: `function average(data) {
+    if (!data.length) return 0;
+    const total = data.reduce((s, x) => s + x, 0);
+    return total / data.length;  // no mutation
+}
+
+const nums = [10, 20, 30, 40];
+console.log(average(nums));  // 25
+console.log(nums);           // [10, 20, 30, 40] — unchanged`,
+    java: `import java.util.List;
+import java.util.Arrays;
+
+public class Main {
+    static double average(List<Integer> data) {
+        if (data.isEmpty()) return 0.0;
+        int total = data.stream().mapToInt(Integer::intValue).sum();
+        return (double) total / data.size();  // read-only — no mutation
+    }
+    public static void main(String[] args) {
+        List<Integer> nums = Arrays.asList(10, 20, 30, 40);
+        System.out.println(average(nums));  // 25.0
+    }
+}`,
+  },
   fixes: [
     {
       id: "const-ref", correct: true,
@@ -803,6 +1617,73 @@ int main() {
     process(`,
   codeAfter: `);  // should print "pointer"
 }`,
+  codeBeforeByLang: {
+    python: `def process(value):
+    if value `,
+    javascript: `function process(value) {
+    if (value `,
+    java: `public class Main {
+    static void process(Integer ptr) {
+        if (ptr `,
+  },
+  codeAfterByLang: {
+    python: ` is 0:  # bug: 'is' checks identity not equality — may fail for larger ints
+        print("none/null check failed")
+    elif value is None:
+        print("pointer (None)")
+    else:
+        print("integer")`,
+    javascript: ` == null) {  // bug: == null matches both null AND undefined — use === null
+        console.log("pointer (null)");
+    } else {
+        console.log("integer");
+    }
+}
+
+process(null);       // should print "pointer (null)"
+process(undefined);  // bug: also matches — should NOT`,
+    java: ` == null)  // bug: missing null check — NullPointerException if ptr is null
+            System.out.println("pointer (null)");
+        else
+            System.out.println("integer: " + ptr);
+    }
+    public static void main(String[] args) {
+        process(null);  // should print "pointer (null)" without throwing
+    }
+}`,
+  },
+  correctedCodeByLang: {
+    python: `def process(value):
+    if value is None:  # idiomatic None check with 'is'
+        print("pointer (None)")
+    else:
+        print("integer:", value)
+
+process(None)  # pointer (None)
+process(42)    # integer: 42`,
+    javascript: `function process(value) {
+    if (value === null) {  // === null is precise — doesn't match undefined
+        console.log("pointer (null)");
+    } else {
+        console.log("integer:", value);
+    }
+}
+
+process(null);  // pointer (null)
+process(42);    // integer: 42`,
+    java: `public class Main {
+    static void process(Integer ptr) {
+        if (ptr == null)  // safe: Java auto-unboxing skipped when ptr is null
+            System.out.println("pointer (null)");
+        else
+            System.out.println("integer: " + ptr);
+    }
+    public static void main(String[] args) {
+        process(null);  // pointer (null)
+        process(42);    // integer: 42
+    }
+}`,
+  },
   options: [
     {
       id: "a", value: "nullptr", correct: true,
@@ -864,6 +1745,101 @@ int main() {
     Buffer b(10);
     std::cout << "Buffer size: " << b.getSize() << std::endl;  // 10
 }  // ~Buffer() correctly frees all 10 elements`,
+  codeByLang: {
+    python: `# Python: no manual memory — closest bug: file/resource not properly closed
+class Buffer:
+    def __init__(self, n):
+        self.file = open("temp_buffer.txt", "w")  # resource acquired
+        self.size = n
+
+    def write(self, data):
+        self.file.write(data)
+
+    def destroy(self):
+        pass  # bug: forgot to close the file — resource leak!`,
+    javascript: `// JS: no manual memory — closest bug: event listener not removed (resource leak)
+class Buffer {
+    constructor(n) {
+        this.size = n;
+        this.handler = () => console.log("event");
+        document.addEventListener("click", this.handler);  // resource acquired
+    }
+
+    destroy() {
+        // bug: forgot removeEventListener — handler leaks in memory
+    }
+}`,
+    java: `public class Main {
+    static class Buffer {
+        int[] data;
+        int size;
+
+        Buffer(int n) {
+            this.data = new int[n];
+            this.size = n;
+        }
+
+        void destroy() {
+            data = null;  // bug: just nulls reference — does not release promptly
+            // should use try-with-resources or explicit close() pattern
+        }
+    }
+}`,
+  },
+  bugLineByLang: {
+    python: 11,
+    javascript: 12,
+    java: 11,
+  },
+  correctedCodeByLang: {
+    python: `class Buffer:
+    def __init__(self, n):
+        self.file = open("temp_buffer.txt", "w")
+        self.size = n
+
+    def write(self, data):
+        self.file.write(data)
+
+    def destroy(self):
+        self.file.close()  # explicitly close the resource
+
+# or use context manager (preferred):
+# with open("temp_buffer.txt", "w") as f:
+#     f.write("data")`,
+    javascript: `class Buffer {
+    constructor(n) {
+        this.size = n;
+        this.handler = () => console.log("event");
+        document.addEventListener("click", this.handler);
+    }
+
+    destroy() {
+        document.removeEventListener("click", this.handler);  // properly removes listener
+    }
+}`,
+    java: `public class Main {
+    static class Buffer implements AutoCloseable {
+        int[] data;
+        int size;
+
+        Buffer(int n) {
+            this.data = new int[n];
+            this.size = n;
+        }
+
+        @Override
+        public void close() {
+            data = null;  // release reference for GC
+            System.out.println("Buffer freed");
+        }
+    }
+    public static void main(String[] args) throws Exception {
+        try (Buffer b = new Buffer(10)) {  // try-with-resources ensures close() is called
+            System.out.println("Buffer size: " + b.size);
+        }
+    }
+}`,
+  },
   fixes: [
     {
       id: "delete-array", correct: true,

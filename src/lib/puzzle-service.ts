@@ -82,8 +82,10 @@ async function fetchNextPuzzle(req: NextPuzzleRequest): Promise<AnyPuzzle> {
   return resp.json();
 }
 
-async function fetchPuzzleById(id: string, lang = "en"): Promise<AnyPuzzle> {
-  const resp = await fetch(`/api/puzzle?id=${encodeURIComponent(id)}&lang=${lang}`);
+export async function fetchPuzzleById(id: string, lang = "en", progLang?: string): Promise<AnyPuzzle> {
+  let url = `/api/puzzle?id=${encodeURIComponent(id)}&lang=${lang}`;
+  if (progLang) url += `&progLang=${encodeURIComponent(progLang)}`;
+  const resp = await fetch(url);
   if (!resp.ok) throw new Error(`API error ${resp.status}`);
   return resp.json();
 }
@@ -101,10 +103,10 @@ export function toRuntimePuzzle(p: AstPickFixPuzzle): Puzzle {
 
 // ─── React Query hooks ────────────────────────────────────────────────────
 
-export function usePuzzle(id: string, lang: Language) {
+export function usePuzzle(id: string, lang: Language, progLang?: Language) {
   return useQuery({
-    queryKey: ["puzzle", id, lang],
-    queryFn: () => fetchPuzzleById(id, lang),
+    queryKey: ["puzzle", id, lang, progLang ?? "any"],
+    queryFn: () => fetchPuzzleById(id, lang, progLang),
     staleTime: Infinity,
   });
 }

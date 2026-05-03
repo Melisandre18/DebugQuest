@@ -28,19 +28,31 @@ async function loadTextPuzzles() {
   }
 }
 
-function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
+function serializeTextPuzzle(def: any, lang: UiLanguage, progLang?: ProgrammingLanguage): SerializedPuzzle {
   const p = (t: { en: string; ka: string }) => t[lang] ?? t.en;
+
+  // Resolve code fields — prefer language-specific variant if available
+  const resolvedCode: string = (progLang && def.codeByLang?.[progLang]) ?? def.code;
+  const resolvedCorrectedCode: string | undefined =
+    (progLang && def.correctedCodeByLang?.[progLang]) ?? def.correctedCode;
+  const resolvedCodeBefore: string = (progLang && def.codeBeforeByLang?.[progLang]) ?? def.codeBefore;
+  const resolvedCodeAfter: string = (progLang && def.codeAfterByLang?.[progLang]) ?? def.codeAfter;
+  const resolvedBugLine: number | undefined =
+    (progLang && def.bugLineByLang?.[progLang] !== undefined ? Number(def.bugLineByLang[progLang]) : undefined)
+    ?? def.bugLine;
 
   let starterCode: string;
   let solution: string;
   if (def.interaction === "pick-fix") {
-    starterCode = def.code;
+    starterCode = resolvedCode;
     const correct = (def.fixes as any[]).find((f: any) => f.correct);
     solution = correct ? p(correct.label) : "";
   } else {
-    starterCode = def.codeBefore + "___" + def.codeAfter;
+    starterCode = resolvedCodeBefore + "___" + resolvedCodeAfter;
     const correct = (def.options as any[]).find((o: any) => o.correct);
-    solution = correct ? correct.value : "";
+    solution = correct
+      ? ((progLang && correct.valueByLang?.[progLang]) ?? correct.value)
+      : "";
   }
 
   const base = {
@@ -63,9 +75,9 @@ function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
       ...base,
       format: "text",
       interaction: "pick-fix",
-      code: def.code,
-      bugLine: def.bugLine,
-      ...(def.correctedCode ? { correctedCode: def.correctedCode } : {}),
+      code: resolvedCode,
+      bugLine: resolvedBugLine,
+      ...(resolvedCorrectedCode ? { correctedCode: resolvedCorrectedCode } : {}),
       fixes: (def.fixes as any[]).map((f: any) => ({
         id: f.id, correct: f.correct,
         label: p(f.label), explanation: p(f.explanation),
@@ -76,11 +88,13 @@ function serializeTextPuzzle(def: any, lang: UiLanguage): SerializedPuzzle {
     ...base,
     format: "text",
     interaction: "fill-blank",
-    codeBefore: def.codeBefore,
-    codeAfter: def.codeAfter,
-    ...(def.correctedCode ? { correctedCode: def.correctedCode } : {}),
+    codeBefore: resolvedCodeBefore,
+    codeAfter: resolvedCodeAfter,
+    ...(resolvedCorrectedCode ? { correctedCode: resolvedCorrectedCode } : {}),
     options: (def.options as any[]).map((o: any) => ({
-      id: o.id, value: o.value, correct: o.correct,
+      id: o.id,
+      value: (progLang && o.valueByLang?.[progLang]) ?? o.value,
+      correct: o.correct,
       explanation: p(o.explanation),
     })),
   } as SerializedPuzzle;
@@ -110,7 +124,7 @@ export async function getAllPuzzles(
       p.difficulty === difficulty &&
       (progLang ? p.programmingLanguage === progLang : true)
     )
-    .forEach(p => results.push(serializeTextPuzzle(p, lang)));
+    .forEach(p => results.push(serializeTextPuzzle(p, lang, progLang)));
 
   return results;
 }
@@ -165,7 +179,7 @@ export async function pickNext(opts: {
 }
 
 // Get a single puzzle by ID
-export async function getPuzzleById(id: string, lang: UiLanguage = "en"): Promise<SerializedPuzzle | null> {
+export async function getPuzzleById(id: string, lang: UiLanguage = "en", progLang?: ProgrammingLanguage): Promise<SerializedPuzzle | null> {
   await loadTextPuzzles();
 
   // AST pick-fix
@@ -178,7 +192,7 @@ export async function getPuzzleById(id: string, lang: UiLanguage = "en"): Promis
 
   // Text puzzles
   const textDef = _textDefs.find(p => p.id === id);
-  if (textDef) return serializeTextPuzzle(textDef, lang);
+  if (textDef) return serializeTextPuzzle(textDef, lang, progLang);
 
   return null;
 }

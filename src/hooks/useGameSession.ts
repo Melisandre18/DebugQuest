@@ -12,7 +12,7 @@ import { DIFFICULTY_META } from "@/components/DifficultyMeta";
 import { useProgress } from "@/contexts/ProgressContext";
 import { useLanguage } from "@/contexts/LanguageContext";
 import {
-  getNextPuzzle, toRuntimePuzzle,
+  getNextPuzzle, toRuntimePuzzle, fetchPuzzleById,
   type AnyPuzzle, type AstPickFixPuzzle,
 } from "@/lib/puzzle-service";
 import { toast } from "sonner";
@@ -219,6 +219,17 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
     // For AST pick-fix: restore the original buggy program so it renders fresh in the new syntax
     if (anyPuzzle && anyPuzzle.format === "ast" && anyPuzzle.interaction === "pick-fix") {
       setProgram(toRuntimePuzzle(anyPuzzle as AstPickFixPuzzle).program);
+    }
+
+    // For text puzzles: re-fetch the same puzzle in the new language so code variants are shown
+    if (anyPuzzle && anyPuzzle.format === "text") {
+      fetchPuzzleById(anyPuzzle.id, uiLang, lang)
+        .then(result => {
+          setAnyPuzzle(result);
+        })
+        .catch(() => {
+          // silently ignore — player still sees original language code
+        });
     }
   }
 

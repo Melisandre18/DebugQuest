@@ -3,6 +3,8 @@
 
 interface LocalizedText { en: string; ka: string; }
 
+type LangMap = Partial<Record<"python" | "javascript" | "cpp" | "java", string>>;
+
 interface TextPickFixDef {
   id: string; difficulty: "easy" | "medium" | "hard";
   bugType: string; programmingLanguage: "python" | "javascript" | "cpp" | "java";
@@ -10,7 +12,10 @@ interface TextPickFixDef {
   hints: LocalizedText[];
   format: "text"; interaction: "pick-fix";
   code: string; bugLine?: number;
+  bugLineByLang?: LangMap;
   correctedCode?: string;
+  codeByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
   fixes: Array<{ id: string; label: LocalizedText; correct: boolean; explanation: LocalizedText }>;
 }
 
@@ -21,7 +26,11 @@ interface TextFillBlankDef {
   hints: LocalizedText[];
   format: "text"; interaction: "fill-blank";
   codeBefore: string; codeAfter: string;
-  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText }>;
+  correctedCode?: string;
+  codeBeforeByLang?: LangMap;
+  codeAfterByLang?: LangMap;
+  correctedCodeByLang?: LangMap;
+  options: Array<{ id: string; value: string; correct: boolean; explanation: LocalizedText; valueByLang?: LangMap }>;
 }
 
 type AnyTextPuzzleDef = TextPickFixDef | TextFillBlankDef;
@@ -52,21 +61,40 @@ const py1: TextFillBlankDef = {
     return total
 
 print(sum_to_n(5))  # expected: 15`,
+  codeBeforeByLang: {
+    javascript: `function sumToN(n) {\n  let total = 0;\n  for (let i = 1; i `,
+    cpp: `#include <iostream>\nint sumToN(int n) {\n    int total = 0;\n    for (int i = 1; i `,
+    java: `public class Main {\n    static int sumToN(int n) {\n        int total = 0;\n        for (int i = 1; i `,
+  },
+  codeAfterByLang: {
+    javascript: ` n; i++) {\n    total += i;\n  }\n  return total;\n}\nconsole.log(sumToN(5));  // expected: 15`,
+    cpp: ` n; i++) {\n        total += i;\n    }\n    return total;\n}\nint main() { std::cout << sumToN(5) << std::endl; }  // expected: 15`,
+    java: ` n; i++) {\n            total += i;\n        }\n        return total;\n    }\n    public static void main(String[] args) { System.out.println(sumToN(5)); }  // expected: 15\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function sumToN(n) {\n  let total = 0;\n  for (let i = 1; i <= n; i++) {\n    total += i;\n  }\n  return total;\n}\nconsole.log(sumToN(5));  // 15`,
+    cpp: `#include <iostream>\nint sumToN(int n) {\n    int total = 0;\n    for (int i = 1; i <= n; i++) total += i;\n    return total;\n}\nint main() { std::cout << sumToN(5) << std::endl; }`,
+    java: `public class Main {\n    static int sumToN(int n) {\n        int total = 0;\n        for (int i = 1; i <= n; i++) total += i;\n        return total;\n    }\n    public static void main(String[] args) { System.out.println(sumToN(5)); }\n}`,
+  },
   options: [
     {
       id: "a", value: "n+1", correct: true,
+      valueByLang: { javascript: "<= n", cpp: "<= n", java: "<= n" },
       explanation: { en: "range(1, n+1) includes n, producing 1+2+3+4+5 = 15.", ka: "range(1, n+1) მოიცავს n-ს და იძლევა 1+2+3+4+5 = 15." },
     },
     {
       id: "b", value: "n", correct: false,
+      valueByLang: { javascript: "< n", cpp: "< n", java: "< n" },
       explanation: { en: "range(1, n) stops before n — misses the last value.", ka: "range(1, n) ჩერდება n-მდე — ბოლო მნიშვნელობა გამოტოვდება." },
     },
     {
       id: "c", value: "n-1", correct: false,
+      valueByLang: { javascript: "< n - 1", cpp: "< n - 1", java: "< n - 1" },
       explanation: { en: "range(1, n-1) misses both n-1 and n.", ka: "range(1, n-1) გამოტოვებს n-1-სა და n-ს." },
     },
     {
       id: "d", value: "n+2", correct: false,
+      valueByLang: { javascript: "<= n + 1", cpp: "<= n + 1", java: "<= n + 1" },
       explanation: { en: "range(1, n+2) overshoots — adds n+1 as well.", ka: "range(1, n+2) ზედმეტია — n+1-საც ამატებს." },
     },
   ],
@@ -104,6 +132,17 @@ print(greeting)  # expected: Hello, Alice!`,
 
 greeting = greet("Alice")
 print(greeting)  # Hello, Alice!`,
+  codeByLang: {
+    javascript: `function greet(name) {\n  const message = "Hello, " + name + "!";\n  const result = console.log(message);\n  return result;\n}\n\nconst greeting = greet("Alice");\nconsole.log(greeting);  // expected: Hello, Alice!`,
+    cpp: `#include <iostream>\n#include <string>\n\nstd::string greet(const std::string& name) {\n    std::string message = "Hello, " + name + "!";\n    // void return — cannot assign\n    std::cout << message;  // bug: using output instead of return\n    return "";  // returns empty instead of message\n}\n\nint main() {\n    std::string g = greet("Alice");\n    std::cout << g << std::endl;  // expected: Hello, Alice!\n}`,
+    java: `public class Main {\n    static String greet(String name) {\n        String message = "Hello, " + name + "!";\n        String result = String.valueOf(System.out.println(message));  // bug: println returns void\n        return result;\n    }\n\n    public static void main(String[] args) {\n        String greeting = greet("Alice");\n        System.out.println(greeting);  // expected: Hello, Alice!\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "3", cpp: "6", java: "3" },
+  correctedCodeByLang: {
+    javascript: `function greet(name) {\n  const message = "Hello, " + name + "!";\n  return message;\n}\n\nconst greeting = greet("Alice");\nconsole.log(greeting);  // Hello, Alice!`,
+    cpp: `#include <iostream>\n#include <string>\n\nstd::string greet(const std::string& name) {\n    return "Hello, " + name + "!";\n}\n\nint main() {\n    std::string g = greet("Alice");\n    std::cout << g << std::endl;  // Hello, Alice!\n}`,
+    java: `public class Main {\n    static String greet(String name) {\n        return "Hello, " + name + "!";\n    }\n\n    public static void main(String[] args) {\n        String greeting = greet("Alice");\n        System.out.println(greeting);  // Hello, Alice!\n    }\n}`,
+  },
   fixes: [
     {
       id: "return-msg", correct: true,
@@ -152,6 +191,17 @@ print(make_badge("Bob", 25))`,
     return badge
 
 print(make_badge("Bob", 25))`,
+  codeByLang: {
+    javascript: `function makeBadge(name, age) {\n  const badge = "Name: " + name + ", Age: " + age;\n  return badge;\n}\n\nconsole.log(makeBadge("Bob", 25));  // no error in JS (coercion), but consider type safety`,
+    cpp: `#include <iostream>\n#include <string>\n\nstd::string makeBadge(const std::string& name, int age) {\n    std::string badge = "Name: " + name + ", Age: " + age;  // bug: + int to string is wrong\n    return badge;\n}\n\nint main() {\n    std::cout << makeBadge("Bob", 25) << std::endl;\n}`,
+    java: `public class Main {\n    static String makeBadge(String name, int age) {\n        String badge = "Name: " + name + ", Age: " + age;  // works in Java via auto-toString\n        return badge;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(makeBadge("Bob", 25));\n    }\n}`,
+  },
+  bugLineByLang: { cpp: "5" },
+  correctedCodeByLang: {
+    javascript: `function makeBadge(name, age) {\n  const badge = "Name: " + name + ", Age: " + String(age);\n  return badge;\n}\n\nconsole.log(makeBadge("Bob", 25));`,
+    cpp: `#include <iostream>\n#include <string>\n\nstd::string makeBadge(const std::string& name, int age) {\n    std::string badge = "Name: " + name + ", Age: " + std::to_string(age);\n    return badge;\n}\n\nint main() {\n    std::cout << makeBadge("Bob", 25) << std::endl;\n}`,
+    java: `public class Main {\n    static String makeBadge(String name, int age) {\n        String badge = "Name: " + name + ", Age: " + Integer.toString(age);\n        return badge;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(makeBadge("Bob", 25));\n    }\n}`,
+  },
   fixes: [
     {
       id: "str-cast", correct: true,
@@ -195,6 +245,21 @@ const py4: TextFillBlankDef = {
   codeAfter: ` len(scores)
 
 print(average([7, 8, 9]))  # expected: 8.0`,
+  codeBeforeByLang: {
+    javascript: `function average(scores) {\n  const total = scores.reduce((a, b) => a + b, 0);\n  return total `,
+    cpp: `#include <iostream>\n#include <vector>\n#include <numeric>\n\ndouble average(const std::vector<int>& scores) {\n    int total = std::accumulate(scores.begin(), scores.end(), 0);\n    return `,
+    java: `import java.util.*;\npublic class Main {\n    static double average(int[] scores) {\n        int total = 0;\n        for (int s : scores) total += s;\n        return total `,
+  },
+  codeAfterByLang: {
+    javascript: ` scores.length;\n}\nconsole.log(average([7, 8, 9]));  // expected: 8.0`,
+    cpp: `(double)total / scores.size();\n}\nint main() { std::vector<int> v={7,8,9}; std::cout << average(v) << std::endl; }  // expected: 8.0`,
+    java: ` scores.length;\n    }\n    public static void main(String[] args) { System.out.println(average(new int[]{7,8,9})); }  // expected: 8.0\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function average(scores) {\n  const total = scores.reduce((a, b) => a + b, 0);\n  return total / scores.length;\n}\nconsole.log(average([7, 8, 9]));  // 8`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <numeric>\n\ndouble average(const std::vector<int>& scores) {\n    int total = std::accumulate(scores.begin(), scores.end(), 0);\n    return (double)total / scores.size();\n}\nint main() { std::vector<int> v={7,8,9}; std::cout << average(v) << std::endl; }`,
+    java: `import java.util.*;\npublic class Main {\n    static double average(int[] scores) {\n        int total = 0;\n        for (int s : scores) total += s;\n        return (double)total / scores.length;\n    }\n    public static void main(String[] args) { System.out.println(average(new int[]{7,8,9})); }\n}`,
+  },
   options: [
     {
       id: "a", value: "/", correct: true,
@@ -235,18 +300,36 @@ const py5: TextFillBlankDef = {
 
 flag = input("Enable? ").strip()
 print(is_enabled(flag))  # should print True when user types yes`,
+  codeBeforeByLang: {
+    javascript: `function isEnabled(value) {\n  return value `,
+    cpp: `#include <iostream>\n#include <string>\n\nbool isEnabled(const std::string& value) {\n    return value `,
+    java: `public class Main {\n    static boolean isEnabled(String value) {\n        return value.`,
+  },
+  codeAfterByLang: {
+    javascript: ` "yes";\n}\n\nconst flag = "yes";\nconsole.log(isEnabled(flag));  // should print true`,
+    cpp: ` "yes";\n}\n\nint main() {\n    std::string flag = "yes";\n    std::cout << std::boolalpha << isEnabled(flag) << std::endl;  // true\n}`,
+    java: `("yes");\n    }\n\n    public static void main(String[] args) {\n        System.out.println(isEnabled("yes"));  // true\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function isEnabled(value) {\n  return value === "yes";\n}\n\nconst flag = "yes";\nconsole.log(isEnabled(flag));  // true`,
+    cpp: `#include <iostream>\n#include <string>\n\nbool isEnabled(const std::string& value) {\n    return value == "yes";\n}\n\nint main() {\n    std::string flag = "yes";\n    std::cout << std::boolalpha << isEnabled(flag) << std::endl;  // true\n}`,
+    java: `public class Main {\n    static boolean isEnabled(String value) {\n        return value.equals("yes");\n    }\n\n    public static void main(String[] args) {\n        System.out.println(isEnabled("yes"));  // true\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "==", correct: true,
+      valueByLang: { javascript: "===", cpp: "==", java: "equals" },
       explanation: { en: "== compares values: 'yes' == 'yes' is always True regardless of which object it is.", ka: "== ადარებს მნიშვნელობებს: 'yes' == 'yes' ყოველთვის True-ია, განურჩევლად ობიექტისა." },
     },
     {
       id: "b", value: "is", correct: false,
+      valueByLang: { javascript: "==", cpp: "!=", java: "==" },
       explanation: { en: "is checks if both sides point to the exact same object in memory. Input strings are rarely interned, so this is unreliable.", ka: "is ამოწმებს ორივე გამოთქმა ერთ ობიექტზე მიუთითებს თუ არა. შეყვანის სტრიქონები იშვიათად ინტერნდება, ამიტომ ეს არასანდოა." },
     },
     {
       id: "c", value: "is not", correct: false,
-      explanation: { en: "is not is the opposite of is — still an identity check, and inverted at that.", ka: "is not is-ის საწინააღმდეგოა — კვლავ იდენტობის შემოწმებაა, თანაც შებრუნებული." },
+      valueByLang: { javascript: "!==", cpp: "!=", java: "equalsIgnoreCase" },
+      explanation: { en: "is not is the opposite of is — still an identity check, and inverted at that.", ka: "is not is-ის საწინAAGMEDEGOA — კვლავ იდენტობის შემოწმებაა, თანაც შებრუნებული." },
     },
   ],
 };
@@ -284,6 +367,17 @@ print(append_item("b"))  # expected ['b'], got ['a', 'b']`,
 
 print(append_item("a"))  # ['a']
 print(append_item("b"))  # ['b']`,
+  codeByLang: {
+    javascript: `// JS: static variable simulating shared default (module-level array)\nconst _defaultList = [];\nfunction appendItem(item, lst = _defaultList) {\n  lst.push(item);\n  return lst;\n}\n\nconsole.log(appendItem("a"));  // ['a']\nconsole.log(appendItem("b"));  // expected ['b'], got ['a', 'b']`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\n// bug: static local keeps state across calls\nstd::vector<std::string> appendItem(const std::string& item) {\n    static std::vector<std::string> lst;  // shared across calls!\n    lst.push_back(item);\n    return lst;\n}\n\nint main() {\n    auto r1 = appendItem("a"); // {a}\n    auto r2 = appendItem("b"); // expected {b}, got {a, b}\n    for (auto& s : r2) std::cout << s << " ";\n}`,
+    java: `import java.util.*;\npublic class Main {\n    // bug: static list shared across calls\n    static List<String> sharedList = new ArrayList<>();\n\n    static List<String> appendItem(String item) {\n        sharedList.add(item);\n        return sharedList;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(appendItem("a"));  // [a]\n        System.out.println(appendItem("b"));  // expected [b], got [a, b]\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "2", cpp: "7", java: "4" },
+  correctedCodeByLang: {
+    javascript: `function appendItem(item, lst) {\n  const result = lst ? [...lst] : [];\n  result.push(item);\n  return result;\n}\n\nconsole.log(appendItem("a"));  // ['a']\nconsole.log(appendItem("b"));  // ['b']`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nstd::vector<std::string> appendItem(const std::string& item, std::vector<std::string> lst = {}) {\n    lst.push_back(item);\n    return lst;\n}\n\nint main() {\n    auto r1 = appendItem("a");\n    auto r2 = appendItem("b");\n    for (auto& s : r1) std::cout << s << " ";  // a\n    std::cout << std::endl;\n    for (auto& s : r2) std::cout << s << " ";  // b\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<String> appendItem(String item) {\n        List<String> result = new ArrayList<>();  // fresh each call\n        result.add(item);\n        return result;\n    }\n\n    public static void main(String[] args) {\n        System.out.println(appendItem("a"));  // [a]\n        System.out.println(appendItem("b"));  // [b]\n    }\n}`,
+  },
   fixes: [
     {
       id: "none-default", correct: true,
@@ -336,6 +430,17 @@ print(build_list([1, 2, 3]))  # expected: [1, 2, 3]`,
     return result
 
 print(build_list([1, 2, 3]))  # [1, 2, 3]`,
+  codeByLang: {
+    javascript: `function buildList(values) {\n  let result = [];\n  for (const value of values) {\n    result = result.push(value);  // push returns new length, not array\n  }\n  return result;\n}\n\nconsole.log(buildList([1, 2, 3]));  // expected: [1, 2, 3]`,
+    cpp: `#include <iostream>\n#include <vector>\n\nstd::vector<int> buildList(const std::vector<int>& values) {\n    std::vector<int> result;\n    for (int value : values) {\n        result = result.push_back(value);  // bug: push_back returns void\n    }\n    return result;\n}\n\nint main() {\n    for (int x : buildList({1,2,3})) std::cout << x << " ";\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<Integer> buildList(int[] values) {\n        List<Integer> result = new ArrayList<>();\n        for (int value : values) {\n            result = result.add(value);  // bug: add() returns boolean, not list\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        System.out.println(buildList(new int[]{1,2,3}));\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "4", cpp: "7", java: "6" },
+  correctedCodeByLang: {
+    javascript: `function buildList(values) {\n  let result = [];\n  for (const value of values) {\n    result.push(value);\n  }\n  return result;\n}\n\nconsole.log(buildList([1, 2, 3]));  // [1, 2, 3]`,
+    cpp: `#include <iostream>\n#include <vector>\n\nstd::vector<int> buildList(const std::vector<int>& values) {\n    std::vector<int> result;\n    for (int value : values) {\n        result.push_back(value);\n    }\n    return result;\n}\n\nint main() {\n    for (int x : buildList({1,2,3})) std::cout << x << " ";\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static List<Integer> buildList(int[] values) {\n        List<Integer> result = new ArrayList<>();\n        for (int value : values) {\n            result.add(value);\n        }\n        return result;\n    }\n    public static void main(String[] args) {\n        System.out.println(buildList(new int[]{1,2,3}));\n    }\n}`,
+  },
   fixes: [
     {
       id: "no-assign", correct: true,
@@ -381,21 +486,40 @@ const py8: TextFillBlankDef = {
     return numbers
 
 print(remove_evens([1, 2, 4, 3, 6]))  # expected: [1, 3]`,
+  codeBeforeByLang: {
+    javascript: `function removeEvens(numbers) {\n  for (const n of `,
+    cpp: `#include <iostream>\n#include <vector>\n\nvoid removeEvens(std::vector<int>& numbers) {\n    for (auto it = `,
+    java: `import java.util.*;\npublic class Main {\n    static void removeEvens(List<Integer> numbers) {\n        for (Iterator<Integer> it = `,
+  },
+  codeAfterByLang: {
+    javascript: `) {\n    if (n % 2 === 0) numbers.splice(numbers.indexOf(n), 1);\n  }\n  return numbers;\n}\nconsole.log(removeEvens([1, 2, 4, 3, 6]));  // expected: [1, 3]`,
+    cpp: `numbers.begin(); it != numbers.end(); ) {\n        if (*it % 2 == 0) it = numbers.erase(it);\n        else ++it;\n    }\n}\nint main() {\n    std::vector<int> v = {1,2,4,3,6};\n    removeEvens(v);\n    for (int x : v) std::cout << x << " ";\n}`,
+    java: `numbers.iterator(); it.hasNext(); ) {\n            int n = it.next();\n            if (n % 2 == 0) it.remove();\n        }\n    }\n    public static void main(String[] args) {\n        List<Integer> nums = new ArrayList<>(Arrays.asList(1,2,4,3,6));\n        removeEvens(nums);\n        System.out.println(nums);\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function removeEvens(numbers) {\n  return numbers.filter(n => n % 2 !== 0);\n}\nconsole.log(removeEvens([1, 2, 4, 3, 6]));  // [1, 3]`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <algorithm>\n\nvoid removeEvens(std::vector<int>& numbers) {\n    numbers.erase(std::remove_if(numbers.begin(), numbers.end(),\n        [](int n){ return n % 2 == 0; }), numbers.end());\n}\nint main() {\n    std::vector<int> v = {1,2,4,3,6};\n    removeEvens(v);\n    for (int x : v) std::cout << x << " ";\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static void removeEvens(List<Integer> numbers) {\n        numbers.removeIf(n -> n % 2 == 0);\n    }\n    public static void main(String[] args) {\n        List<Integer> nums = new ArrayList<>(Arrays.asList(1,2,4,3,6));\n        removeEvens(nums);\n        System.out.println(nums);\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "numbers[:]", correct: true,
+      valueByLang: { javascript: "[...numbers]", cpp: "numbers.begin()", java: "numbers.iterator()" },
       explanation: { en: "numbers[:] creates a shallow copy, so modifying numbers inside the loop doesn't disrupt the iteration.", ka: "numbers[:] ზედაპირულ ასლს ქმნის, ამიტომ მარყუჟში numbers-ის ცვლა იტერაციას არ ხელს არ უშლის." },
     },
     {
       id: "b", value: "numbers", correct: false,
+      valueByLang: { javascript: "numbers", cpp: "numbers.begin()", java: "numbers.listIterator()" },
       explanation: { en: "Iterating over numbers while removing from it causes skips — the classic mutation-during-iteration bug.", ka: "numbers-ზე იტერაცია მასზე წაშლის დროს გამოტოვებებს იწვევს — კლასიკური mutation-during-iteration შეცდომა." },
     },
     {
       id: "c", value: "list(numbers)", correct: true,
+      valueByLang: { javascript: "numbers.slice()", cpp: "numbers.cbegin()", java: "new ArrayList<>(numbers).iterator()" },
       explanation: { en: "list(numbers) also produces a copy and is equivalent to numbers[:]. Both are correct.", ka: "list(numbers) ასევე ასლს ქმნის და numbers[:]-ის ეკვივალენტია. ორივე სწორია." },
     },
     {
       id: "d", value: "reversed(numbers)", correct: false,
+      valueByLang: { javascript: "numbers.reverse()", cpp: "numbers.rbegin()", java: "Collections.reverse(numbers); numbers.iterator()" },
       explanation: { en: "reversed() iterates backwards — avoids the skip but is a workaround, not the idiomatic fix.", ka: "reversed() უკუმიმართულებით გადის — გამოტოვებას თავს არიდებს, მაგრამ ეს გამოსავალია, არა სტანდარტული გამოსწორება." },
     },
   ],
@@ -437,6 +561,17 @@ def increment():
 increment()
 increment()
 print(counter)  # 2`,
+  codeByLang: {
+    javascript: `let counter = 0;\n\nfunction increment() {\n  let counter = counter + 1;  // bug: shadows outer counter with let\n}\n\nincrement();\nincrement();\nconsole.log(counter);  // expected: 2`,
+    cpp: `#include <iostream>\n\nint counter = 0;\n\nvoid increment() {\n    int counter = counter + 1;  // bug: local shadows global, also uninitialized UB\n}\n\nint main() {\n    increment();\n    increment();\n    std::cout << counter << std::endl;  // expected: 2\n}`,
+    java: `public class Main {\n    static int counter = 0;\n\n    static void increment() {\n        int counter = counter + 1;  // bug: local shadows static field\n    }\n\n    public static void main(String[] args) {\n        increment();\n        increment();\n        System.out.println(counter);  // expected: 2\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "4", cpp: "6", java: "5" },
+  correctedCodeByLang: {
+    javascript: `let counter = 0;\n\nfunction increment() {\n  counter = counter + 1;\n}\n\nincrement();\nincrement();\nconsole.log(counter);  // 2`,
+    cpp: `#include <iostream>\n\nint counter = 0;\n\nvoid increment() {\n    counter = counter + 1;\n}\n\nint main() {\n    increment();\n    increment();\n    std::cout << counter << std::endl;  // 2\n}`,
+    java: `public class Main {\n    static int counter = 0;\n\n    static void increment() {\n        counter = counter + 1;\n    }\n\n    public static void main(String[] args) {\n        increment();\n        increment();\n        System.out.println(counter);  // 2\n    }\n}`,
+  },
   fixes: [
     {
       id: "global-kw", correct: true,
@@ -480,21 +615,40 @@ const py10: TextFillBlankDef = {
 
 print(page_count(10, 3))  # expected: 4
 print(page_count(9, 3))   # expected: 3`,
+  codeBeforeByLang: {
+    javascript: `function pageCount(total, perPage) {\n  return `,
+    cpp: `#include <iostream>\n#include <cmath>\n\nint pageCount(int total, int perPage) {\n    return `,
+    java: `public class Main {\n    static int pageCount(int total, int perPage) {\n        return `,
+  },
+  codeAfterByLang: {
+    javascript: `;\n}\nconsole.log(pageCount(10, 3));  // expected: 4\nconsole.log(pageCount(9, 3));   // expected: 3`,
+    cpp: `;\n}\nint main() {\n    std::cout << pageCount(10, 3) << std::endl;  // 4\n    std::cout << pageCount(9, 3) << std::endl;   // 3\n}`,
+    java: `;\n    }\n    public static void main(String[] args) {\n        System.out.println(pageCount(10, 3));  // 4\n        System.out.println(pageCount(9, 3));   // 3\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function pageCount(total, perPage) {\n  return Math.ceil(total / perPage);\n}\nconsole.log(pageCount(10, 3));  // 4\nconsole.log(pageCount(9, 3));   // 3`,
+    cpp: `#include <iostream>\n#include <cmath>\n\nint pageCount(int total, int perPage) {\n    return (int)std::ceil((double)total / perPage);\n}\nint main() {\n    std::cout << pageCount(10, 3) << std::endl;  // 4\n    std::cout << pageCount(9, 3) << std::endl;   // 3\n}`,
+    java: `public class Main {\n    static int pageCount(int total, int perPage) {\n        return (int)Math.ceil((double)total / perPage);\n    }\n    public static void main(String[] args) {\n        System.out.println(pageCount(10, 3));  // 4\n        System.out.println(pageCount(9, 3));   // 3\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "-(-total // per_page)", correct: true,
+      valueByLang: { javascript: "Math.ceil(total / perPage)", cpp: "(int)std::ceil((double)total / perPage)", java: "(int)Math.ceil((double)total / perPage)" },
       explanation: { en: "Double-negation ceiling: -(-10 // 3) = -(- 4) = 4. Works without importing math.", ka: "ორმაგი უარყოფის ceil: -(-10 // 3) = -(-4) = 4. math-ის გარეშე მუშაობს." },
     },
     {
       id: "b", value: "total // per_page", correct: false,
+      valueByLang: { javascript: "Math.floor(total / perPage)", cpp: "total / perPage", java: "total / perPage" },
       explanation: { en: "Floor division: 10 // 3 = 3, dropping the remainder. The last partial page is lost.", ka: "ქვედა გაყოფა: 10 // 3 = 3, ნაშთი იყრება. ბოლო ნაწილობრივი გვერდი იკარგება." },
     },
     {
       id: "c", value: "total / per_page", correct: false,
+      valueByLang: { javascript: "total / perPage", cpp: "(double)total / perPage", java: "(double)total / perPage" },
       explanation: { en: "Returns 3.333… — a float, not an integer page count.", ka: "3.333…-ს აბრუნებს — ათწილადი, არა მთელი გვერდების რაოდენობა." },
     },
     {
       id: "d", value: "(total + per_page) // per_page", correct: false,
+      valueByLang: { javascript: "Math.trunc((total + perPage) / perPage)", cpp: "(total + perPage) / perPage", java: "(total + perPage) / perPage" },
       explanation: { en: "This overshoots: (10+3)//3 = 4, coincidentally correct here, but (9+3)//3 = 4 instead of 3.", ka: "ეს ზედმეტია: (10+3)//3 = 4, შემთხვევით სწორია, მაგრამ (9+3)//3 = 4 3-ის ნაცვლად." },
     },
   ],
@@ -526,17 +680,35 @@ const py11: TextFillBlankDef = {
     return counter
 
 print(count_words(["cat", "dog", "cat"]))  # {'cat': 2, 'dog': 1}`,
+  codeBeforeByLang: {
+    javascript: `function countWords(words) {\n  const counter = {};\n  for (const word of words) {\n    counter[word] = `,
+    cpp: `#include <iostream>\n#include <map>\n#include <vector>\n#include <string>\n\nstd::map<std::string,int> countWords(const std::vector<std::string>& words) {\n    std::map<std::string,int> counter;\n    for (const auto& word : words) {\n        counter[word] = `,
+    java: `import java.util.*;\npublic class Main {\n    static Map<String,Integer> countWords(String[] words) {\n        Map<String,Integer> counter = new HashMap<>();\n        for (String word : words) {\n            counter.put(word, `,
+  },
+  codeAfterByLang: {
+    javascript: `(counter[word] || 0) + 1;\n  }\n  return counter;\n}\nconsole.log(countWords(["cat","dog","cat"]));`,
+    cpp: `counter.count(word) ? counter.at(word) : 0 + 1;\n    }\n    return counter;\n}\nint main() {\n    auto m = countWords({"cat","dog","cat"});\n    for (auto& p : m) std::cout << p.first << ":" << p.second << " ";\n}`,
+    java: `counter.getOrDefault(word, 0) + 1);\n        }\n        return counter;\n    }\n    public static void main(String[] args) {\n        System.out.println(countWords(new String[]{"cat","dog","cat"}));\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function countWords(words) {\n  const counter = {};\n  for (const word of words) {\n    counter[word] = (counter[word] ?? 0) + 1;\n  }\n  return counter;\n}\nconsole.log(countWords(["cat","dog","cat"]));`,
+    cpp: `#include <iostream>\n#include <map>\n#include <vector>\n#include <string>\n\nstd::map<std::string,int> countWords(const std::vector<std::string>& words) {\n    std::map<std::string,int> counter;\n    for (const auto& word : words) {\n        counter[word]++;  // operator[] default-inits to 0\n    }\n    return counter;\n}\nint main() {\n    auto m = countWords({"cat","dog","cat"});\n    for (auto& p : m) std::cout << p.first << ":" << p.second << " ";\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static Map<String,Integer> countWords(String[] words) {\n        Map<String,Integer> counter = new HashMap<>();\n        for (String word : words) {\n            counter.put(word, counter.getOrDefault(word, 0) + 1);\n        }\n        return counter;\n    }\n    public static void main(String[] args) {\n        System.out.println(countWords(new String[]{"cat","dog","cat"}));\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "counter.get(word, 0)", correct: true,
+      valueByLang: { javascript: "(counter[word] ?? 0)", cpp: "counter[word]++; //(use default)", java: "counter.getOrDefault(word, 0)" },
       explanation: { en: "counter.get(word, 0) returns 0 for an unknown word, so the first occurrence becomes 0+1=1.", ka: "counter.get(word, 0) უცნობი სიტყვისთვის 0-ს დაბრუნებს, ამიტომ პირველი გამოჩენა 0+1=1 ხდება." },
     },
     {
       id: "b", value: "counter[word]", correct: false,
+      valueByLang: { javascript: "counter[word]", cpp: "counter.at(word)", java: "counter.get(word)" },
       explanation: { en: "counter[word] raises KeyError on the first occurrence of any new word.", ka: "counter[word] ნებისმიერი ახალი სიტყვის პირველ გამოჩენაზე KeyError-ს გამოიძახებს." },
     },
     {
       id: "c", value: "counter.pop(word, 0)", correct: false,
+      valueByLang: { javascript: "delete counter[word] || 0", cpp: "counter.erase(word)", java: "counter.remove(word, 0)" },
       explanation: { en: "pop() removes the key and returns its value — the opposite of what you want here.", ka: "pop() გასაღებს შლის და მის მნიშვნელობას აბრუნებს — ზუსტად საპირისპიროა." },
     },
   ],
@@ -573,6 +745,17 @@ label_items(["apple", "banana", "cherry"])`,
         print(f"{i}: {item}")
 
 label_items(["apple", "banana", "cherry"])`,
+  codeByLang: {
+    javascript: `function labelItems(items) {\n  let idx = 0;\n  for (const item of items) {\n    console.log(idx + ": " + item);\n    idx++;\n  }\n}\n\nlabelItems(["apple", "banana", "cherry"]);`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nvoid labelItems(const std::vector<std::string>& items) {\n    int idx = 0;\n    for (const auto& item : items) {\n        std::cout << idx << ": " << item << "\\n";\n        idx++;\n    }\n}\n\nint main() {\n    labelItems({"apple", "banana", "cherry"});\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static void labelItems(String[] items) {\n        int idx = 0;\n        for (String item : items) {\n            System.out.println(idx + ": " + item);\n            idx++;\n        }\n    }\n    public static void main(String[] args) {\n        labelItems(new String[]{"apple","banana","cherry"});\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "2", cpp: "7", java: "4" },
+  correctedCodeByLang: {
+    javascript: `function labelItems(items) {\n  items.forEach((item, i) => {\n    console.log(i + ": " + item);\n  });\n}\n\nlabelItems(["apple", "banana", "cherry"]);`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nvoid labelItems(const std::vector<std::string>& items) {\n    for (size_t i = 0; i < items.size(); ++i) {\n        std::cout << i << ": " << items[i] << "\\n";\n    }\n}\n\nint main() {\n    labelItems({"apple", "banana", "cherry"});\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static void labelItems(String[] items) {\n        for (int i = 0; i < items.length; i++) {\n            System.out.println(i + ": " + items[i]);\n        }\n    }\n    public static void main(String[] args) {\n        labelItems(new String[]{"apple","banana","cherry"});\n    }\n}`,
+  },
   fixes: [
     {
       id: "enumerate", correct: true,
@@ -616,17 +799,35 @@ const py13: TextFillBlankDef = {
         print(f"{name}: ${price}")
 
 show_prices(["apple", "bread"], [1.2, 2.5])`,
+  codeBeforeByLang: {
+    javascript: `function showPrices(names, prices) {\n  for (`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nvoid showPrices(const std::vector<std::string>& names, const std::vector<double>& prices) {\n    for (`,
+    java: `import java.util.*;\npublic class Main {\n    static void showPrices(String[] names, double[] prices) {\n        for (`,
+  },
+  codeAfterByLang: {
+    javascript: `let i = 0; i < names.length; i++) {\n    console.log(names[i] + ": $" + prices[i]);\n  }\n}\nshowPrices(["apple","bread"], [1.2, 2.5]);`,
+    cpp: `size_t i = 0; i < names.size(); i++) {\n        std::cout << names[i] << ": $" << prices[i] << "\\n";\n    }\n}\nint main() { showPrices({"apple","bread"},{1.2,2.5}); }`,
+    java: `int i = 0; i < names.length; i++) {\n            System.out.println(names[i] + ": $" + prices[i]);\n        }\n    }\n    public static void main(String[] args) {\n        showPrices(new String[]{"apple","bread"}, new double[]{1.2,2.5});\n    }\n}`,
+  },
+  correctedCodeByLang: {
+    javascript: `function showPrices(names, prices) {\n  names.forEach((name, i) => {\n    console.log(name + ": $" + prices[i]);\n  });\n}\nshowPrices(["apple","bread"], [1.2, 2.5]);`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nvoid showPrices(const std::vector<std::string>& names, const std::vector<double>& prices) {\n    for (size_t i = 0; i < names.size(); ++i) {\n        std::cout << names[i] << ": $" << prices[i] << "\\n";\n    }\n}\nint main() { showPrices({"apple","bread"},{1.2,2.5}); }`,
+    java: `import java.util.*;\npublic class Main {\n    static void showPrices(String[] names, double[] prices) {\n        for (int i = 0; i < names.length; i++) {\n            System.out.println(names[i] + ": $" + prices[i]);\n        }\n    }\n    public static void main(String[] args) {\n        showPrices(new String[]{"apple","bread"}, new double[]{1.2,2.5});\n    }\n}`,
+  },
   options: [
     {
       id: "a", value: "name, price in zip(names, prices)", correct: true,
+      valueByLang: { javascript: "let i = 0; i < names.length; i++", cpp: "size_t i = 0; i < names.size(); i++", java: "int i = 0; i < names.length; i++" },
       explanation: { en: "zip pairs each element from both lists, yielding (name, price) tuples cleanly.", ka: "zip ორი სიის თითოეულ ელემენტს აწყვილებს, (სახელი, ფასი) კორტეჟებს სუფთად გასცემს." },
     },
     {
       id: "b", value: "i in range(len(names))", correct: false,
+      valueByLang: { javascript: "const name of names", cpp: "const auto& name : names", java: "String name : names" },
       explanation: { en: "range(len()) works but requires names[i] and prices[i] — verbose and error-prone with mismatched lengths.", ka: "range(len()) მუშაობს, მაგრამ names[i] და prices[i] სჭირდება — ვრცელი და სხვადასხვა სიგრძეებთან შეცდომებისადმი მიდრეკილი." },
     },
     {
       id: "c", value: "name, price in enumerate(names)", correct: false,
+      valueByLang: { javascript: "let [name, price] of Object.entries(names)", cpp: "auto [name, price] : names", java: "var entry : names" },
       explanation: { en: "enumerate yields (index, name) — price is not accessible that way.", ka: "enumerate (ინდექსი, სახელი)-ს გასცემს — price ამ გზით ხელმიუწვდომელია." },
     },
   ],
@@ -668,6 +869,17 @@ def read():
 
 while chunk := read():
     print("Processing:", chunk)`,
+  codeByLang: {
+    javascript: `// JS equivalent: read-check-use pattern with repeated call\nconst data = ["chunk1", "chunk2", "chunk3", ""];\nlet idx = 0;\nconst read = () => data[idx++] ?? "";\n\nlet chunk = read();  // priming read\nwhile (chunk) {\n    console.log("Processing:", chunk);\n    chunk = read();  // repeated — easy to forget\n}`,
+    cpp: `#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<std::string> data = {"chunk1","chunk2","chunk3",""};\n    size_t idx = 0;\n    auto readChunk = [&]() { return idx < data.size() ? data[idx++] : ""; };\n\n    std::string chunk = readChunk();  // priming read\n    while (!chunk.empty()) {\n        std::cout << "Processing: " << chunk << "\\n";\n        chunk = readChunk();  // repeated — easy to forget\n    }\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static String[] data = {"chunk1","chunk2","chunk3",""};\n    static int idx = 0;\n    static String readChunk() { return idx < data.length ? data[idx++] : ""; }\n\n    public static void main(String[] args) {\n        String chunk = readChunk();  // priming read\n        while (!chunk.isEmpty()) {\n            System.out.println("Processing: " + chunk);\n            chunk = readChunk();  // repeated — easy to forget\n        }\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "7", cpp: "11", java: "10" },
+  correctedCodeByLang: {
+    javascript: `const data = ["chunk1", "chunk2", "chunk3", ""];\nlet idx = 0;\nconst read = () => data[idx++] ?? "";\n\nlet chunk;\nwhile ((chunk = read())) {\n    console.log("Processing:", chunk);\n}`,
+    cpp: `#include <iostream>\n#include <string>\n#include <vector>\n\nint main() {\n    std::vector<std::string> data = {"chunk1","chunk2","chunk3",""};\n    size_t idx = 0;\n    auto readChunk = [&]() { return idx < data.size() ? data[idx++] : ""; };\n\n    std::string chunk;\n    while (!(chunk = readChunk()).empty()) {\n        std::cout << "Processing: " << chunk << "\\n";\n    }\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static String[] data = {"chunk1","chunk2","chunk3",""};\n    static int idx = 0;\n    static String readChunk() { return idx < data.length ? data[idx++] : ""; }\n\n    public static void main(String[] args) {\n        String chunk;\n        while (!(chunk = readChunk()).isEmpty()) {\n            System.out.println("Processing: " + chunk);\n        }\n    }\n}`,
+  },
   fixes: [
     {
       id: "walrus", correct: true,
@@ -725,6 +937,17 @@ team_b = clone_roster(team_a)
 team_b["players"].append("Charlie")
 print(team_a["players"])  # ['Alice', 'Bob']
 print(team_b["players"])  # ['Alice', 'Bob', 'Charlie']`,
+  codeByLang: {
+    javascript: `function cloneRoster(roster) {\n  return Object.assign({}, roster);  // shallow copy — arrays still shared\n}\n\nconst teamA = { players: ["Alice", "Bob"] };\nconst teamB = cloneRoster(teamA);\nteamB.players.push("Charlie");\nconsole.log(teamA.players);  // expected ['Alice','Bob'], got ['Alice','Bob','Charlie']`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nstruct Roster { std::vector<std::string> players; };\n\nRoster cloneRoster(const Roster& r) {\n    return r;  // default copy — but if players were a pointer, it would be shallow\n}\n\nint main() {\n    Roster teamA; teamA.players = {"Alice","Bob"};\n    Roster teamB = cloneRoster(teamA);\n    teamB.players.push_back("Charlie");\n    for (auto& p : teamA.players) std::cout << p << " ";  // Alice Bob (correct: value copy)\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static Map<String, List<String>> cloneRoster(Map<String, List<String>> roster) {\n        return new HashMap<>(roster);  // shallow copy — inner list still shared\n    }\n\n    public static void main(String[] args) {\n        Map<String, List<String>> teamA = new HashMap<>();\n        teamA.put("players", new ArrayList<>(Arrays.asList("Alice", "Bob")));\n        Map<String, List<String>> teamB = cloneRoster(teamA);\n        teamB.get("players").add("Charlie");\n        System.out.println(teamA.get("players"));  // expected [Alice, Bob], got [Alice, Bob, Charlie]\n    }\n}`,
+  },
+  bugLineByLang: { javascript: "2", cpp: "8", java: "4" },
+  correctedCodeByLang: {
+    javascript: `function cloneRoster(roster) {\n  return JSON.parse(JSON.stringify(roster));  // deep clone\n}\n\nconst teamA = { players: ["Alice", "Bob"] };\nconst teamB = cloneRoster(teamA);\nteamB.players.push("Charlie");\nconsole.log(teamA.players);  // ['Alice', 'Bob']\nconsole.log(teamB.players);  // ['Alice', 'Bob', 'Charlie']`,
+    cpp: `#include <iostream>\n#include <vector>\n#include <string>\n\nstruct Roster { std::vector<std::string> players; };\n\n// C++ structs copy by value — vector members are deep-copied automatically\nRoster cloneRoster(const Roster& r) {\n    return r;  // safe value copy\n}\n\nint main() {\n    Roster teamA; teamA.players = {"Alice","Bob"};\n    Roster teamB = cloneRoster(teamA);\n    teamB.players.push_back("Charlie");\n    for (auto& p : teamA.players) std::cout << p << " ";  // Alice Bob\n    std::cout << "\\n";\n    for (auto& p : teamB.players) std::cout << p << " ";  // Alice Bob Charlie\n}`,
+    java: `import java.util.*;\npublic class Main {\n    static Map<String, List<String>> cloneRoster(Map<String, List<String>> roster) {\n        Map<String, List<String>> copy = new HashMap<>();\n        for (Map.Entry<String, List<String>> e : roster.entrySet()) {\n            copy.put(e.getKey(), new ArrayList<>(e.getValue()));\n        }\n        return copy;\n    }\n\n    public static void main(String[] args) {\n        Map<String, List<String>> teamA = new HashMap<>();\n        teamA.put("players", new ArrayList<>(Arrays.asList("Alice", "Bob")));\n        Map<String, List<String>> teamB = cloneRoster(teamA);\n        teamB.get("players").add("Charlie");\n        System.out.println(teamA.get("players"));  // [Alice, Bob]\n        System.out.println(teamB.get("players"));  // [Alice, Bob, Charlie]\n    }\n}`,
+  },
   fixes: [
     {
       id: "deepcopy", correct: true,

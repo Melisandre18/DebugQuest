@@ -111,7 +111,7 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
               id="auth-username"
               type="text"
               autoComplete="username"
-              placeholder="your_username"
+              placeholder="username"
               value={username}
               onChange={e => handleUsernameChange(e.target.value)}
               required
