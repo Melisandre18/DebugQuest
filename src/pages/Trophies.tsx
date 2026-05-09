@@ -22,7 +22,8 @@ import {
 import { ACHIEVEMENTS, computePerformance } from "@/lib/progress";
 import { useProgress } from "@/contexts/ProgressContext";
 import { usePuzzleCounts } from "@/lib/puzzle-service";
-import { LANGUAGES, type Language } from "@/lib/puzzle-engine";
+import { LANGUAGES, type Language, type Difficulty } from "@/lib/puzzle-engine";
+import { DifficultyBadge } from "@/components/DifficultyMeta";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
 
@@ -314,6 +315,12 @@ export default function Trophies() {
                           ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                           : <XCircle className="w-4 h-4 text-destructive shrink-0" />}
                         <span className="text-xs text-muted-foreground truncate">{r.puzzleTitle ?? r.puzzleId}</span>
+                        {r.difficulty && (
+                          <DifficultyBadge
+                            d={r.difficulty as Difficulty}
+                            className="shrink-0 text-[10px] px-1.5 py-0"
+                          />
+                        )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
                         <span>{(r.timeMs / 1000).toFixed(1)}s</span>
