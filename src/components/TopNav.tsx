@@ -148,7 +148,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
           </Link>
 
           {/* Feedback */}
-          <FeedbackDialog />
+          <FeedbackDialog triggerLabel={t.nav.feedback} />
           <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
 
           {backTo && (
@@ -175,7 +175,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
             </div>
           ) : (
             <Button variant="outline" size="sm" className="hidden sm:inline-flex" onClick={() => setAuthOpen(true)}>
-              Sign in
+              {t.nav.signIn}
             </Button>
           )}
 

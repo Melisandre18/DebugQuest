@@ -10,6 +10,7 @@ export interface Translations {
     sandbox: string;
     back: string;
     feedback: string;
+    signIn: string;
   };
 
   landing: {
@@ -192,6 +193,7 @@ export const translations: Record<Language, Translations> = {
       sandbox: "Editor",
       back: "Back",
       feedback: "Feedback",
+      signIn: "Sign in",
     },
 
     landing: {
@@ -400,11 +402,12 @@ export const translations: Record<Language, Translations> = {
       home: "მთავარი",
       howItWorks: "როგორ მუშაობს",
       modes: "რეჟიმები",
-      trophies: "ტროფეები",
+      trophies: "მიღწევები",
       play: "თამაში",
-      sandbox: "რედაქტორი",
+      sandbox: "ედიტორი",
       back: "უკან",
       feedback: "უკუკავშირი",
+      signIn: "შესვლა",
     },
 
     landing: {
