@@ -1,6 +1,7 @@
 import { Difficulty } from "@/lib/puzzle-engine";
 import { Sparkles, Zap, Flame, Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export const DIFFICULTY_META: Record<Difficulty, {
   title: string; tagline: string; icon: any; color: string; ring: string; chip: string;
@@ -34,10 +35,11 @@ export const DIFFICULTY_META: Record<Difficulty, {
 
 export function DifficultyBadge({ d, className }: { d: Difficulty; className?: string }) {
   const m = DIFFICULTY_META[d];
+  const { t } = useLanguage();
   const Icon = m.icon;
   return (
     <span className={cn("inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md border text-xs font-medium", m.chip, className)}>
-      <Icon className="w-3 h-3" /> {m.title}
+      <Icon className="w-3 h-3" /> {t.difficulty[d].title}
     </span>
   );
 }

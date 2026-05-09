@@ -41,6 +41,7 @@ export default function Modes() {
         <div className="mt-10 grid md:grid-cols-2 gap-5">
           {modes.map((d) => {
             const m = DIFFICULTY_META[d];
+            const dt = t.difficulty[d];
             const Icon = m.icon;
             return (
               <button
@@ -53,14 +54,14 @@ export default function Modes() {
                   <div className={`w-12 h-12 rounded-xl inline-flex items-center justify-center border ${m.chip}`}>
                     <Icon className="w-6 h-6" />
                   </div>
-                  <span className={`text-xs font-mono uppercase tracking-wider ${m.color}`}>{m.title}</span>
+                  <span className={`text-xs font-mono uppercase tracking-wider ${m.color}`}>{dt.title}</span>
                 </div>
-                <h2 className="font-display text-2xl font-bold mt-4">{m.tagline}</h2>
+                <h2 className="font-display text-2xl font-bold mt-4">{dt.tagline}</h2>
                 <ul className="mt-4 space-y-1.5 text-sm text-muted-foreground">
-                  {m.bullets.map(b => <li key={b} className="flex gap-2"><span className={m.color}>›</span>{b}</li>)}
+                  {dt.bullets.map(b => <li key={b} className="flex gap-2"><span className={m.color}>›</span>{b}</li>)}
                 </ul>
                 <div className="mt-6 inline-flex items-center text-sm font-medium text-primary-glow">
-                  Continue <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  {t.modes.continue} <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
                 </div>
               </button>
             );

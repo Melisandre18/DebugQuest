@@ -114,6 +114,7 @@ export default function Landing() {
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           {modes.map((d, i) => {
             const m = DIFFICULTY_META[d];
+            const dt = t.difficulty[d];
             const Icon = m.icon;
             return (
               <motion.div
@@ -130,10 +131,10 @@ export default function Landing() {
                   <div className={`w-10 h-10 rounded-lg inline-flex items-center justify-center border ${m.chip} mb-4`}>
                     <Icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-display font-semibold text-lg">{m.title}</h3>
-                  <p className="text-sm text-muted-foreground mb-4">{m.tagline}</p>
+                  <h3 className="font-display font-semibold text-lg">{dt.title}</h3>
+                  <p className="text-sm text-muted-foreground mb-4">{dt.tagline}</p>
                   <ul className="text-xs text-muted-foreground space-y-1">
-                    {m.bullets.map(b => <li key={b} className="flex gap-2"><span className={m.color}>›</span>{b}</li>)}
+                    {dt.bullets.map(b => <li key={b} className="flex gap-2"><span className={m.color}>›</span>{b}</li>)}
                   </ul>
                   <div className="mt-5 inline-flex items-center text-sm text-primary-glow opacity-80 group-hover:opacity-100 transition-opacity">
                     {t.landingUI.modes} <ArrowRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />
@@ -161,20 +162,18 @@ export default function Landing() {
                 {t.landingUI.builtFor}
               </h2>
               <p className="mt-4 text-muted-foreground">
-                Each puzzle exposes one of the foundational mental models — control flow,
-                execution state, debugging strategy. The interface visualises what's usually
-                invisible, so beginners build intuition the way experienced programmers do.
+                {t.landingUI.conceptsDesc}
               </p>
               <Button asChild size="lg" variant="hero" className="mt-6">
-                <Link to="/modes">Try it now <ArrowRight className="ml-1 w-4 h-4" /></Link>
+                <Link to="/modes">{t.landingUI.tryItNow} <ArrowRight className="ml-1 w-4 h-4" /></Link>
               </Button>
             </div>
             <div className="grid gap-3">
-              {[
-                ["Control Flow Graphs", "Highlighted paths show which branches actually run."],
-                ["Execution Models", "Step-by-step variable snapshots make abstract state concrete."],
-                ["Debugging Strategy", "Trace → Isolate → Fix — the same loop pros use."],
-              ].map(([title, desc], i) => (
+              {([
+                t.landingUI.concepts.controlFlow,
+                t.landingUI.concepts.executionModels,
+                t.landingUI.concepts.debuggingStrategy,
+              ] as { title: string; desc: string }[]).map(({ title, desc }, i) => (
                 <motion.div
                   key={title}
                   initial={{ opacity: 0, x: 16 }}

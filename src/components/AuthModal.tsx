@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -14,21 +15,22 @@ interface Props {
 
 const USERNAME_RE = /^[a-zA-Z0-9_]+$/;
 
-function validateUsername(value: string): string | null {
-  if (value.length < 3)          return "At least 3 characters";
-  if (value.length > 20)         return "At most 20 characters";
-  if (!USERNAME_RE.test(value))  return "Letters, numbers, and underscores only";
-  return null;
-}
-
 export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: Props) {
   const { register, login } = useAuth();
-  const [tab, setTab]               = useState<"login" | "register">(defaultTab);
-  const [username, setUsername]     = useState("");
-  const [password, setPassword]     = useState("");
+  const { t } = useLanguage();
+
+  function validateUsername(value: string): string | null {
+    if (value.length < 3)          return t.auth.errorUsernameMin;
+    if (value.length > 20)         return t.auth.errorUsernameMax;
+    if (!USERNAME_RE.test(value))  return t.auth.errorUsernameChars;
+    return null;
+  }
+  const [tab, setTab]                     = useState<"login" | "register">(defaultTab);
+  const [username, setUsername]           = useState("");
+  const [password, setPassword]           = useState("");
   const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [error, setError]           = useState<string | null>(null);
-  const [loading, setLoading]       = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+  const [loading, setLoading]             = useState(false);
 
   function handleUsernameChange(value: string) {
     setUsername(value);
@@ -72,7 +74,7 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-sm">
         <DialogHeader>
-          <DialogTitle>{tab === "login" ? "Sign in" : "Create account"}</DialogTitle>
+          <DialogTitle>{tab === "login" ? t.auth.signIn : t.auth.createAccount}</DialogTitle>
         </DialogHeader>
 
         {/* Tab toggle */}
@@ -87,7 +89,7 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
                 : "text-muted-foreground hover:bg-secondary/60"
             )}
           >
-            Sign in
+            {t.auth.signIn}
           </button>
           <button
             type="button"
@@ -99,14 +101,14 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
                 : "text-muted-foreground hover:bg-secondary/60"
             )}
           >
-            Register
+            {t.auth.register}
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 mt-1">
           {/* Username */}
           <div className="space-y-1.5">
-            <Label htmlFor="auth-username">Username</Label>
+            <Label htmlFor="auth-username">{t.auth.username}</Label>
             <Input
               id="auth-username"
               type="text"
@@ -120,14 +122,14 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
             />
             {tab === "register" && (
               <p className={cn("text-xs", usernameError ? "text-destructive" : "text-muted-foreground")}>
-                {usernameError ?? "3–20 characters · letters, numbers, underscores"}
+                {usernameError ?? t.auth.usernameHint}
               </p>
             )}
           </div>
 
           {/* Password */}
           <div className="space-y-1.5">
-            <Label htmlFor="auth-password">Password</Label>
+            <Label htmlFor="auth-password">{t.auth.password}</Label>
             <Input
               id="auth-password"
               type="password"
@@ -139,7 +141,7 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
               minLength={6}
             />
             {tab === "register" && (
-              <p className="text-xs text-muted-foreground">At least 6 characters</p>
+              <p className="text-xs text-muted-foreground">{t.auth.passwordHint}</p>
             )}
           </div>
 
@@ -151,7 +153,7 @@ export default function AuthModal({ open, onOpenChange, defaultTab = "login" }: 
             className="w-full"
             disabled={loading || (tab === "register" && !!usernameError)}
           >
-            {loading ? "Please wait…" : tab === "login" ? "Sign in" : "Create account"}
+            {loading ? t.auth.pleaseWait : tab === "login" ? t.auth.signIn : t.auth.createAccount}
           </Button>
         </form>
       </DialogContent>

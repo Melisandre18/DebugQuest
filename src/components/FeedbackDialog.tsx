@@ -47,7 +47,7 @@ export default function FeedbackDialog({
 
   function handleSubmit() {
     if (message.trim().length < 3) {
-      toast.error("Please write a few words so we can act on it.");
+      toast.error(t.feedback.writeMoreWords);
       return;
     }
 
@@ -70,8 +70,8 @@ export default function FeedbackDialog({
     // Close and confirm right away — don't make the user wait for the email
     setOpen(false);
     reset();
-    toast.success("Thanks for your feedback!", {
-      description: "Your message has been sent.",
+    toast.success(t.feedback.thanksFeedback, {
+      description: t.feedback.messageSent,
     });
   }
 
@@ -100,22 +100,22 @@ export default function FeedbackDialog({
           {/* Optional sender info */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Name (optional)</label>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">{t.feedback.nameOptional}</label>
               <Input
                 value={senderName}
                 onChange={(e) => setSenderName(e.target.value)}
-                placeholder="Your name"
+                placeholder={t.feedback.yourNamePlaceholder}
                 className="mt-1.5 h-8 text-sm"
                 maxLength={80}
               />
             </div>
             <div>
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Email (optional)</label>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">{t.feedback.emailOptional}</label>
               <Input
                 type="email"
                 value={senderEmail}
                 onChange={(e) => setSenderEmail(e.target.value)}
-                placeholder="for a reply"
+                placeholder={t.feedback.replyPlaceholder}
                 className="mt-1.5 h-8 text-sm"
                 maxLength={120}
               />
@@ -145,14 +145,14 @@ export default function FeedbackDialog({
 
           {/* Category */}
           <div>
-            <label className="text-xs uppercase tracking-wider text-muted-foreground">Category</label>
+            <label className="text-xs uppercase tracking-wider text-muted-foreground">{t.feedback.category}</label>
             <Select value={category} onValueChange={setCategory}>
               <SelectTrigger className="mt-1.5">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
                 {FEEDBACK_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>{t.feedback.categories[c]}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -161,7 +161,7 @@ export default function FeedbackDialog({
           {/* Message */}
           <div>
             <label className="text-xs uppercase tracking-wider text-muted-foreground">
-              {context === "puzzle" ? "Your thoughts on this puzzle" : "What's on your mind?"}
+              {context === "puzzle" ? t.feedback.puzzleThoughts : t.feedback.whatsOnMind}
             </label>
             <Textarea
               value={message}

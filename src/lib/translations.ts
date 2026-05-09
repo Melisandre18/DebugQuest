@@ -151,6 +151,12 @@ export interface Translations {
   landingUI: {
     features: string; builtFor: string; modes: string; fourWays: string;
     whyDebugging: string; difficultyModes: string; languages: string; noSignup: string;
+    conceptsDesc: string; tryItNow: string;
+    concepts: {
+      controlFlow: { title: string; desc: string };
+      executionModels: { title: string; desc: string };
+      debuggingStrategy: { title: string; desc: string };
+    };
   };
 
   modesUI: {
@@ -169,6 +175,18 @@ export interface Translations {
   feedback: {
     feedbackOnPuzzle: string; sendFeedback: string; feedbackDesc: string;
     puzzleQuestion: string; generalQuestion: string;
+    nameOptional: string; emailOptional: string;
+    yourNamePlaceholder: string; replyPlaceholder: string;
+    category: string; puzzleThoughts: string; whatsOnMind: string;
+    writeMoreWords: string; thanksFeedback: string; messageSent: string;
+    categories: Record<"Bug" | "Idea" | "Difficulty" | "Praise" | "Other", string>;
+  };
+
+  auth: {
+    signIn: string; createAccount: string; register: string;
+    username: string; password: string;
+    usernameHint: string; passwordHint: string; pleaseWait: string;
+    errorUsernameMin: string; errorUsernameMax: string; errorUsernameChars: string;
   };
 
   gameUI: {
@@ -201,12 +219,12 @@ export const translations: Record<Language, Translations> = {
         title: "Learn programming by fixing bugs",
         subtitle: "Don't write code, fix it.",
         description:
-          "An interactive debugging game that builds real computational thinking. Master Python, JavaScript, C++, and Java through hands-on problem solving.",
+          "Master Python, JavaScript, C++ and Java through problem solving.",
         cta: "Start Playing",
       },
       features: {
-        learnFirst:    { title: "Learn first, then fix", desc: "Every puzzle opens with a focused 60-second lesson on the underlying concept — then you apply it." },
-        realPrograms:  { title: "Real broken programs",  desc: "No syntax drills. Every level is a working program with a real, traceable defect." },
+        learnFirst:    { title: "Learn first, then fix", desc: "Every puzzle opens with a 60 second lesson on the underlying concept" },
+        realPrograms:  { title: "Real broken programs",  desc: "No syntax drills. Every level is a working program with a real, traceable bug." },
         blocksAndCode: { title: "Blocks ↔ code, in sync", desc: "Toggle visual blocks or read the same program in Python, JavaScript, C++ or Java." },
         execution:     { title: "Step-through execution", desc: "Run, pause and step. Watch variables and control flow change line by line." },
         hints:         { title: "Tiered hints",           desc: "From a gentle nudge to a full explanation — only when you ask." },
@@ -322,10 +340,10 @@ export const translations: Record<Language, Translations> = {
     },
 
     difficulty: {
-      easy:     { title: "Easy",     tagline: "Foundations",      bullets: ["Core concepts", "Guided hints", "Blocks only"] },
-      medium:   { title: "Medium",   tagline: "Intermediate",     bullets: ["Real patterns", "Fewer hints", "Blocks & code"] },
-      hard:     { title: "Hard",     tagline: "Advanced",         bullets: ["Tough bugs", "Minimal hints", "Code only"] },
-      adaptive: { title: "Adaptive", tagline: "Smart difficulty", bullets: ["Learns from you", "Auto-adjusted"] },
+      easy:     { title: "Easy",     tagline: "First steps in debugging",           bullets: ["Sequence & basic if-statements", "Strong, friendly hints", "Visual block focus"] },
+      medium:   { title: "Medium",   tagline: "Loops and variables enter the chat", bullets: ["Loops, off-by-one, infinite loops", "Limited hint tiers", "Code + blocks side by side"] },
+      hard:     { title: "Hard",     tagline: "Real-world tangled logic",            bullets: ["Nested conditions, multiple variables", "Minimal hints", "Subtle correctness bugs"] },
+      adaptive: { title: "Adaptive", tagline: "The platform tunes itself to you",   bullets: ["Tracks accuracy, time, hints", "Scales up when you're confident", "Eases back when you struggle"] },
     },
 
     trophies: {
@@ -356,6 +374,13 @@ export const translations: Record<Language, Translations> = {
       features: "Features", builtFor: "Built for understanding.", modes: "Modes",
       fourWays: "Four ways to play", whyDebugging: "Why debugging?",
       difficultyModes: "4 modes", languages: "Python · JS · C++ · Java", noSignup: "No signup required",
+      conceptsDesc: "Each puzzle exposes one of the foundational mental models — control flow, execution state, debugging strategy. The interface visualises what's usually invisible, so beginners build intuition the way experienced programmers do.",
+      tryItNow: "Try it now",
+      concepts: {
+        controlFlow:       { title: "Control Flow Graphs",  desc: "Highlighted paths show which branches actually run." },
+        executionModels:   { title: "Execution Models",     desc: "Step-by-step variable snapshots make abstract state concrete." },
+        debuggingStrategy: { title: "Debugging Strategy",   desc: "Trace → Isolate → Fix — the same loop pros use." },
+      },
     },
 
     modesUI: {
@@ -380,6 +405,31 @@ export const translations: Record<Language, Translations> = {
       feedbackDesc: "Share your thoughts.",
       puzzleQuestion: "Was it clear?",
       generalQuestion: "Any feedback?",
+      nameOptional: "Name (optional)",
+      emailOptional: "Email (optional)",
+      yourNamePlaceholder: "Your name",
+      replyPlaceholder: "for a reply",
+      category: "Category",
+      puzzleThoughts: "Your thoughts on this puzzle",
+      whatsOnMind: "What's on your mind?",
+      writeMoreWords: "Please write a few words so we can act on it.",
+      thanksFeedback: "Thanks for your feedback!",
+      messageSent: "Your message has been sent.",
+      categories: { Bug: "Bug", Idea: "Idea", Difficulty: "Difficulty", Praise: "Praise", Other: "Other" },
+    },
+
+    auth: {
+      signIn: "Sign in",
+      createAccount: "Create account",
+      register: "Register",
+      username: "Username",
+      password: "Password",
+      usernameHint: "3–20 characters · letters, numbers, underscores",
+      passwordHint: "At least 6 characters",
+      pleaseWait: "Please wait…",
+      errorUsernameMin: "At least 3 characters",
+      errorUsernameMax: "At most 20 characters",
+      errorUsernameChars: "Letters, numbers, and underscores only",
     },
 
     gameUI: {
@@ -413,31 +463,31 @@ export const translations: Record<Language, Translations> = {
     landing: {
       hero: {
         title: "ისწავლე პროგრამირება შეცდომების გამოსწორებით",
-        subtitle: "ნუ დაწერ კოდს — გამოასწორე იგი.",
+        subtitle: "ნუ დაწერ კოდს, შეასწორე ის",
         description:
-          "ინტერაქტიული დებაგინგის თამაში, რომელიც ავითარებს ნამდვილ გამოთვლით აზროვნებას. დაეუფლე Python-ს, JavaScript-ს, C++-ს და Java-ს პრაქტიკული პრობლემების გადაჭრით.",
+          "დაეუფლე Python-ს, JavaScript-ს, C++-ს და Java-ს პრაქტიკული პრობლემების გადაჭრით.",
         cta: "თამაშის დაწყება",
       },
       features: {
-        learnFirst:    { title: "ჯერ ისწავლე, შემდეგ გამოასწორე", desc: "ყოველი ამოცანა იხსნება 60-წამიანი გაკვეთილით ძირითადი კონცეფციის შესახებ — შემდეგ ახარება." },
-        realPrograms:  { title: "ნამდვილი გატეხილი პროგრამები",   desc: "სინტაქსური სავარჯიშოები არ არის. ყოველი დონე სამუშაო პროგრამაა ნამდვილი, თვალსაჩინო დეფექტით." },
-        blocksAndCode: { title: "ბლოკები ↔ კოდი, სინქრონულად",   desc: "გადართე ვიზუალური ბლოკები ან წაიკითხე იგივე პროგრამა Python-ში, JavaScript-ში, C++-ში ან Java-ში." },
-        execution:     { title: "ნაბიჯ-ნაბიჯ შესრულება",          desc: "გაუშვი, შეაჩერე და ნაბიჯი გადადგი. დააკვირდი, როგორ იცვლება ცვლადები სტრიქონ-სტრიქონ." },
-        hints:         { title: "დახარისხებული მინიშნებები",        desc: "მსუბუქი გამიჯვნიდან სრულ განმარტებამდე — მხოლოდ მოთხოვნის შემთხვევაში." },
-        adaptive:      { title: "ადაპტური სირთულე",                desc: "სისტემა ადევნებს თვალს სიზუსტეს, დროსა და გამოყენებულ მინიშნებებს და ამოარჩევს შემდეგ ამოცანას." },
+        learnFirst:    { title: "ჯერ ისწავლე, შემდეგ გამოასწორე", desc: "ყოველი ამოცანა იწყება 60 წამიანი გაკვეთილით ძირითადი საკითხის შესახებ" },
+        realPrograms:  { title: "მცდარი პროგრამები",   desc: "სინტაქსური სავარჯიშოები არ არის. ყოველი დონეზე არის პროგრამა თვალსაჩინო შეცდნომით" },
+        blocksAndCode: { title: "ბლოკები ↔ კოდი, სინქრონში",   desc: "გადააწყე ბლოკები ან გაუშვი იგივე პროგრამა Python-ში, JavaScript-ში, C++-ში ან Java-ში" },
+        execution:     { title: "ნაბიჯ-ნაბიჯ შესრულება",          desc: "გაუშვი, შეაჩერე და დააკვირდი ყოველ ნაბიჯს. დააკვირდი, როგორ იცვლება ცვლადები ყოველი ხაზის შესაბამისად" },
+        hints:         { title: "დაფარული მინიშნებები",        desc: "მარტივი მინიშნებიდან სრულ განმარტებამდე, მხოლოდ მოთხოვნის შემთხვევაში" },
+        adaptive:      { title: "შესაბამისი სირთულე",                desc: "სისტემა ითვლის სიზუსტეს, დროსა და გამოყენებულ მინიშნებებს და მათ შესაბამისად არჩევს შემდეგ ამოცანას" },
       },
       howItWorks: {
         title: "როგორ მუშაობს",
-        subtitle: "სასწავლო მარყუჟი, არა ლექცია.",
-        description: "ყოველი ამოცანა მიჰყვება იმავე სამუშაო პროცედურას, რასაც ნამდვილი პროგრამისტები იყენებენ.",
-        steps: { read: "წაიკითხე", run: "გაუშვი", hypothesise: "ჰიპოთეზა", test: "ტესტი", reflect: "გააანალიზე", levelUp: "ასწიე დონე" },
+        subtitle: "სასწავლო ციკლი და არა ლექცია",
+        description: "ყოველი ამოცანა მიჰყვება იმავე სამუშაო პროცესს, რასაც ნამდვილი პროგრამისტები იყენებენ",
+        steps: { read: "წაიკითხე", run: "გაუშვი", hypothesise: "ჰიპოთეზა", test: "დატესტე", reflect: "გააანალიზე", levelUp: "გადადი შემდეგ დონეზე" },
         descriptions: {
-          read: "გაიგე, რა უნდა გააკეთოს პროგრამამ.",
-          run: "გაუშვი და დააკვირდი ქცევას.",
-          hypothesise: "შეარჩიე შესაძლო გამოსწორება.",
-          test: "გამოიყენე და ხელახლა გაუშვი.",
-          reflect: "წაიკითხე განმარტება.",
-          levelUp: "გადადი უფრო რთულ ამოცანაზე.",
+          read: "გაიგე, რა უნდა გააკეთოს პროგრამამ",
+          run: "გაუშვი და დააკვირდი ქცევას",
+          hypothesise: "შეარჩიე შესაძლო გამოსწორება",
+          test: "შეასწორე და ხელახლა გაუშვი",
+          reflect: "წაიკითხე განმარტება",
+          levelUp: "გადადი უფრო რთულ ამოცანაზე",
         },
       },
       modes:    { title: "ოთხი სათამაშო გზა", subtitle: "შეარჩიე რეჟიმი ან ნება მიეც ადაპტურს.", description: "ყოველი რეჟიმი სირთულეს ზრდის.", start: "დაწყება" },
@@ -536,21 +586,21 @@ export const translations: Record<Language, Translations> = {
     },
 
     difficulty: {
-      easy:     { title: "მარტივი",  tagline: "საფუძვლები",    bullets: ["ძირითადი კონცეფციები", "კონკრეტული მინიშნებები", "მხოლოდ ბლოკები"] },
-      medium:   { title: "საშუალო", tagline: "შუალედური",     bullets: ["ნამდვილი ნიმუშები", "ნაკლები მინიშნება", "ბლოკები და კოდი"] },
-      hard:     { title: "რთული",   tagline: "მოწინავე",      bullets: ["რთული შეცდომები", "მინიმალური მინიშნება", "მხოლოდ კოდი"] },
-      adaptive: { title: "ადაპტური",tagline: "ჭკვიანი სირთულე",bullets: ["გთვლის", "ავტომატურად ადაპტირება"] },
+      easy:     { title: "მარტივი",  tagline: "პირველი ნაბიჯები დებაგინგში",     bullets: ["მიმდევრობა და ძირითადი if-სტრუქტურები", "გასაგები მინიშნებები", "ვიზუალური ბლოკების ფოკუსი"] },
+      medium:   { title: "საშუალო", tagline: "ციკლები და ცვლადები",           bullets: ["ციკლები, off-by-one, უსასრულო ციკლი", "შეზღუდული მინიშნებები", "კოდი + ბლოკები გვერდიგვერდ"] },
+      hard:     { title: "რთული",   tagline: "რეალური, რთული ლოგიკა",   bullets: ["ჩადგმული პირობები, მრავალი ცვლადი", "მინიმალური მინიშნებები", "დახვეწილი შეცდომები"] },
+      adaptive: { title: "ადაპტური",tagline: "პლატფორმა გერგება შენ", bullets: ["ადევნებს თვალს სიზუსტეს, დროს, მინიშნებებს", "ზრდის სირთულეს პროგრესთან ერთად", "ამცირებს შეცდომების შემთხვევაში"] },
     },
 
     trophies: {
-      title: "შენი ტროფეები",
+      title: "შენი მიღწევები",
       accuracy: "სიზუსტე",
       avgTime: "საშ. დრო",
       avgHints: "საშ. მინიშნება",
       bestScore: "საუკეთესო ქულა",
       achievements: "მიღწევები",
       reset: "პროგრესის განულება",
-      trophyRoom: "ტროფეების ოთახი",
+      trophyRoom: "მიღწევების ოთახი",
       pointsUnit: "ქულა",
       subtitle: "შენი დებაგინგის სტატისტიკა.",
       earnMorePoints: "მეტი ქულის მიღება",
@@ -580,13 +630,20 @@ export const translations: Record<Language, Translations> = {
 
     landingUI: {
       features: "ფუნქციები",
-      builtFor: "შექმნილია გასაგებლად.",
+      builtFor: "შექმნილია გასაგებად",
       modes: "რეჟიმები",
       fourWays: "ოთხი სათამაშო გზა",
       whyDebugging: "რატომ დებაგინგი?",
       difficultyModes: "4 რეჟიმი",
       languages: "Python · JS · C++ · Java",
       noSignup: "რეგისტრაცია არ არის საჭირო",
+      conceptsDesc: "ყოველი ამოცანა ავლენს ერთ ძირითად მოდელს — გაშვების პროცესი, შესრულების მდგომარეობა, დებაგინგის სტრატეგია. ინტერფეისი ხილვადს ხდის იმას, რაც ჩვეულებრივ უხილავია, ასე რომ დამწყებები ინტუიციას ისე ავითარებენ, როგორც გამოცდილი პროგრამისტები.",
+      tryItNow: "სცადე ახლა",
+      concepts: {
+        controlFlow:       { title: "კონტროლდება გაშვების პროცესი", desc: "მონიშნული გზები აჩვენებს, რომელი ნაწილები ეშვება სინამდვილეში" },
+        executionModels:   { title: "შესრულების სახეობები",        desc: "ნაბიჯ-ნაბიჯ ცვლადების სნეფშოტები აბსტრაქტულ მდგომარეობას კონკრეტულს ხდის" },
+        debuggingStrategy: { title: "დებაგინგის სტრატეგია",       desc: "დაკვირვება → იზოლაცია → გამოსწორება — იგივე მეთოდი, რასაც პროფესიონალები იყენებენ" },
+      },
     },
 
     modesUI: {
@@ -619,6 +676,31 @@ export const translations: Record<Language, Translations> = {
       feedbackDesc: "გვიზიარე შენი მოსაზრება.",
       puzzleQuestion: "გასაგები იყო?",
       generalQuestion: "გაქვს შენიშვნა?",
+      nameOptional: "სახელი (სურვილისამებრ)",
+      emailOptional: "ელ-ფოსტა (სურვილისამებრ)",
+      yourNamePlaceholder: "შენი სახელი",
+      replyPlaceholder: "პასუხისთვის",
+      category: "კატეგორია",
+      puzzleThoughts: "შენი მოსაზრება ამოცანაზე",
+      whatsOnMind: "რა გაქვს სათქმელი?",
+      writeMoreWords: "გთხოვ, დაწერე რამდენიმე სიტყვა.",
+      thanksFeedback: "გმადლობ გამოხმაურებისთვის!",
+      messageSent: "შენი შეტყობინება გაიგზავნა.",
+      categories: { Bug: "შეცდომა", Idea: "იდეა", Difficulty: "სირთულე", Praise: "შექება", Other: "სხვა" },
+    },
+
+    auth: {
+      signIn: "შესვლა",
+      createAccount: "ანგარიშის შექმნა",
+      register: "რეგისტრაცია",
+      username: "მომხმარებელი",
+      password: "პაროლი",
+      usernameHint: "3–20 სიმბოლო · ასოები, ციფრები, ქვედა ტირე",
+      passwordHint: "მინიმუმ 6 სიმბოლო",
+      pleaseWait: "გთხოვ დაელოდე…",
+      errorUsernameMin: "მინიმუმ 3 სიმბოლო",
+      errorUsernameMax: "მაქსიმუმ 20 სიმბოლო",
+      errorUsernameChars: "მხოლოდ ასოები, ციფრები და ქვედა ტირე",
     },
 
     gameUI: {
