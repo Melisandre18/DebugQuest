@@ -182,19 +182,19 @@ export default function Trophies() {
                           <div className="w-10 h-10 rounded-xl bg-destructive/10 border border-destructive/30 flex items-center justify-center shrink-0">
                             <AlertTriangle className="w-5 h-5 text-destructive" />
                           </div>
-                          <AlertDialogTitle className="text-xl">Reset all progress?</AlertDialogTitle>
+                          <AlertDialogTitle className="text-xl">{t.trophiesUI.resetTitle}</AlertDialogTitle>
                         </div>
                         <AlertDialogDescription className="text-sm text-muted-foreground leading-relaxed">
-                          This will permanently erase your <span className="text-foreground font-medium">score</span>, <span className="text-foreground font-medium">solved puzzles</span>, and <span className="text-foreground font-medium">all achievements</span>. There is no way to undo this.
+                          {t.trophiesUI.resetDesc}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter className="gap-2 sm:gap-2">
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>{t.common.cancel}</AlertDialogCancel>
                         <AlertDialogAction
                           className="bg-destructive text-destructive-foreground hover:bg-destructive/90 gap-2"
                           onClick={resetProgress}
                         >
-                          <Trash2 className="w-4 h-4" /> Reset everything
+                          <Trash2 className="w-4 h-4" /> {t.trophiesUI.resetConfirm}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>

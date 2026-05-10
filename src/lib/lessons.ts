@@ -381,7 +381,7 @@ export const LESSONS: Record<BugType, Lesson> = {
       },
     },
     furtherReading: [
-      { en: "Startin pattern", ka: "საწყისი პატერნი" },
+      { en: "Starting pattern", ka: "საწყისი პატერნები" },
       { en: "Identity elements", ka: "ნეიტრალური ელემენტები" },
       { en: "Reduce / fold", ka: "Reduce / fold" },
     ],

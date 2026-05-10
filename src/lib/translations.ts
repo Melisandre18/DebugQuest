@@ -172,8 +172,9 @@ export interface Translations {
   };
 
   trophiesUI: {
-    resetProgress: string; confirmReset: string; accuracy: string;
-    avgTime: string; avgHints: string; bestStreak: string;
+    resetProgress: string; confirmReset: string;
+    resetTitle: string; resetDesc: string; resetConfirm: string;
+    accuracy: string; avgTime: string; avgHints: string; bestStreak: string;
     noTrophies: string; noTrophiesDesc: string;
     scoreOverTime: string; solvedByDifficulty: string; recentAttempts: string;
     filterByLanguage: string; allLanguages: string;
@@ -408,6 +409,9 @@ export const translations: Record<Language, Translations> = {
 
     trophiesUI: {
       resetProgress: "Reset Progress", confirmReset: "Are you sure?",
+      resetTitle: "Reset all progress?",
+      resetDesc: "This will permanently erase your score, solved puzzles, and all achievements",
+      resetConfirm: "Reset everything",
       accuracy: "Accuracy", avgTime: "Avg. time", avgHints: "Avg. hints",
       bestStreak: "Best streak", noTrophies: "No trophies yet", noTrophiesDesc: "Solve your first puzzle.",
       scoreOverTime: "Score over time", solvedByDifficulty: "Solved by difficulty", recentAttempts: "Recent attempts",
@@ -686,6 +690,9 @@ export const translations: Record<Language, Translations> = {
     trophiesUI: {
       resetProgress: "პროგრესის განულება",
       confirmReset: "დარწმუნებული ხარ?",
+      resetTitle: "ყველა პროგრესის განულება?",
+      resetDesc: "ეს სამუდამოდ წაშლის შენს ქულას, ამოხსნილ ამოცანებს და ყველა მიღწევას.",
+      resetConfirm: "ყველაფრის განულება",
       accuracy: "სიზუსტე",
       avgTime: "საშ. დრო",
       avgHints: "საშ. მინიშნება",
