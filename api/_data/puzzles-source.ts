@@ -234,7 +234,7 @@ const p3: PuzzleDef = (() => {
     bugStmtId: b,
     expected: { returned: 15 },
     program,
-    concept: { en: "Loop bounds & off-by-one errors", ka: "მარყუჟის საზღვრები და off-by-one შეცდომები" },
+    concept: { en: "Loop bounds & off-by-one errors", ka: "ციკლის საზღვრები და off-by-one შეცდომები" },
     title: { en: "Sum to N", ka: "ჯამი N-მდე" },
     story: {
       en: "Add up numbers 1..5. The accountant always gets it wrong.",
@@ -247,11 +247,11 @@ const p3: PuzzleDef = (() => {
     hints: [
       {
         en: "Trace the loop on paper. What values does `i` actually take?",
-        ka: "გაიარე მარყუჟი ქაღალდზე. რა მნიშვნელობებს ღებულობს `i` სინამდვილეში?",
+        ka: "გაიარე ციკლი ქაღალდზე. რა მნიშვნელობებს ღებულობს `i` სინამდვილეში?",
       },
       {
         en: "Check the upper bound. Does the loop reach 5?",
-        ka: "შეამოწმე ზედა ზღვარი. მარყუჟი 5-ს აღწევს?",
+        ka: "შეამოწმე ზედა ზღვარი. ციკლი 5-ს აღწევს?",
       },
       { en: "Make the range inclusive of 5.", ka: "გახადე დიაპაზონი 5-ის ჩათვლით." },
     ],
@@ -262,7 +262,7 @@ const p3: PuzzleDef = (() => {
         label: { en: "Make the range include 5", ka: "შეიტანე 5 დიაპაზონში" },
         explanation: {
           en: "The loop currently stops *before* 5 (classic off-by-one). Including 5 gives 1+2+3+4+5 = 15.",
-          ka: "მარყუჟი ამჟამად ჩერდება 5-*მდე* (კლასიკური off-by-one). 5-ის ჩათვლა იძლევა 1+2+3+4+5 = 15.",
+          ka: "ციკლი ამჟამად ჩერდება 5-*მდე* (კლასიკური off-by-one). 5-ის ჩათვლა იძლევა 1+2+3+4+5 = 15.",
         },
         applyToProgram: (p) => p.map(s =>
           s.id === b && s.kind === "for" ? { ...s, inclusive: true } : s
@@ -286,7 +286,7 @@ const p3: PuzzleDef = (() => {
         label: { en: "Initialise total to 1", ka: "total-ს მიანიჭე საწყისი მნიშვნელობა 1" },
         explanation: {
           en: "That gives 1 + (1+2+3+4) = 11. The loop bound is the real bug.",
-          ka: "ეს იძლევა 1 + (1+2+3+4) = 11. ნამდვილი შეცდომა მარყუჟის ზღვარშია.",
+          ka: "ეს იძლევა 1 + (1+2+3+4) = 11. ნამდვილი შეცდომა ციკლის ზღვარშია.",
         },
         applyToProgram: (p) => p.map(s =>
           s.id === a && s.kind === "assign" ? { ...s, value: num(1) } : s
@@ -322,7 +322,7 @@ const p4: PuzzleDef = (() => {
     program,
     concept: {
       en: "Loop termination — the variable must move toward the exit condition",
-      ka: "მარყუჟის დასრულება — ცვლადი გამოსასვლელი პირობისკენ უნდა მიდიოდეს",
+      ka: "ციკლის დასრულება — ცვლადი გამოსასვლელი პირობისკენ უნდა მიდიოდეს",
     },
     title: { en: "Endless Countdown", ka: "უსასრულო კარათვლა" },
     story: {
@@ -340,7 +340,7 @@ const p4: PuzzleDef = (() => {
       },
       {
         en: "For a while-loop to end, the variable must move toward making the condition false.",
-        ka: "while-მარყუჟის დასასრულებლად, ცვლადი პირობის false-ად გახდის მიმართულებით უნდა მიდიოდეს.",
+        ka: "while-ციკლის დასასრულებლად, ცვლადი პირობის false-ად გახდის მიმართულებით უნდა მიდიოდეს.",
       },
       { en: "Replace `+ 1` with `- 1`.", ka: "შეცვალე `+ 1` `-1`-ით." },
     ],
@@ -351,7 +351,7 @@ const p4: PuzzleDef = (() => {
         label: { en: "Change `n = n + 1` to `n = n - 1`", ka: "შეცვალე `n = n + 1` `n = n - 1`-ად" },
         explanation: {
           en: "The loop stops when `n` reaches 0. Adding 1 moves *away* from 0, so it never stops. Subtracting drives it toward the exit.",
-          ka: "მარყუჟი ჩერდება, როდესაც `n` 0-ს გაუტოლდება. 1-ის დამატება 0-ისგან *შორდება*, ამიტომ არ ჩერდება. გამოკლება სწორი მიმართულებაა.",
+          ka: "ციკლი ჩერდება, როდესაც `n` 0-ს გაუტოლდება. 1-ის დამატება 0-ისგან *შორდება*, ამიტომ არ ჩერდება. გამოკლება სწორი მიმართულებაა.",
         },
         applyToProgram: (p) => {
           const fixNode = (s: typeof p[number]): typeof p[number] => {
@@ -371,7 +371,7 @@ const p4: PuzzleDef = (() => {
         label: { en: "Start `n` at 0", ka: "დააყენე `n` 0-ით" },
         explanation: {
           en: "Then the loop body never runs — nothing gets printed.",
-          ka: "მაშინ მარყუჟის სხეული არასდროს სრულდება — არარაფერი არ დაიბეჭდება.",
+          ka: "მაშინ ციკლის სხეული არასდროს სრულდება — არარაფერი არ დაიბეჭდება.",
         },
         applyToProgram: (p) => p.map(s =>
           s.id === a && s.kind === "assign" ? { ...s, value: num(0) } : s
@@ -526,7 +526,7 @@ const p5: PuzzleDef = (() => {
         correct: false,
         label: {
           en: "Just shrink the loop so the bug is hidden",
-          ka: "შეამცირე მარყუჟი, რათა შეცდომა დამალული იყოს",
+          ka: "შეამცირე ციკლი, რათა შეცდომა დამალული იყოს",
         },
         explanation: {
           en: "Hiding a bug isn't fixing it. The logic is still wrong for 15, 30, 45, …",
@@ -588,7 +588,7 @@ const p6: PuzzleDef = (() => {
     program,
     concept: {
       en: "Initialisation matters — bad initial state corrupts the whole loop's logic",
-      ka: "ინიციალიზაცია მნიშვნელოვანია — მცდარი საწყისი მნიშვნელობა ანგრევს მარყუჟის ლოგიკას",
+      ka: "ინიციალიზაცია მნიშვნელოვანია — მცდარი საწყისი მნიშვნელობა ანგრევს ციკლის ლოგიკას",
     },
     title: { en: "The Lost Maximum", ka: "დაკარგული მაქსიმუმი" },
     story: {

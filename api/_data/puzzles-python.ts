@@ -42,14 +42,14 @@ const py1: TextFillBlankDef = {
   difficulty: "easy",
   bugType: "off-by-one",
   programmingLanguage: "python",
-  concept: { en: "Loop bounds: range() is exclusive at the end", ka: "მარყუჟის ზღვრები: range() არ მოიცავს ბოლო მნიშვნელობას" },
+  concept: { en: "Loop bounds: range() is exclusive at the end", ka: "ციკლის ზღვრები: range() არ მოიცავს ბოლო მნიშვნელობას" },
   title: { en: "Missing the Last Number", ka: "ბოლო რიცხვი გამოტოვებულია" },
   story: { en: "A student wants to sum all integers from 1 to n, but the total is always too small.", ka: "სტუდენტს სურს 1-დან n-მდე ყველა მთელი რიცხვის ჯამი, მაგრამ ჯამი ყოველთვის პატარაა." },
   task: { en: "Fix the range so it includes n itself.", ka: "გაასწორე range ისე, რომ n-ც შევიდეს." },
   hints: [
     { en: "What does range(1, n) actually produce? Try n=5 in your head.", ka: "რას გვაძლევს range(1, n)? სცადე n=5 გონებაში." },
     { en: "range(start, stop) stops *before* stop. You want to include n.", ka: "range(start, stop) ჩერდება stop-*მდე*. გჭირდება n-ის ჩათვლა." },
-    { en: "Use range(1, n+1) so the loop reaches n.", ka: "გამოიყენე range(1, n+1), რომ მარყუჟი n-ს მიაღწიოს." },
+    { en: "Use range(1, n+1) so the loop reaches n.", ka: "გამოიყენე range(1, n+1), რომ ციკლი n-ს მიაღწიოს." },
   ],
   format: "text",
   interaction: "fill-blank",
@@ -470,7 +470,7 @@ const py8: TextFillBlankDef = {
   concept: { en: "Never mutate a list while iterating over it — use a copy instead", ka: "იტერაციის დროს სიის ცვლა დაუშვებელია — გამოიყენე ასლი" },
   title: { en: "Skipping Evens", ka: "წყვილების გამოტოვება" },
   story: { en: "A filter that removes even numbers skips some of them because it modifies the list it is walking through.", ka: "ლუწი რიცხვების გამფილტრავი ზოგიერთს გამოტოვებს, რადგან გასვლის დროს სიას ცვლის." },
-  task: { en: "Iterate over a copy of the list so removals don't affect the loop.", ka: "გაიარე სიის ასლზე, რომ წაშლები მარყუჟს არ ეხება." },
+  task: { en: "Iterate over a copy of the list so removals don't affect the loop.", ka: "გაიარე სიის ასლზე, რომ წაშლები ციკლს არ ეხება." },
   hints: [
     { en: "Trace what happens when numbers = [1, 2, 4, 3]. Which elements get skipped?", ka: "გაიარე numbers = [1, 2, 4, 3]-ისთვის. რომელი ელემენტები გამოტოვდება?" },
     { en: "Removing an element shifts later elements left, causing the iterator to skip the next one.", ka: "ელემენტის ამოღება შემდეგ ელემენტებს მარცხნივ ცვლის, ამიტომ იტერატორი მომდევნოს გამოტოვებს." },
@@ -505,7 +505,7 @@ print(remove_evens([1, 2, 4, 3, 6]))  # expected: [1, 3]`,
     {
       id: "a", value: "numbers[:]", correct: true,
       valueByLang: { javascript: "[...numbers]", cpp: "numbers.begin()", java: "numbers.iterator()" },
-      explanation: { en: "numbers[:] creates a shallow copy, so modifying numbers inside the loop doesn't disrupt the iteration.", ka: "numbers[:] ზედაპირულ ასლს ქმნის, ამიტომ მარყუჟში numbers-ის ცვლა იტერაციას არ ხელს არ უშლის." },
+      explanation: { en: "numbers[:] creates a shallow copy, so modifying numbers inside the loop doesn't disrupt the iteration.", ka: "numbers[:] ზედაპირულ ასლს ქმნის, ამიტომ ციკლში numbers-ის ცვლა იტერაციას არ ხელს არ უშლის." },
     },
     {
       id: "b", value: "numbers", correct: false,
@@ -726,7 +726,7 @@ const py12: TextPickFixDef = {
   story: { en: "A labeling function maintains a separate counter variable that it forgets to reset between calls.", ka: "ლეიბლების ფუნქცია ცალკე მთვლელ ცვლადს ინარჩუნებს, რომლის გამოძახებებს შორის გადაყენებაც ავიწყდება." },
   task: { en: "Replace the manual index variable with enumerate() to cleanly get both index and item.", ka: "ხელით ინდექსი enumerate()-ით შეცვალე, რომ ინდექსი და ელემენტი სუფთად მიიღო." },
   hints: [
-    { en: "Python's for loop gives you the value, not the index. How do you get both?", ka: "Python-ის for მარყუჟი მნიშვნელობას გაძლევს, არა ინდექსს. ორივეს როგორ მიიღებ?" },
+    { en: "Python's for loop gives you the value, not the index. How do you get both?", ka: "Python-ის for ციკლი მნიშვნელობას გაძლევს, არა ინდექსს. ორივეს როგორ მიიღებ?" },
     { en: "enumerate() wraps any iterable and adds an automatic counter.", ka: "enumerate() ნებისმიერ iterable-ს ახვევს და ავტომატური მთვლელი ემატება." },
     { en: "for i, item in enumerate(items): is the idiomatic pattern.", ka: "for i, item in enumerate(items): სტანდარტული Python შაბლონია." },
   ],
@@ -845,7 +845,7 @@ const py14: TextPickFixDef = {
   story: { en: "A streaming reader checks an empty string each iteration instead of the freshly read chunk because assignment and condition are on separate lines.", ka: "ნაკადის წამკითხველი ყოველ იტერაციაზე ცარიელ სტრიქონს ამოწმებს განახლებული ფრაგმენტის ნაცვლად." },
   task: { en: "Use the walrus operator so the read and the while-check happen in the same expression.", ka: "Walrus ოპერატორი გამოიყენე, რომ წაკითხვა და while-შემოწმება ერთ გამოთქმაში მოხდეს." },
   hints: [
-    { en: "The chunk is assigned before the loop, so the while condition checks the initial empty value forever.", ka: "ფრაგმენტი მარყუჟამდე ენიჭება, ამიტომ while პირობა ყოველთვის თავდაპირველ ცარიელ მნიშვნელობას ამოწმებს." },
+    { en: "The chunk is assigned before the loop, so the while condition checks the initial empty value forever.", ka: "ფრაგმენტი ციკლამდე ენიჭება, ამიტომ while პირობა ყოველთვის თავდაპირველ ცარიელ მნიშვნელობას ამოწმებს." },
     { en: "The walrus operator := can assign inside a condition: while chunk := read().", ka: "Walrus ოპერატორი := პირობაში ახდენს მინიჭებას: while chunk := read()." },
     { en: "Place the assignment inside the while condition using :=.", ka: "მინიჭება := გამოყენებით while პირობაში მოათავსე." },
   ],

@@ -177,12 +177,12 @@ const java3: TextFillBlankDef = {
   programmingLanguage: "java",
   concept: { en: "Java array length is arr.length; valid indices are 0 to arr.length-1", ka: "Java მასივის სიგრძე arr.length-ია; სწორი ინდექსები 0-დან arr.length-1-მდე" },
   title: { en: "One Step Too Far", ka: "ერთი ნაბიჯით ზედმეტი" },
-  story: { en: "A loop that prints all elements of an array throws ArrayIndexOutOfBoundsException on the last step.", ka: "მასივის ყველა ელემენტის დამბეჭდი მარყუჟი ბოლო ნაბიჯზე ArrayIndexOutOfBoundsException-ს გამოიძახებს." },
-  task: { en: "Fix the loop bound so it stops at the last valid index.", ka: "მარყუჟის ზღვარი გაასწორე, რომ ბოლო სწორ ინდექსზე ჩერდებოდეს." },
+  story: { en: "A loop that prints all elements of an array throws ArrayIndexOutOfBoundsException on the last step.", ka: "მასივის ყველა ელემენტის დამბეჭდი ციკლი ბოლო ნაბიჯზე ArrayIndexOutOfBoundsException-ს გამოიძახებს." },
+  task: { en: "Fix the loop bound so it stops at the last valid index.", ka: "ციკლის ზღვარი გაასწორე, რომ ბოლო სწორ ინდექსზე ჩერდებოდეს." },
   hints: [
     { en: "An array of length 5 has indices 0, 1, 2, 3, 4. What is the last index?", ka: "სიგრძის 5 მასივს 0, 1, 2, 3, 4 ინდექსები აქვს. რა არის ბოლო ინდექსი?" },
     { en: "arr.length gives 5 for a 5-element array. arr[5] throws AIOBE.", ka: "arr.length 5-ელემენტიანი მასივისთვის 5-ს გვაძლევს. arr[5] AIOBE-ს გამოიძახებს." },
-    { en: "Use i < arr.length (strict less-than) as the loop condition.", ka: "i < arr.length (მკაცრი less-than) მარყუჟის პირობად გამოიყენე." },
+    { en: "Use i < arr.length (strict less-than) as the loop condition.", ka: "i < arr.length (მკაცრი less-than) ციკლის პირობად გამოიყენე." },
   ],
   format: "text",
   interaction: "fill-blank",
@@ -305,10 +305,10 @@ const java5: TextPickFixDef = {
   difficulty: "medium",
   bugType: "wrong-operator",
   programmingLanguage: "java",
-  concept: { en: "Concatenating Strings in a loop with += creates O(n²) copies; use StringBuilder for O(n) performance", ka: "მარყუჟში += String-ების შეერთება O(n²) ასლს ქმნის; O(n) შესრულებისთვის StringBuilder გამოიყენე" },
+  concept: { en: "Concatenating Strings in a loop with += creates O(n²) copies; use StringBuilder for O(n) performance", ka: "ციკლში += String-ების შეერთება O(n²) ასლს ქმნის; O(n) შესრულებისთვის StringBuilder გამოიყენე" },
   title: { en: "The Slow Builder", ka: "ნელი მშენებელი" },
   story: { en: "A CSV builder that joins thousands of rows is extremely slow because each iteration creates a new String object.", ka: "CSV მშენებელი, რომელიც ათასობით მწკრივს აერთებს, ძალიან ნელია, რადგან ყოველ იტერაციაზე ახალ String ობიექტს ქმნის." },
-  task: { en: "Refactor to use StringBuilder so the loop runs efficiently.", ka: "StringBuilder-ის გამოსაყენებლად გადაწერე, რომ მარყუჟი ეფექტიანად მუშაობდეს." },
+  task: { en: "Refactor to use StringBuilder so the loop runs efficiently.", ka: "StringBuilder-ის გამოსაყენებლად გადაწერე, რომ ციკლი ეფექტიანად მუშაობდეს." },
   hints: [
     { en: "Each += on a String allocates a brand-new String object. n concatenations = n(n+1)/2 characters copied.", ka: "String-ზე ყოველი += ახალ String ობიექტს გამოყოფს. n შეერთება = n(n+1)/2 კოპირებული სიმბოლო." },
     { en: "StringBuilder.append() adds to the same buffer in O(1) amortized.", ka: "StringBuilder.append() ამორტიზებული O(1)-ით ერთ ბუფერს ამატებს." },
@@ -619,7 +619,7 @@ const java9: TextPickFixDef = {
   task: { en: "Fix the removal so it doesn't trigger ConcurrentModificationException.", ka: "წაშლა გაასწორე, რომ ConcurrentModificationException-ს არ გამოიძახებდეს." },
   hints: [
     { en: "Why does ArrayList throw ConcurrentModificationException here?", ka: "რატომ გამოიძახებს ArrayList ConcurrentModificationException-ს?" },
-    { en: "The for-each loop uses an Iterator internally. Modifying the list directly invalidates the iterator.", ka: "for-each მარყუჟი Iterator-ს შიგნიდან იყენებს. სიის პირდაპირი ცვლა iterator-ს ბათილს ხდის." },
+    { en: "The for-each loop uses an Iterator internally. Modifying the list directly invalidates the iterator.", ka: "for-each ციკლი Iterator-ს შიგნიდან იყენებს. სიის პირდაპირი ცვლა iterator-ს ბათილს ხდის." },
     { en: "Use list.removeIf(n -> n < 0) — it is safe and concise.", ka: "list.removeIf(n -> n < 0) გამოიყენე — უსაფრთხო და ლაკონიკური." },
   ],
   format: "text",
@@ -1099,7 +1099,7 @@ public class Main {
     {
       id: "catch-close", correct: false,
       label: { en: "Wrap in try/catch and call close() in catch", ka: "try/catch-ში გახვიე და catch-ში close() გამოიძახე" },
-      explanation: { en: "Calling close() only in catch still leaks on the normal path if you forget to also call it after the loop.", ka: "close()-ის მხოლოდ catch-ში გამოძახება კვლავ გაჟონავს ნორმალურ გზაზე, თუ მარყუჟის შემდეგ გამოძახებასაც დაივიწყებ." },
+      explanation: { en: "Calling close() only in catch still leaks on the normal path if you forget to also call it after the loop.", ka: "close()-ის მხოლოდ catch-ში გამოძახება კვლავ გაჟონავს ნორმალურ გზაზე, თუ ციკლის შემდეგ გამოძახებასაც დაივიწყებ." },
     },
   ],
 };
