@@ -123,6 +123,13 @@ export interface Translations {
     checkOrder: string;
     orderWrong: string;
     tryAgain: string;
+
+    // Lesson panel labels
+    lessonWhatToKnow: string;
+    lessonExample: string;
+    lessonCorrect: string;
+    lessonNotQuite: string;
+    lessonRelated: string;
   };
 
   difficulty: {
@@ -339,6 +346,12 @@ export const translations: Record<Language, Translations> = {
       checkOrder: "Check order",
       orderWrong: "Wrong order — try again",
       tryAgain: "Try again",
+
+      lessonWhatToKnow: "What you need to know",
+      lessonExample: "Example",
+      lessonCorrect: "Correct",
+      lessonNotQuite: "Not quite — here's why:",
+      lessonRelated: "Related concepts",
     },
 
     difficulty: {
@@ -593,6 +606,12 @@ export const translations: Record<Language, Translations> = {
       checkOrder: "თანმიმდევრობის შემოწმება",
       orderWrong: "არასწორი თანმიმდევრობა — კვლავ სცადე",
       tryAgain: "კვლავ სცადე",
+
+      lessonWhatToKnow: "რა უნდა იცოდე",
+      lessonExample: "მაგალითი",
+      lessonCorrect: "სწორია",
+      lessonNotQuite: "ჯერ ვერა — ასეა:",
+      lessonRelated: "თემები",
     },
 
     difficulty: {

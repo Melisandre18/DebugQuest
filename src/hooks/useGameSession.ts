@@ -39,6 +39,8 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
   const [tab, setTab]                     = useState<Tab>("learn");
   const [progLang, setProgLang]           = useState<Language>(initialProgLang);
   const progLangRef                       = useRef<Language>(initialProgLang);
+  const uiLangRef                         = useRef(uiLang);
+  useEffect(() => { uiLangRef.current = uiLang; }, [uiLang]);
   const [sessionSolved, setSessionSolved] = useState(0);
   // Incremented on language change to force-remount text/reorder components
   const [resetKey, setResetKey]           = useState(0);
@@ -83,7 +85,7 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
     setLoading(true); setLoadError(null);
     try {
       const next = await getNextPuzzle({
-        difficulty: d, lang: uiLang, progLang: progLangRef.current,
+        difficulty: d, lang: uiLangRef.current, progLang: progLangRef.current,
         solved: progress.solved,
         recent: progress.attempts.slice(-5).map(a => ({
           puzzleId: a.puzzleId, correct: a.correct, hintsUsed: a.hintsUsed, attempts: a.attempts,
@@ -101,14 +103,23 @@ export function useGameSession(d: Difficulty, initialProgLang: Language) {
     } finally {
       setLoading(false);
     }
-  // progress is intentionally excluded: we only want to reload on difficulty/lang changes
-  // progLang is accessed via ref so language changes don't trigger a puzzle reload
+  // progress intentionally excluded; uiLang accessed via ref so UI-language changes
+  // don't load a new puzzle — a separate effect handles in-place re-translation.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [d, uiLang]);
+  }, [d]);
 
   useEffect(() => { loadNewPuzzle(); }, [loadNewPuzzle]);
   useEffect(() => { setStepIdx(0); stopAuto(); }, [program]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: "smooth" }); }, [d, initialProgLang]);
+
+  // When the UI language changes, re-fetch the same puzzle translated — don't load a new one.
+  useEffect(() => {
+    if (!anyPuzzle) return;
+    fetchPuzzleById(anyPuzzle.id, uiLang, progLangRef.current)
+      .then(setAnyPuzzle)
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uiLang]);
 
   function stopAuto() {
     if (autoTimer.current) { window.clearInterval(autoTimer.current); autoTimer.current = null; }

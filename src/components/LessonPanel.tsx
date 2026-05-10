@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BookOpen, CheckCircle2, XCircle, Lightbulb, ArrowRight, GraduationCap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { Lesson } from "@/lib/lessons";
-import { getExampleForLanguage } from "@/lib/lessons";
+import { getExampleForLanguage, pickL } from "@/lib/lessons";
 import type { Language } from "@/lib/puzzle-engine";
 import { cn } from "@/lib/utils";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -11,21 +11,17 @@ import { useLanguage } from "@/contexts/LanguageContext";
 interface Props {
   lesson: Lesson;
   language: Language;
-  /** Called when the user finishes the lesson (passes the quiz or skips). */
   onContinue?: () => void;
-  /** Disables the continue button (e.g. already on Debug tab). */
   hideContinue?: boolean;
 }
 
-/**
- * Structured pre-puzzle lesson: concept → example → key ideas → mini quiz.
- * Encourages "learn first, fix second".
- */
 export default function LessonPanel({ lesson, language, onContinue, hideContinue }: Props) {
-  const { t } = useLanguage();
+  const { t, language: uiLang } = useLanguage();
   const [picked, setPicked] = useState<number | null>(null);
   const correct = picked !== null && picked === lesson.quiz.correctIndex;
   const example = getExampleForLanguage(lesson, language);
+
+  const p = (text: Parameters<typeof pickL>[0]) => pickL(text, uiLang);
 
   return (
     <div className="space-y-5">
@@ -37,9 +33,9 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
             <GraduationCap className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-xs uppercase tracking-wider text-muted-foreground">Concept</div>
-            <h2 className="font-display text-xl font-bold mt-0.5">{lesson.title}</h2>
-            <p className="text-sm text-muted-foreground mt-1">{lesson.concept}</p>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">{t.game.concept}</div>
+            <h2 className="font-display text-xl font-bold mt-0.5">{p(lesson.title)}</h2>
+            <p className="text-sm text-muted-foreground mt-1">{p(lesson.concept)}</p>
           </div>
         </div>
       </div>
@@ -47,30 +43,30 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
       {/* Intro */}
       <section className="card-surface rounded-xl p-5">
         <div className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5 mb-2">
-          <BookOpen className="w-3.5 h-3.5" /> What you need to know
+          <BookOpen className="w-3.5 h-3.5" /> {t.game.lessonWhatToKnow}
         </div>
-        <p className="text-sm leading-relaxed text-foreground/90">{lesson.intro}</p>
+        <p className="text-sm leading-relaxed text-foreground/90">{p(lesson.intro)}</p>
       </section>
 
       {/* Example */}
       <section className="card-surface rounded-xl p-5">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Example</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{t.game.lessonExample}</div>
         <pre className="code-surface rounded-lg p-4 text-xs md:text-sm overflow-auto leading-6">
 {example.code}
         </pre>
-        <p className="text-sm text-muted-foreground mt-3">{example.explanation}</p>
+        <p className="text-sm text-muted-foreground mt-3">{p(example.explanation)}</p>
       </section>
 
       {/* Key ideas */}
       <section className="card-surface rounded-xl p-5">
         <div className="text-xs uppercase tracking-wider text-muted-foreground inline-flex items-center gap-1.5 mb-3">
-          <Lightbulb className="w-3.5 h-3.5" /> Key ideas
+          <Lightbulb className="w-3.5 h-3.5" /> {t.game.keyIdeas}
         </div>
         <ul className="space-y-2">
           {lesson.keyIdeas.map((k, i) => (
             <li key={i} className="flex items-start gap-2.5 text-sm">
               <span className="mt-1 w-1.5 h-1.5 rounded-full bg-primary-glow shrink-0" />
-              <span className="text-foreground/90">{k}</span>
+              <span className="text-foreground/90">{p(k)}</span>
             </li>
           ))}
         </ul>
@@ -78,8 +74,8 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
 
       {/* Mini quiz */}
       <section className="card-surface rounded-xl p-5">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Quick check</div>
-        <p className="text-sm font-medium mb-3">{lesson.quiz.question}</p>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{t.game.quickCheck}</div>
+        <p className="text-sm font-medium mb-3">{p(lesson.quiz.question)}</p>
         <div className="grid gap-2">
           {lesson.quiz.options.map((opt, i) => {
             const isPicked = picked === i;
@@ -101,7 +97,7 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
                 <span className="inline-flex items-center gap-2">
                   {showState && isCorrect && <CheckCircle2 className="w-4 h-4 text-success" />}
                   {showState && isPicked && !isCorrect && <XCircle className="w-4 h-4 text-destructive" />}
-                  {opt}
+                  {p(opt)}
                 </span>
               </button>
             );
@@ -117,15 +113,15 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
               )}
             >
               <div className="font-display font-semibold mb-1">
-                {correct ? "Correct." : "Not quite — here's why:"}
+                {correct ? t.game.lessonCorrect : t.game.lessonNotQuite}
               </div>
-              <div className="text-muted-foreground">{lesson.quiz.rationale}</div>
+              <div className="text-muted-foreground">{p(lesson.quiz.rationale)}</div>
               {!correct && (
                 <button
                   onClick={() => setPicked(null)}
                   className="mt-2 text-xs text-primary-glow hover:underline"
                 >
-                  Try again
+                  {t.game.tryAgain}
                 </button>
               )}
             </motion.div>
@@ -135,11 +131,11 @@ export default function LessonPanel({ lesson, language, onContinue, hideContinue
 
       {/* Further reading */}
       <section className="card-surface rounded-xl p-5">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Related concepts</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">{t.game.lessonRelated}</div>
         <div className="flex flex-wrap gap-1.5">
-          {lesson.furtherReading.map((r) => (
-            <span key={r} className="px-2.5 py-1 rounded-md bg-secondary/60 border border-border text-xs text-muted-foreground">
-              {r}
+          {lesson.furtherReading.map((r, i) => (
+            <span key={i} className="px-2.5 py-1 rounded-md bg-secondary/60 border border-border text-xs text-muted-foreground">
+              {p(r)}
             </span>
           ))}
         </div>
