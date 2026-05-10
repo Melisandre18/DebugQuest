@@ -89,7 +89,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
         </div>
 
         {/* Desktop nav links */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav className="hidden lg:flex items-center gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item);
@@ -105,8 +105,8 @@ export default function TopNav({ center, backTo }: TopNavProps) {
                     : "text-muted-foreground hover:text-foreground hover:bg-secondary/60"
                 )}
               >
-                <Icon className="w-3.5 h-3.5" />
-                {item.label}
+                <Icon className="w-3.5 h-3.5 shrink-0" />
+                <span className="text-center leading-tight">{item.label}</span>
               </Link>
             );
           })}
@@ -124,12 +124,14 @@ export default function TopNav({ center, backTo }: TopNavProps) {
           {/* Score chip */}
           <Link
             to="/trophies"
-            className="group relative inline-flex items-center gap-2 rounded-full border border-accent/40 bg-accent/5 pl-2 pr-3 py-1.5 hover:border-accent/70 hover:bg-accent/10 transition-colors"
+            className="group relative inline-flex items-center gap-x-2 rounded-full border border-accent/40 bg-accent/5 pl-2 pr-3 py-1.5 hover:border-accent/70 hover:bg-accent/10 transition-colors"
             aria-label={t.nav.trophies}
           >
-            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-accent text-accent-foreground shadow-glow-accent">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gradient-accent text-accent-foreground shadow-glow-accent shrink-0">
               <Trophy className="w-3.5 h-3.5" />
             </span>
+
+          <div className="flex flex-col items-center text-center leading-none">
             <AnimatePresence mode="popLayout">
               <motion.span
                 key={progress.totalScore}
@@ -142,10 +144,12 @@ export default function TopNav({ center, backTo }: TopNavProps) {
                 {progress.totalScore.toLocaleString()}
               </motion.span>
             </AnimatePresence>
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground hidden lg:inline">
+
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground hidden xl:inline">
               {progress.solved.length} {t.common.solved}
             </span>
-          </Link>
+          </div>
+        </Link>
 
           {/* Feedback */}
           <FeedbackDialog triggerLabel={t.nav.feedback} />
@@ -183,7 +187,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
           <button
             type="button"
             onClick={() => setMobileOpen(v => !v)}
-            className="md:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border bg-background hover:bg-secondary/60 transition-colors"
+            className="lg:hidden inline-flex items-center justify-center w-9 h-9 rounded-md border border-border bg-background hover:bg-secondary/60 transition-colors"
             aria-label="Toggle menu"
           >
             {mobileOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
@@ -199,7 +203,7 @@ export default function TopNav({ center, backTo }: TopNavProps) {
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.18 }}
-            className="md:hidden border-t border-border/60 overflow-hidden bg-background/95 backdrop-blur-md"
+            className="lg:hidden border-t border-border/60 overflow-hidden bg-background/95 backdrop-blur-md"
           >
             <nav className="container py-3 grid gap-1">
               {navItems.map((item) => {
