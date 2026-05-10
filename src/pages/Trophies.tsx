@@ -1,4 +1,5 @@
 import { useMemo, useEffect, useState } from "react";
+import { useQueries } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ACHIEVEMENTS, computePerformance } from "@/lib/progress";
 import { useProgress } from "@/contexts/ProgressContext";
-import { usePuzzleCounts } from "@/lib/puzzle-service";
+import { usePuzzleCounts, fetchPuzzleById } from "@/lib/puzzle-service";
 import { LANGUAGES, type Language, type Difficulty } from "@/lib/puzzle-engine";
 import { DifficultyBadge } from "@/components/DifficultyMeta";
 import { cn } from "@/lib/utils";
@@ -81,9 +82,9 @@ export default function Trophies() {
   const byDifficulty = useMemo(() => {
     const totals = puzzleCounts ?? { easy: 0, medium: 0, hard: 0 };
     const counts: Record<string, { difficulty: string; solved: number; total: number; fill: string }> = {
-      easy:   { difficulty: "Easy",   solved: 0, total: totals.easy   ?? 0, fill: "hsl(var(--diff-easy))" },
-      medium: { difficulty: "Medium", solved: 0, total: totals.medium ?? 0, fill: "hsl(var(--diff-medium))" },
-      hard:   { difficulty: "Hard",   solved: 0, total: totals.hard   ?? 0, fill: "hsl(var(--diff-hard))" },
+      easy:   { difficulty: t.difficulty.easy.title,   solved: 0, total: totals.easy   ?? 0, fill: "hsl(var(--diff-easy))" },
+      medium: { difficulty: t.difficulty.medium.title, solved: 0, total: totals.medium ?? 0, fill: "hsl(var(--diff-medium))" },
+      hard:   { difficulty: t.difficulty.hard.title,   solved: 0, total: totals.hard   ?? 0, fill: "hsl(var(--diff-hard))" },
     };
     // Derive solved from filtered correct attempts (so language filter applies)
     // Use stored difficulty field; fall back to ID prefix for legacy records.
@@ -101,9 +102,23 @@ export default function Trophies() {
       else if (diff === "hard")   counts.hard.solved++;
     });
     return Object.values(counts);
-  }, [filtered, puzzleCounts]);
+  }, [filtered, puzzleCounts, t]);
 
   const recent = filtered.slice(-8).reverse();
+
+  const uniqueRecentIds = useMemo(() => [...new Set(recent.map(r => r.puzzleId))], [recent]);
+  const titleQueries = useQueries({
+    queries: uniqueRecentIds.map(id => ({
+      queryKey: ["puzzle-title-en", id],
+      queryFn: () => fetchPuzzleById(id, "en").then(p => ({ id, title: p.title })),
+      staleTime: Infinity,
+    })),
+  });
+  const enTitles = useMemo(() => {
+    const map: Record<string, string> = {};
+    titleQueries.forEach(q => { if (q.data) map[q.data.id] = q.data.title; });
+    return map;
+  }, [titleQueries]);
 
   const totalUnlocks = Object.keys(ACHIEVEMENTS).length;
   const unlocked = progress.achievements.length;
@@ -245,8 +260,11 @@ export default function Trophies() {
                           border: "1px solid hsl(var(--border))",
                           borderRadius: 8,
                           fontSize: 12,
+                          color: "hsl(var(--popover-foreground))",
                         }}
-                        formatter={(v: number, _n, p) => [`${v} / ${(p.payload as { total: number }).total}`, "Solved"]}
+                        labelStyle={{ color: "hsl(var(--muted-foreground))" }}
+                        itemStyle={{ color: "#f59e0b" }}
+                        formatter={(v: number, _n, p) => [`${v} / ${(p.payload as { total: number }).total}`, t.common.solved]}
                       />
                       <Bar dataKey="solved" radius={[6, 6, 0, 0]}>
                         {byDifficulty.map((d) => <Cell key={d.difficulty} fill={d.fill} />)}
@@ -268,7 +286,7 @@ export default function Trophies() {
             {/* Achievements + Recent */}
             <div className="grid lg:grid-cols-[1fr_1fr] gap-5 mt-6">
               <Panel
-                title="Achievements"
+                title={t.trophies.achievements}
                 icon={Award}
                 right={<span className="text-xs text-muted-foreground">{unlocked} / {totalUnlocks}</span>}
               >
@@ -294,8 +312,8 @@ export default function Trophies() {
                           {got ? "★" : "☆"}
                         </div>
                         <div className="min-w-0">
-                          <div className="font-display text-sm font-semibold truncate">{ach.title}</div>
-                          <div className="text-xs text-muted-foreground">{ach.desc}</div>
+                          <div className="font-display text-sm font-semibold truncate">{t.achievements[code as keyof typeof t.achievements]?.title ?? ach.title}</div>
+                          <div className="text-xs text-muted-foreground">{t.achievements[code as keyof typeof t.achievements]?.desc ?? ach.desc}</div>
                         </div>
                       </motion.div>
                     );
@@ -314,12 +332,17 @@ export default function Trophies() {
                         {r.correct
                           ? <CheckCircle2 className="w-4 h-4 text-success shrink-0" />
                           : <XCircle className="w-4 h-4 text-destructive shrink-0" />}
-                        <span className="text-xs text-muted-foreground truncate">{r.puzzleTitle ?? r.puzzleId}</span>
+                        <span className="text-xs text-muted-foreground truncate">{enTitles[r.puzzleId] ?? r.puzzleTitle ?? r.puzzleId}</span>
                         {r.difficulty && (
                           <DifficultyBadge
                             d={r.difficulty as Difficulty}
                             className="shrink-0 text-[10px] px-1.5 py-0"
                           />
+                        )}
+                        {r.language && (
+                          <span className="shrink-0 font-mono text-[10px] px-1.5 py-0.5 rounded border border-border bg-card/60 text-muted-foreground">
+                            {LANGUAGES.find(l => l.id === r.language)?.label ?? r.language}
+                          </span>
                         )}
                       </div>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">

@@ -172,6 +172,8 @@ export interface Translations {
     filterByLanguage: string; allLanguages: string;
   };
 
+  achievements: Record<"first-fix" | "no-hints" | "speed-demon" | "hard-mode" | "streak-3", { title: string; desc: string }>;
+
   feedback: {
     feedbackOnPuzzle: string; sendFeedback: string; feedbackDesc: string;
     puzzleQuestion: string; generalQuestion: string;
@@ -399,6 +401,14 @@ export const translations: Record<Language, Translations> = {
       filterByLanguage: "Language", allLanguages: "All languages",
     },
 
+    achievements: {
+      "first-fix":   { title: "First Fix",    desc: "Solve your first puzzle." },
+      "no-hints":    { title: "Pure Insight", desc: "Solve a puzzle without using any hints." },
+      "speed-demon": { title: "Speed Demon",  desc: "Solve a puzzle in under 30 seconds." },
+      "hard-mode":   { title: "Bug Hunter",   desc: "Solve a Hard puzzle." },
+      "streak-3":    { title: "On a Roll",    desc: "Solve 3 puzzles in a row first try." },
+    },
+
     feedback: {
       feedbackOnPuzzle: "Feedback on this puzzle",
       sendFeedback: "Send feedback",
@@ -497,7 +507,7 @@ export const translations: Record<Language, Translations> = {
     modes: {
       title: "შეარჩიე რეჟიმი",
       subtitle: "ადაპტური ირჩევს შესრულებაზე დაყრდნობით.",
-      description: "ყველა ამოცანა მხარს უჭერს ძირითად ენებს.",
+      description: "ყველა ამოცანა მოიცავს ძირითად ენებს.",
       selectLanguage: "შეარჩიე ენა",
       languageDescription: "კოდის მაგალითები შეესაბამება შენს არჩევანს.",
       continue: "გაგრძელება",
@@ -589,7 +599,7 @@ export const translations: Record<Language, Translations> = {
       easy:     { title: "მარტივი",  tagline: "პირველი ნაბიჯები დებაგინგში",     bullets: ["მიმდევრობა და ძირითადი if-სტრუქტურები", "გასაგები მინიშნებები", "ვიზუალური ბლოკების ფოკუსი"] },
       medium:   { title: "საშუალო", tagline: "ციკლები და ცვლადები",           bullets: ["ციკლები, off-by-one, უსასრულო ციკლი", "შეზღუდული მინიშნებები", "კოდი + ბლოკები გვერდიგვერდ"] },
       hard:     { title: "რთული",   tagline: "რეალური, რთული ლოგიკა",   bullets: ["ჩადგმული პირობები, მრავალი ცვლადი", "მინიმალური მინიშნებები", "დახვეწილი შეცდომები"] },
-      adaptive: { title: "ადაპტური",tagline: "პლატფორმა გერგება შენ", bullets: ["ადევნებს თვალს სიზუსტეს, დროს, მინიშნებებს", "ზრდის სირთულეს პროგრესთან ერთად", "ამცირებს შეცდომების შემთხვევაში"] },
+      adaptive: { title: "ადაპტური",tagline: "პლათფორმა გერგება შენ", bullets: ["ადევნებს თვალს სიზუსტეს, დროს, მინიშნებებს", "ზრდის სირთულეს პროგრესთან ერთად", "ამცირებს შეცდომების შემთხვევაში"] },
     },
 
     trophies: {
@@ -602,8 +612,8 @@ export const translations: Record<Language, Translations> = {
       reset: "პროგრესის განულება",
       trophyRoom: "მიღწევების ოთახი",
       pointsUnit: "ქულა",
-      subtitle: "შენი დებაგინგის სტატისტიკა.",
-      earnMorePoints: "მეტი ქულის მიღება",
+      subtitle: "შენი დებაგინგის სტატისტიკა",
+      earnMorePoints: "მეტი ქულის დაგროვება",
       attemptNumber: "მცდელობა #",
       startFirstPuzzle: "დაიწყე პირველი ამოცანა",
     },
@@ -670,10 +680,18 @@ export const translations: Record<Language, Translations> = {
       allLanguages: "ყველა ენა",
     },
 
+    achievements: {
+      "first-fix":   { title: "პირველი გამოსწორება", desc: "ამოხსენი შენი პირველი ამოცანა" },
+      "no-hints":    { title: "სუფთა ინტუიცია",      desc: "ამოხსენი ამოცანა მინიშნებების გარეშე" },
+      "speed-demon": { title: "სიჩქარის ოსტატი",     desc: "ამოხსენი ამოცანა 30 წამში" },
+      "hard-mode":   { title: "შეცდომებზე მონადირე", desc: "ამოხსენი რთული ამოცანა" },
+      "streak-3":    { title: "სერიაში",              desc: "ამოხსენი 3 ამოცანა მიყოლებით პირველი მცდელობით" },
+    },
+
     feedback: {
       feedbackOnPuzzle: "ამოცანის შეფასება",
-      sendFeedback: "გაგზავნა",
-      feedbackDesc: "გვიზიარე შენი მოსაზრება.",
+      sendFeedback: "უკუკავშირის გაგზავნა",
+      feedbackDesc: "გაგვიზიარე შენი მოსაზრება",
       puzzleQuestion: "გასაგები იყო?",
       generalQuestion: "გაქვს შენიშვნა?",
       nameOptional: "სახელი (სურვილისამებრ)",
