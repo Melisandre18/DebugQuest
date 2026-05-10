@@ -40,3 +40,9 @@ Thumbs.db
 
 # Bun binary lockfile (npm lockfile is canonical)
 bun.lockb
+
+# Project documents & scripts
+*.pptx
+*.docx
+~$*
+scripts/
